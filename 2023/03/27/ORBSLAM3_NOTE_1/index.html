@@ -79,15 +79,15 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(1)最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。  一、框架结构orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。 Example">
+<meta name="description" content="ORBSLAM3学习笔记(1)最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。ps:源码用的是计算机视觉life的注释版本  一、框架结构orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ORBSLAM3 Preview">
 <meta property="og:url" content="http://example.com/2023/03/27/ORBSLAM3_NOTE_1/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
-<meta property="og:description" content="ORBSLAM3学习笔记(1)最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。  一、框架结构orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。 Example">
+<meta property="og:description" content="ORBSLAM3学习笔记(1)最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。ps:源码用的是计算机视觉life的注释版本  一、框架结构orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-27T11:05:31.000Z">
-<meta property="article:modified_time" content="2023-03-27T12:12:27.356Z">
+<meta property="article:modified_time" content="2023-03-28T04:32:40.351Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -310,7 +310,7 @@
       
 
       
-        <h1 id="ORBSLAM3学习笔记-1"><a href="#ORBSLAM3学习笔记-1" class="headerlink" title="ORBSLAM3学习笔记(1)"></a>ORBSLAM3学习笔记(1)</h1><p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。</p>
+        <h1 id="ORBSLAM3学习笔记-1"><a href="#ORBSLAM3学习笔记-1" class="headerlink" title="ORBSLAM3学习笔记(1)"></a>ORBSLAM3学习笔记(1)</h1><p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。ps:源码用的是计算机视觉life的注释版本</p>
 <hr>
 <h2 id="一、框架结构"><a href="#一、框架结构" class="headerlink" title="一、框架结构"></a>一、框架结构</h2><p>orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。</p>
 <p><strong>Examples目录</strong><br>examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br>除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS&#x2F;src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
@@ -395,8 +395,8 @@ ros::start();
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2023/03/27/ORBSLAM3_NOTE_2/" rel="prev" title="System.cc">
-                System.cc <i class="fa fa-chevron-right"></i>
+              <a href="/2023/03/27/ORBSLAM3_NOTE_2/" rel="prev" title="System.cc_1">
+                System.cc_1 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -474,7 +474,7 @@ ros::start();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
