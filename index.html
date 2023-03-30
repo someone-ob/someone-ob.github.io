@@ -239,6 +239,129 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JZH's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/ORBSLAM3-NOTE-4/" itemprop="url">ORBextractor.cc</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T13:55:07+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
+<hr>
+<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/1.png" alt="Key points"></p>
+<p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。然后算这个圆的灰度质心。链接这个圆的几何中心与质心得到一个向量，这个向量就是fast关键点的方向。 </p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/28/ORBSLAM3_NOTE_3/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -310,7 +433,85 @@
       
         
           
-            
+            <h1 id="ORBSLAM3学习笔记-3"><a href="#ORBSLAM3学习笔记-3" class="headerlink" title="ORBSLAM3学习笔记(3)"></a>ORBSLAM3学习笔记(3)</h1><p>这篇博客继续对System.cc文件进行阅读，主要是看构造函数中依次创建跟踪、局部建图、闭环、显示线程这部分。</p>
+<h3 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h3><p>之前我们已经看到FrameDrawer和MapDrawer的初始化完成，接下来对成员变量mpTracker进行初始化</p>
+<pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
+                         mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
+</code></pre>
+<p>这行代码调用了Tracking类的构造函数，我们先来看一下构造函数引用的参数和部分成员变量的初始化</p>
+<pre><code>Tracking::Tracking(System *pSys,    //System类指针
+    ORBVocabulary* pVoc,            //词典 
+    FrameDrawer *pFrameDrawer,      //画图像的 
+    MapDrawer *pMapDrawer,          //画地图的
+    Atlas *pAtlas,                  //atlas类指针
+    KeyFrameDatabase* pKFDB,        //关键帧词典数据库 
+    const string &amp;strSettingPath,   //参数文件路径
+    const int sensor,               //传感器类型
+    Settings* settings,             //参数类 
+    const string &amp;_nameSeq          //序列名字，没用到
+): 
+    mState(NO_IMAGES_YET),          //根据枚举表，值为0 
+    mSensor(sensor),                
+    mTrackedFr(0),
+    mbStep(false),
+    mbOnlyTracking(false), 
+    mbMapUpdated(false), 
+    mbVO(false), 
+    mpORBVocabulary(pVoc), 
+    mpKeyFrameDB(pKFDB),
+    mbReadyToInitializate(false), 
+    mpSystem(pSys), 
+    mpViewer(NULL), 
+    bStepByStep(false),
+    mpFrameDrawer(pFrameDrawer), 
+    mpMapDrawer(pMapDrawer), 
+    mpAtlas(pAtlas), 
+    mnLastRelocFrameId(0), 
+    time_recently_lost(5.0),
+    mnInitialFrameId(0), 
+    mbCreatedMap(false), 
+    mnFirstFrameId(0), 
+    mpCamera2(nullptr), 
+    mpLastKeyFrame(static_cast&lt;KeyFrame*&gt;(NULL))
+</code></pre>
+<p>由于Tracking类的成员变量过多，关于它们的含义和作用，就等到用到的时候再说吧。</p>
+<p>构造函数首先从配置文件中加载相机参数</p>
+<pre><code>newParameterLoader(settings);
+</code></pre>
+<p>我们马上具体看这个函数是如何实现的：</p>
+<p><strong>1. 读取相机1</strong></p>
+<pre><code>mpCamera = settings-&gt;camera1();
+mpCamera = mpAtlas-&gt;AddCamera(mpCamera);
+
+if(settings-&gt;needToUndistort())&#123;
+    mDistCoef = settings-&gt;camera1DistortionCoef();
+&#125;
+else&#123;
+    mDistCoef = cv::Mat::zeros(4,1,CV_32F);
+&#125;
+
+//TODO: missing image scaling and rectification
+mImageScale = 1.0f;
+
+mK = cv::Mat::eye(3,3,CV_32F);
+mK.at&lt;float&gt;(0,0) = mpCamera-&gt;getParameter(0);
+mK.at&lt;float&gt;(1,1) = mpCamera-&gt;getParameter(1);
+mK.at&lt;float&gt;(0,2) = mpCamera-&gt;getParameter(2);
+mK.at&lt;float&gt;(1,2) = mpCamera-&gt;getParameter(3);
+
+mK_.setIdentity();
+mK_(0,0) = mpCamera-&gt;getParameter(0);
+mK_(1,1) = mpCamera-&gt;getParameter(1);
+mK_(0,2) = mpCamera-&gt;getParameter(2);
+mK_(1,2) = mpCamera-&gt;getParameter(3);
+</code></pre>
+<p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br>接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector&lt;GeometricCamera*&gt; mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br>由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br>然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
+<p><strong>2. 读取特征点参数</strong><br>这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor.cc文件，由于内容有点多，就把内容放在另一篇博客里了，详情见<a href="">ORBextractor.cc</a></p>
+<p>这些参数都是settings中保存的特征点相关参数</p>
+<pre><code>mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+</code></pre>
+<p>接下来我们详细看ORBextractor的构造函数，首先还是先看引用参数</p>
+
           
         
       
@@ -597,6 +798,54 @@ KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;vo
 </code></pre>
 <p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
 <hr>
+<p>接下来将用于显示帧和地图的成员变量初始化，由Viewer调用。</p>
+<pre><code>mpFrameDrawer = new FrameDrawer(mpAtlas);
+mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
+</code></pre>
+<p>先看FrameDrawer类的构造函数</p>
+<pre><code>FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
+&#123;
+    mState=Tracking::SYSTEM_NOT_READY;
+    mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
+    mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
+&#125;
+</code></pre>
+<p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
+<p>再看MapDrawer类的构造函数</p>
+<pre><code>MapDrawer::MapDrawer(Atlas* pAtlas, const string &amp;strSettingPath, Settings* settings):mpAtlas(pAtlas)
+&#123;
+    if(settings)&#123;
+        newParameterLoader(settings);
+    &#125;
+    else&#123;
+        cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+        bool is_correct = ParseViewerParamFile(fSettings);
+
+        if(!is_correct)
+        &#123;
+            std::cerr &lt;&lt; &quot;**ERROR in the config file, the format is not correct**&quot; &lt;&lt; std::endl;
+            try
+            &#123;
+                throw -1;
+            &#125;
+            catch(exception &amp;e)
+            &#123;
+
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
+<pre><code>void MapDrawer::newParameterLoader(Settings *settings) &#123;
+    mKeyFrameSize = settings-&gt;keyFrameSize();
+    mKeyFrameLineWidth = settings-&gt;keyFrameLineWidth();
+    mGraphLineWidth = settings-&gt;graphLineWidth();
+    mPointSize = settings-&gt;pointSize();
+    mCameraSize = settings-&gt;cameraSize();
+    mCameraLineWidth  = settings-&gt;cameraLineWidth();
+&#125;
+</code></pre>
 <p>接下来依次创建跟踪、局部建图、闭环、显示线程，由于这部分内容过多，就放在下一篇博客里了。</p>
 
           
@@ -847,7 +1096,7 @@ ros::start();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
