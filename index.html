@@ -239,6 +239,168 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JZH's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/ORBSLAM3-NOTE-5/" itemprop="url">System.cc_2</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T20:34:51+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-LocalMapping"><a href="#LocalMapping-LocalMapping" class="headerlink" title="LocalMapping::LocalMapping()"></a>LocalMapping::LocalMapping()</h3><pre><code>LocalMapping::LocalMapping(System* pSys,    //系统类指针 
+    Atlas *pAtlas,                          //atlas 
+    const float bMonocular,                 //是否是单目 (bug)用float赋值了 
+    bool bInertial,                         //是否是惯性模式，传递过来的是false 
+    const string &amp;_strSeqName               //序列名字，没用到
+    ):
+    mpSystem(pSys), 
+    mbMonocular(bMonocular), 
+    mbInertial(bInertial), 
+    mbResetRequested(false),            //请求当前线程复位的标志。true，表示一直请求复位，但复位还未完成；表示复位完成为false 
+    mbResetRequestedActiveMap(false),
+    mbFinishRequested(false),           //请求终止当前线程的标志。注意只是请求，不一定终止。终止要看 mbFinished 
+    mbFinished(true),                   //判断最终LocalMapping::Run() 是否完成的标志。 
+    mpAtlas(pAtlas),
+    bInitializing(false),
+    mbAbortBA(false),                   //是否流产BA优化的标志位 
+    mbStopped(false),                   //为true表示可以并终止localmapping 线程 
+    mbStopRequested(false),             //外部线程调用，为true，表示外部线程请求停止 local mapping 
+    mbNotStop(false),                   //true，表示不要停止 localmapping 线程，因为要插入关键帧了。需要和 mbStopped 结合使用 
+    mbAcceptKeyFrames(true),            //true，允许接受关键帧。
+    mIdxInit(0), 
+    mScale(1.0), 
+    mInitSect(0), 
+    mbNotBA1(true), 
+    mbNotBA2(true), 
+    mIdxIteration(0), 
+    infoInertial(Eigen::MatrixXd::Zero(9,9))
+&#123;
+    mnMatchesInliers = 0;
+    mbBadImu = false;
+    mTinit = 0.f;
+    mNumLM = 0;
+    mNumKFCulling=0;
+#ifdef REGISTER_TIMES
+    nLBA_exec = 0;
+    nLBA_abort = 0;
+#endif
+&#125;
+</code></pre>
+<p>这段已经注释的很清楚了，就不讲了。</p>
+<hr>
+<h2 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h2>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -511,12 +673,9 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
       
         
           
-            <h1 id="ORBSLAM3学习笔记-3"><a href="#ORBSLAM3学习笔记-3" class="headerlink" title="ORBSLAM3学习笔记(3)"></a>ORBSLAM3学习笔记(3)</h1><p>这篇博客继续对System.cc文件进行阅读，主要是看构造函数中依次创建跟踪、局部建图、闭环、显示线程这部分。</p>
-<h3 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h3><p>之前我们已经看到FrameDrawer和MapDrawer的初始化完成，接下来对成员变量mpTracker进行初始化</p>
-<pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
-                         mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-</code></pre>
-<p>这行代码调用了Tracking类的构造函数，我们先来看一下构造函数引用的参数和部分成员变量的初始化</p>
+            <h1 id="ORBSLAM3学习笔记-3"><a href="#ORBSLAM3学习笔记-3" class="headerlink" title="ORBSLAM3学习笔记(3)"></a>ORBSLAM3学习笔记(3)</h1><p>这篇博客主要是对Tracking.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Tracking-Tracking"><a href="#Tracking-Tracking" class="headerlink" title="Tracking::Tracking()"></a>Tracking::Tracking()</h3><p>我们先来看一下构造函数引用的参数和部分成员变量的初始化</p>
 <pre><code>Tracking::Tracking(System *pSys,    //System类指针
     ORBVocabulary* pVoc,            //词典 
     FrameDrawer *pFrameDrawer,      //画图像的 
@@ -584,7 +743,7 @@ mK_(0,2) = mpCamera-&gt;getParameter(2);
 mK_(1,2) = mpCamera-&gt;getParameter(3);
 </code></pre>
 <p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br>接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector&lt;GeometricCamera*&gt; mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br>由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br>然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
-<p><strong>2. 读取特征点参数</strong><br>这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor.cc文件，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+<p><strong>2. 读取特征点参数</strong><br>这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor类的构造函数，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
 <pre><code>mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
 if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -594,7 +753,12 @@ if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 </code></pre>
 <p>由于我现在看的是纯单目的，所以这里用得到的应该只有mpIniORBextractor，这里其实还有点不确定，等看到后面再说。</p>
-<p><strong>3.读取imu参数</strong><br>imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充</p>
+<p><strong>3.读取imu参数</strong><br>imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
+<p>newParameterLoader(settings);执行完之后，执行一下代码，将另外几个成员变量初始化</p>
+<pre><code>initID = 0; lastID = 0;
+mbInitWith3KFs = false;
+mnNumDataset = 0;
+</code></pre>
 
           
         
@@ -930,7 +1094,35 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     mCameraLineWidth  = settings-&gt;cameraLineWidth();
 &#125;
 </code></pre>
-<p>接下来依次创建跟踪、局部建图、闭环、显示线程，由于这部分内容过多，就放在下一篇博客里了。</p>
+<hr>
+<h3 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h3><p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
+<pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
+                         mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
+</code></pre>
+<p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a href="">Tracking.cc</a>里了。</p>
+<h3 id="创建并开启local-mapping线程"><a href="#创建并开启local-mapping线程" class="headerlink" title="创建并开启local mapping线程"></a>创建并开启local mapping线程</h3><p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类的成员变量</p>
+<pre><code>mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
+                                 mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
+</code></pre>
+<p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
+<pre><code>mptLocalMapping = new thread(&amp;ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
+</code></pre>
+<p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a href="">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
+<p>上面执行完后(LocalMapping::Run 函数还在子线程中继续跑)，执行下面的内容，对mpLocalMapper对象剩下的一些成员变量初始化。</p>
+<pre><code>// 设置最远3D地图点的深度值，如果超过阈值，说明可能三角化不太准确，丢弃
+if(settings_)
+    mpLocalMapper-&gt;mThFarPoints = settings_-&gt;thFarPoints();
+else
+    mpLocalMapper-&gt;mThFarPoints = fsSettings[&quot;thFarPoints&quot;];
+// ? 这里有个疑问,C++中浮点型跟0比较是否用精确?
+if(mpLocalMapper-&gt;mThFarPoints!=0)
+&#123;
+    cout &lt;&lt; &quot;Discard points further than &quot; &lt;&lt; mpLocalMapper-&gt;mThFarPoints &lt;&lt; &quot; m from current camera&quot; &lt;&lt; endl;
+    mpLocalMapper-&gt;mbFarPoints = true;
+&#125;
+else
+    mpLocalMapper-&gt;mbFarPoints = false;
+</code></pre>
 
           
         
@@ -1180,7 +1372,7 @@ ros::start();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
