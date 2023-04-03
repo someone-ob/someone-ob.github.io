@@ -82,7 +82,7 @@
 <meta name="description" content="ORBSLAM3学习笔记(4)这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。  基本原理1.关键点提取 关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。 2.描述子获取描述子获取方面要用到o">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ORBextractor.cc">
-<meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3-NOTE-4/index.html">
+<meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
 <meta property="og:description" content="ORBSLAM3学习笔记(4)这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。  基本原理1.关键点提取 关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。 2.描述子获取描述子获取方面要用到o">
 <meta property="og:locale" content="en_US">
@@ -90,7 +90,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/2.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/3.png">
 <meta property="article:published_time" content="2023-03-30T05:55:07.000Z">
-<meta property="article:modified_time" content="2023-03-30T09:01:56.483Z">
+<meta property="article:modified_time" content="2023-04-03T14:46:29.679Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -124,7 +124,7 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-4/"/>
+  <link rel="canonical" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/"/>
 
 
 
@@ -247,7 +247,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-4/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -396,6 +396,101 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
 &#125;
 </code></pre>
 <p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
+<hr>
+<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
+<pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
+    InputArray _mask,                           //掩膜mask,为空，估计没什么用
+    vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
+    OutputArray _descriptors,                   //存储特征点描述子的矩阵 
+    std::vector&lt;int&gt; &amp;vLappingArea              //界限
+    )
+</code></pre>
+<p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
+<pre><code>ComputePyramid(image);
+</code></pre>
+<p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
+<pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
+vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
+//使用四叉树的方式计算每层图像的特征点并进行分配
+ComputeKeyPointsOctTree(allKeypoints);
+</code></pre>
+<hr>
+<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
+&#123;
+    //开始遍历所有的图层
+    for (int level = 0; level &lt; nlevels; ++level)
+    &#123;
+    //获取本层图像的缩放系数
+        float scale = mvInvScaleFactor[level];
+    //计算本层图像的像素尺寸大小
+        Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
+    //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+        Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
+    // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+        Mat temp(wholeSize, image.type()), masktemp;
+    // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+        mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+
+        // Compute the resized image
+    //计算第0层以上resize后的图像
+        if( level != 0 )
+        &#123;
+        //将上一层金字塔图像根据设定sz缩放到当前层级
+            resize(mvImagePyramid[level-1],	//输入图像
+        mvImagePyramid[level], 	        //输出图像
+        sz, 				//输出图像的尺寸
+        0, 				//水平方向上的缩放系数，留0表示自动计算
+        0,  				//垂直方向上的缩放系数，留0表示自动计算
+        cv::INTER_LINEAR);		//图像缩放的差值算法类型，这里的是线性插值算法
+
+        //这样做是为了能够正确提取边界的FAST角点		
+            copyMakeBorder(mvImagePyramid[level], 	        //源图像
+            temp, 					//目标图像（此时其实就已经有大了一圈的尺寸了）
+            EDGE_THRESHOLD, EDGE_THRESHOLD, 	//top &amp; bottom 需要扩展的border大小
+            EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
+                        BORDER_REFLECT_101+BORDER_ISOLATED);    //扩充方式
+        &#125;
+        else
+        &#123;
+        //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            copyMakeBorder(image,			
+            temp, 
+                        EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
+                        BORDER_REFLECT_101);            
+        &#125;
+    &#125;
+&#125;
+
+float scale = mvInvScaleFactor[level];
+Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
+//生成这个边的目的是进行图像金子塔的生成时，需要对图像进行高斯滤波处理，为了考虑到使滤波后的图像边界处的像素也能够携带有正确的图像信息，
+//这里作者就将原图像扩大了一个边。
+Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
+Mat temp(wholeSize, image.type()), masktemp;
+mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+</code></pre>
+<p>作者这里定义了一个带padding的temp，可能是用来处理图像通过滤波缩放时，图像边界可能出现的问题。<br>又根据temp定义了mvImagePyramid[level]的图像大小，Rect(int _x,int _y,int _width,int _height); 参数意思为：左上角x坐标、左上角y坐标、矩形的宽、矩形的高。由此可知，mvImagePyramid[level]的图像是不带padding的。</p>
+<pre><code>//将上一层金字塔图像根据设定sz缩放到当前层级
+resize(mvImagePyramid[level-1],	    //输入图像
+    mvImagePyramid[level], 	    //输出图像
+    sz, 			    //输出图像的尺寸
+    0, 			    //水平方向上的缩放系数，留0表示自动计算
+    0,  			    //垂直方向上的缩放系数，留0表示自动计算
+    cv::INTER_LINEAR);	    //图像缩放的差值算法类型，这里的是线性插值算法
+
+//把源图像拷贝到目的图像的中央，四面填充指定的像素。图片如果已经拷贝到中间，只填充边界
+//TODO 貌似这样做是因为在计算描述子前，进行高斯滤波的时候，图像边界会导致一些问题，说不明白
+//EDGE_THRESHOLD指的这个边界的宽度，由于这个边界之外的像素不是原图像素而是算法生成出来的，所以不能够在EDGE_THRESHOLD之外提取特征点	
+
+copyMakeBorder(mvImagePyramid[level], 	//源图像
+temp, 					//目标图像（此时其实就已经有大了一圈的尺寸了）
+EDGE_THRESHOLD, EDGE_THRESHOLD,         //top &amp; bottom 需要扩展的border大小
+EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
+BORDER_REFLECT_101+BORDER_ISOLATED);    //扩充方式
+</code></pre>
+<p>上面就是对图像进行缩放的代码，上面存入图像金字塔的图像明显就是不带padding的，虽然后面也在temp中存入了图像，但temp只是局部变量，没有意义。这样后面根本用不到带padding的图像。然而，后面提取关键点时，按作者的代码逻辑，其实用的应该是带padding的，这里看得很疑惑，也许是自己对代码的理解不对，以后要是有新的理解再更新吧。</p>
+<hr>
+<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。<br>具体原理步骤可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116784563?spm=1001.2014.3001.5502">这篇博客</a>,作者解释地非常详细，博主的其他文章也非常好。</p>
 
       
     </div>
@@ -436,7 +531,7 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2023/03/30/ORBSLAM3-NOTE-5/" rel="prev" title="LocalMapping.cc">
+              <a href="/2023/03/30/ORBSLAM3_NOTE_5/" rel="prev" title="LocalMapping.cc">
                 LocalMapping.cc <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -515,7 +610,7 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -561,7 +656,7 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-4"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(4)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">基本原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%B3%E9%94%AE%E7%82%B9%E6%8F%90%E5%8F%96"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.关键点提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8F%8F%E8%BF%B0%E5%AD%90%E8%8E%B7%E5%8F%96"><span class="nav-number">1.1.2.</span> <span class="nav-text">2.描述子获取</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-ORBextractor"><span class="nav-number">1.2.1.</span> <span class="nav-text">ORBextractor::ORBextractor()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-4"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(4)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">基本原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%B3%E9%94%AE%E7%82%B9%E6%8F%90%E5%8F%96"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.关键点提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8F%8F%E8%BF%B0%E5%AD%90%E8%8E%B7%E5%8F%96"><span class="nav-number">1.1.2.</span> <span class="nav-text">2.描述子获取</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-ORBextractor"><span class="nav-number">1.2.1.</span> <span class="nav-text">ORBextractor::ORBextractor()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-operator"><span class="nav-number">1.2.2.</span> <span class="nav-text">ORBextractor::operator()()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ComputePyramid"><span class="nav-number">1.2.3.</span> <span class="nav-text">ComputePyramid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ComputeKeyPointsOctTree"><span class="nav-number">1.2.4.</span> <span class="nav-text">ComputeKeyPointsOctTree()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

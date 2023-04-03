@@ -87,7 +87,7 @@
 <meta property="og:description" content="ORBSLAM3学习笔记(3)这篇博客主要是对Tracking.cc文件的学习。  源码阅读Tracking::Tracking()我们先来看一下构造函数引用的参数和部分成员变量的初始化 Tracking::Tracking(System *pSys,    &#x2F;&#x2F;System类指针     ORBVocabulary* pVoc,            &#x2F;&#x2F;词典      FrameDrawer">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-28T08:45:51.000Z">
-<meta property="article:modified_time" content="2023-03-31T02:24:59.752Z">
+<meta property="article:modified_time" content="2023-04-03T08:41:22.388Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -389,13 +389,21 @@ if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
 if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 </code></pre>
-<p>由于我现在看的是纯单目的，所以这里用得到的应该只有mpIniORBextractor，这里其实还有点不确定，等看到后面再说。</p>
+<p>构造Frame类时，若是刚开启追踪，使用的是mpIniORBextractor，之后都是用mpORBextractorLeft了。</p>
 <p><strong>3.读取imu参数</strong><br>imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
 <p>newParameterLoader(settings);执行完之后，执行一下代码，将另外几个成员变量初始化</p>
 <pre><code>initID = 0; lastID = 0;
 mbInitWith3KFs = false;
 mnNumDataset = 0;
 </code></pre>
+<hr>
+<h3 id="Tracking-GrabImageMonocular"><a href="#Tracking-GrabImageMonocular" class="headerlink" title="Tracking::GrabImageMonocular()"></a>Tracking::GrabImageMonocular()</h3><p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
+<hr>
+<h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><hr>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong></p>
+<p><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。</p>
+<p><strong>3.判断地图是否被更新</strong></p>
+<p><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。</p>
 
       
     </div>
@@ -436,7 +444,7 @@ mnNumDataset = 0;
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2023/03/30/ORBSLAM3-NOTE-4/" rel="prev" title="ORBextractor.cc">
+              <a href="/2023/03/30/ORBSLAM3_NOTE_4/" rel="prev" title="ORBextractor.cc">
                 ORBextractor.cc <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -515,7 +523,7 @@ mnNumDataset = 0;
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -561,7 +569,7 @@ mnNumDataset = 0;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-GrabImageMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">Tracking::GrabImageMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-MonocularInitialization"><span class="nav-number">1.1.3.</span> <span class="nav-text">Tracking::MonocularInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Track"><span class="nav-number">1.1.4.</span> <span class="nav-text">Tracking::Track()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

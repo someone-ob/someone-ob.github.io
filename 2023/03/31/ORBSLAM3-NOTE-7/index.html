@@ -79,15 +79,15 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。  源码阅读LocalMapping::LocalMapping()LocalMapping::LocalMapping(System* pSys,    &#x2F;&#x2F;系统类指针      Atlas *pAtlas,                          &#x2F;&#x2F;atlas      const float">
+<meta name="description" content="ORBSLAM3学习笔记(7)这篇博客主要是对Frame.cc文件的学习。 源码阅读Frame::Frame() 缺省构造把相关变量赋为空或false，无其他操作。  Frame::Frame(const Frame &amp;frame) 拷贝构造 Frame::Frame(…)有参数构造1.帧id自加 mnId&#x3D;nNextId++;  2.得图像金字塔的参数，如层数、层间比等这些参数都是从传入">
 <meta property="og:type" content="article">
-<meta property="og:title" content="LocalMapping.cc">
-<meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3-NOTE-5/index.html">
+<meta property="og:title" content="Frame.cc">
+<meta property="og:url" content="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
-<meta property="og:description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。  源码阅读LocalMapping::LocalMapping()LocalMapping::LocalMapping(System* pSys,    &#x2F;&#x2F;系统类指针      Atlas *pAtlas,                          &#x2F;&#x2F;atlas      const float">
+<meta property="og:description" content="ORBSLAM3学习笔记(7)这篇博客主要是对Frame.cc文件的学习。 源码阅读Frame::Frame() 缺省构造把相关变量赋为空或false，无其他操作。  Frame::Frame(const Frame &amp;frame) 拷贝构造 Frame::Frame(…)有参数构造1.帧id自加 mnId&#x3D;nNextId++;  2.得图像金字塔的参数，如层数、层间比等这些参数都是从传入">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2023-03-30T12:34:51.000Z">
-<meta property="article:modified_time" content="2023-03-31T02:25:20.710Z">
+<meta property="article:published_time" content="2023-03-31T13:07:04.000Z">
+<meta property="article:modified_time" content="2023-04-03T08:41:15.712Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-5/"/>
+  <link rel="canonical" href="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/"/>
 
 
 
 
 
-  <title>LocalMapping.cc | JZH's Blog</title>
+  <title>Frame.cc | JZH's Blog</title>
   
 
 
@@ -243,7 +243,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3-NOTE-5/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -260,7 +260,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">LocalMapping.cc</h1>
+          <h1 class="post-title" itemprop="name headline">Frame.cc</h1>
         
 
         <div class="post-meta">
@@ -272,8 +272,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T20:34:51+08:00">
-                2023-03-30
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-31T21:07:04+08:00">
+                2023-03-31
               </time>
             
 
@@ -310,50 +310,35 @@
       
 
       
-        <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。</p>
+        <h1 id="ORBSLAM3学习笔记-7"><a href="#ORBSLAM3学习笔记-7" class="headerlink" title="ORBSLAM3学习笔记(7)"></a>ORBSLAM3学习笔记(7)</h1><p>这篇博客主要是对Frame.cc文件的学习。</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
 <hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-LocalMapping"><a href="#LocalMapping-LocalMapping" class="headerlink" title="LocalMapping::LocalMapping()"></a>LocalMapping::LocalMapping()</h3><pre><code>LocalMapping::LocalMapping(System* pSys,    //系统类指针 
-    Atlas *pAtlas,                          //atlas 
-    const float bMonocular,                 //是否是单目 (bug)用float赋值了 
-    bool bInertial,                         //是否是惯性模式，传递过来的是false 
-    const string &amp;_strSeqName               //序列名字，没用到
-    ):
-    mpSystem(pSys), 
-    mbMonocular(bMonocular), 
-    mbInertial(bInertial), 
-    mbResetRequested(false),            //请求当前线程复位的标志。true，表示一直请求复位，但复位还未完成；表示复位完成为false 
-    mbResetRequestedActiveMap(false),
-    mbFinishRequested(false),           //请求终止当前线程的标志。注意只是请求，不一定终止。终止要看 mbFinished 
-    mbFinished(true),                   //判断最终LocalMapping::Run() 是否完成的标志。 
-    mpAtlas(pAtlas),
-    bInitializing(false),
-    mbAbortBA(false),                   //是否流产BA优化的标志位 
-    mbStopped(false),                   //为true表示可以并终止localmapping 线程 
-    mbStopRequested(false),             //外部线程调用，为true，表示外部线程请求停止 local mapping 
-    mbNotStop(false),                   //true，表示不要停止 localmapping 线程，因为要插入关键帧了。需要和 mbStopped 结合使用 
-    mbAcceptKeyFrames(true),            //true，允许接受关键帧。
-    mIdxInit(0), 
-    mScale(1.0), 
-    mInitSect(0), 
-    mbNotBA1(true), 
-    mbNotBA2(true), 
-    mIdxIteration(0), 
-    infoInertial(Eigen::MatrixXd::Zero(9,9))
+<h3 id="Frame-Frame-const-Frame-amp-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-amp-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><hr>
+<h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
+<pre><code>mnId=nNextId++;
+</code></pre>
+<p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
+<p><strong>3.左右目提取orb特征点，开了两个线程。得到特征点的个数</strong></p>
+<pre><code>ExtractORB(0,imGray,0,1000);
+</code></pre>
+<p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
+<pre><code>void Frame::ExtractORB(int flag, const cv::Mat &amp;im, const int x0, const int x1)
 &#123;
-    mnMatchesInliers = 0;
-    mbBadImu = false;
-    mTinit = 0.f;
-    mNumLM = 0;
-    mNumKFCulling=0;
-#ifdef REGISTER_TIMES
-    nLBA_exec = 0;
-    nLBA_abort = 0;
-#endif
+    vector&lt;int&gt; vLapping = &#123;x0,x1&#125;;
+    // 判断是左图还是右图
+    if(flag==0)
+        // 左图的话就套使用左图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+    else
+        // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 &#125;
 </code></pre>
-<p>这段已经注释的很清楚了，就不讲了。</p>
-<hr>
-<h2 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h2>
+<p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+<p><strong>4.opencv矫正</strong></p>
+<p>5.双目之间特征匹配。去畸变，计算图像边界。 这边没看懂怎么进行匹配的</p>
+<p>6.特征点分配到网格中</p>
+
       
     </div>
     
@@ -383,8 +368,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2023/03/30/ORBSLAM3-NOTE-4/" rel="next" title="ORBextractor.cc">
-                <i class="fa fa-chevron-left"></i> ORBextractor.cc
+              <a href="/2023/03/31/ORBSLAM3_NOTE_6/" rel="next" title="LoopClosing.cc">
+                <i class="fa fa-chevron-left"></i> LoopClosing.cc
               </a>
             
           </div>
@@ -468,7 +453,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -514,7 +499,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-5"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(5)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-LocalMapping"><span class="nav-number">1.1.1.</span> <span class="nav-text">LocalMapping::LocalMapping()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LocalMapping-Run"><span class="nav-number">1.2.</span> <span class="nav-text">LocalMapping::Run()</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-amp-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
