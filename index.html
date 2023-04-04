@@ -886,35 +886,8 @@ ComputeKeyPointsOctTree(allKeypoints);
         &#125;
     &#125;
 &#125;
-
-float scale = mvInvScaleFactor[level];
-Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
-//生成这个边的目的是进行图像金子塔的生成时，需要对图像进行高斯滤波处理，为了考虑到使滤波后的图像边界处的像素也能够携带有正确的图像信息，
-//这里作者就将原图像扩大了一个边。
-Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-Mat temp(wholeSize, image.type()), masktemp;
-mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
 </code></pre>
-<p>作者这里定义了一个带padding的temp，可能是用来处理图像通过滤波缩放时，图像边界可能出现的问题。<br>又根据temp定义了mvImagePyramid[level]的图像大小，Rect(int _x,int _y,int _width,int _height); 参数意思为：左上角x坐标、左上角y坐标、矩形的宽、矩形的高。由此可知，mvImagePyramid[level]的图像是不带padding的。</p>
-<pre><code>//将上一层金字塔图像根据设定sz缩放到当前层级
-resize(mvImagePyramid[level-1],	    //输入图像
-    mvImagePyramid[level], 	    //输出图像
-    sz, 			    //输出图像的尺寸
-    0, 			    //水平方向上的缩放系数，留0表示自动计算
-    0,  			    //垂直方向上的缩放系数，留0表示自动计算
-    cv::INTER_LINEAR);	    //图像缩放的差值算法类型，这里的是线性插值算法
-
-//把源图像拷贝到目的图像的中央，四面填充指定的像素。图片如果已经拷贝到中间，只填充边界
-//TODO 貌似这样做是因为在计算描述子前，进行高斯滤波的时候，图像边界会导致一些问题，说不明白
-//EDGE_THRESHOLD指的这个边界的宽度，由于这个边界之外的像素不是原图像素而是算法生成出来的，所以不能够在EDGE_THRESHOLD之外提取特征点	
-
-copyMakeBorder(mvImagePyramid[level], 	//源图像
-temp, 					//目标图像（此时其实就已经有大了一圈的尺寸了）
-EDGE_THRESHOLD, EDGE_THRESHOLD,         //top &amp; bottom 需要扩展的border大小
-EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
-BORDER_REFLECT_101+BORDER_ISOLATED);    //扩充方式
-</code></pre>
-<p>上面就是对图像进行缩放的代码，上面存入图像金字塔的图像明显就是不带padding的，虽然后面也在temp中存入了图像，但temp只是局部变量，没有意义。这样后面根本用不到带padding的图像。然而，后面提取关键点时，按作者的代码逻辑，其实用的应该是带padding的，这里看得很疑惑，也许是自己对代码的理解不对，以后要是有新的理解再更新吧。</p>
+<p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是为了处理高斯滤波缩放图像时，图像边缘可能会出现的问题(计算机视觉life的注释是这样说的)，我感觉主要还是因为利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），所以用算法扩充了一个padding。<br><strong>注意，此时mvImagePyramid[level]存储的其实就是temp的图像，但它把指针指向了中间部分，下面其实就是对temp指向的那块内存区域进行操作，mvImagePyramid指针用来填充中间的图像，temp指针来填充边框。</strong><br>接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，此时temp指向的图像中间部分就填充好了，然后copyMakeBorder函数主要是用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/4.png" alt="temp"><br>这就是temp图像，中间的深灰色就是mvImagePyramid[level]指向的部分，<strong>注意，这里mvImagePyramid[level]指向的图像的左上角的起始像素的坐标不是(0,0),是(EDGE_THRESHOLD, EDGE_THRESHOLD)。</strong></p>
 <hr>
 <h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。<br>具体原理步骤可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116784563?spm=1001.2014.3001.5502">这篇博客</a>,作者解释地非常详细，博主的其他文章也非常好。</p>
 
