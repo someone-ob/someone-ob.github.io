@@ -95,7 +95,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell2.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/DistributeOctTree.jpg">
 <meta property="article:published_time" content="2023-03-30T05:55:07.000Z">
-<meta property="article:modified_time" content="2023-04-04T14:08:19.242Z">
+<meta property="article:modified_time" content="2023-04-06T14:22:12.522Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -477,8 +477,7 @@ descriptors = _descriptors.getMat();
 &#125;
 </code></pre>
 <p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD&#x3D;19。</p>
-<p><strong>注意，此时mvImagePyramid[level]存储的其实就是temp的图像，但它把指针指向了中间部分，下面其实就是对temp指向的那块内存区域进行操作，mvImagePyramid指针用来填充中间的图像，temp指针来填充边框。</strong></p>
-<p>接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，此时temp指向的图像中间部分就填充好了，然后copyMakeBorder函数主要是用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/4.png" alt="temp"><br>这就是temp图像，<strong>注意，这里mvImagePyramid[level]虽然指向的是temp的中间区域，但它保存的仍然是整个temp，并不是只有中间深灰色部分，它指向中间部分主要是为了上面进行缩放图像存储操作。</strong></p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
 <hr>
 <h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
 <p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
@@ -546,7 +545,7 @@ for(int i=0; i&lt;nRows; i++)
 &#125;
 </code></pre>
 <p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
-<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度。这里也就体现了我们创建带padding的图像的意义了，原图像最边上的那些点进行角点检测就是用的padding里的像素。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell2.png" alt="cell2"></p>
+<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell2.png" alt="cell2"></p>
 <p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
 <pre><code>//声明一个对当前图层的特征点的容器的引用
 vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
@@ -577,7 +576,7 @@ for(int i=0; i&lt;nkps ; i++)
     keypoints[i].size = scaledPatchSize;
 &#125;
 </code></pre>
-<p>这里的PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
 <p>最后计算特征点方向</p>
 <pre><code>for (int level = 0; level &lt; nlevels; ++level)
     computeOrientation(mvImagePyramid[level],	//对应的图层的图像
@@ -707,7 +706,7 @@ for(int i=0; i&lt;nkps ; i++)
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>

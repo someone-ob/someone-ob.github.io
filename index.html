@@ -239,6 +239,143 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/10/ORBSLAM3-NOTE-8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JZH's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/10/ORBSLAM3-NOTE-8/" itemprop="url">ORBSLAM3-NOTE-8</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-10T11:34:02+08:00">
+                2023-04-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-8"><a href="#ORBSLAM3学习笔记-8" class="headerlink" title="ORBSLAM3学习笔记(8)"></a>ORBSLAM3学习笔记(8)</h1><p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBmatcher-SearchForInitialization"><a href="#ORBmatcher-SearchForInitialization" class="headerlink" title="ORBmatcher::SearchForInitialization()"></a>ORBmatcher::SearchForInitialization()</h3><p><strong>1.创建一个旋转直方图</strong></p>
+<pre><code>vector&lt;int&gt; rotHist[HISTO_LENGTH];
+// 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量
+for(int i=0;i&lt;HISTO_LENGTH;i++)
+    rotHist[i].reserve(500);
+const float factor = HISTO_LENGTH/360.0f;
+</code></pre>
+<p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(只取金字塔第0层的)</p>
+<ul>
+<li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
+<li>遍历搜索搜索窗口中的所有潜在的匹配候选点，找到最优的和次优的。匹配的优劣根据描述子的距离判断，两个二进制串之间的汉明距离，指的是其不同位数的个数。</li>
+<li>判断最优结果是否满足阈值，判断最佳距离比次佳距离是否小于设定的比例，判断找到的候选特征点对应F1中特征点是否已经匹配过了，如果已经匹配过了，将原来的匹配也删掉。如果上面的条件都满足，计算匹配点之间的距离，存入直方图对应的bin中。</li>
+</ul>
+<p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
+<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -313,7 +450,8 @@
             <h1 id="ORBSLAM3学习笔记-7"><a href="#ORBSLAM3学习笔记-7" class="headerlink" title="ORBSLAM3学习笔记(7)"></a>ORBSLAM3学习笔记(7)</h1><p>这篇博客主要是对Frame.cc文件的学习。</p>
 <h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
 <hr>
-<h3 id="Frame-Frame-const-Frame-amp-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-amp-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><hr>
+<h3 id="Frame-Frame-const-Frame-amp-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-amp-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
+<hr>
 <h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
 <pre><code>mnId=nNextId++;
 </code></pre>
@@ -335,7 +473,14 @@
 &#125;
 </code></pre>
 <p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
-<p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。</p>
+<p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
+<pre><code>UndistortKeyPoints();
+</code></pre>
+<p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
+<pre><code>mvuRight = vector&lt;float&gt;(N,-1);
+mvDepth = vector&lt;float&gt;(N,-1);
+mnCloseMPs = 0;
+</code></pre>
 <p><strong>5.初始化本帧的地图点</strong></p>
 <pre><code>mvpMapPoints = vector&lt;MapPoint*&gt;(N,static_cast&lt;MapPoint*&gt;(NULL));
 
@@ -343,8 +488,54 @@ mmProjectPoints.clear();// = map&lt;long unsigned int, cv::Point2f&gt;(N, static
 mmMatchedInImage.clear();
 </code></pre>
 <p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
-<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong></p>
+<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br>存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
+<ul>
+<li>若图像是第一帧或者是相机标定参数发生变化，则<ul>
+<li>计算去畸变后图像的边界，这里也是用opencv库里的函数，这步将mnMinX，mnMaxX，mnMinY，mnMaxY初始化。</li>
+<li>计算一个图像像素在网格中占的宽和高mfGridElementWidthInv，mfGridElementHeightInv，这两个变量用来确定特征点在哪个网格。</li>
+<li>特殊的初始化过程完成，标志复位mbInitialComputations&#x3D;false;</li>
+</ul>
+</li>
+<li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure></li>
+<li>将特征点分配到图像网格中 ，调用函数AssignFeaturesToGrid()</li>
+</ul>
 <hr>
+<h3 id="Frame-AssignFeaturesToGrid"><a href="#Frame-AssignFeaturesToGrid" class="headerlink" title="Frame::AssignFeaturesToGrid()"></a>Frame::AssignFeaturesToGrid()</h3><p><strong>1.给存储特征点的网格数组 Frame::mGrid 预分配空间</strong></p>
+<pre><code>const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
+
+int nReserve = 0.5f*N/(nCells);
+
+// 开始对mGrid这个二维数组中的每一个vector元素遍历并预分配空间
+for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
+    for (unsigned int j=0; j&lt;FRAME_GRID_ROWS;j++)&#123;
+        mGrid[i][j].reserve(nReserve);
+        if(Nleft != -1)&#123;
+            mGridRight[i][j].reserve(nReserve);
+        &#125;
+    &#125;
+</code></pre>
+<p>这里nReserve定义为0.5f*N&#x2F;(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
+<p><strong>2.遍历每个特征点，将每个特征点在mvKeysUn中的索引值放到对应的网格mGrid中</strong></p>
+<pre><code>for(int i=0;i&lt;N;i++)
+&#123;
+    const cv::KeyPoint &amp;kp = (Nleft == -1) ? mvKeysUn[i]
+                                             : (i &lt; Nleft) ? mvKeys[i]
+                                                             : mvKeysRight[i - Nleft];
+    // 存储某个特征点所在网格的网格坐标，nGridPosX范围：[0,FRAME_GRID_COLS], nGridPosY范围：[0,FRAME_GRID_ROWS]
+    int nGridPosX, nGridPosY;
+    // 计算某个特征点所在网格的网格坐标，如果找到特征点所在的网格坐标，记录在nGridPosX,nGridPosY里，返回true，没找到返回false
+    if(PosInGrid(kp,nGridPosX,nGridPosY))&#123;
+        if(Nleft == -1 || i &lt; Nleft)
+            // 如果找到特征点所在网格坐标，将这个特征点的索引添加到对应网格的数组mGrid中
+            mGrid[nGridPosX][nGridPosY].push_back(i);
+        else
+            mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
+    &#125;
+&#125;
+</code></pre>
+<p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
+<hr>
+<h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/getfeatures.png" alt="获取候选特征点"></p>
 
           
         
@@ -905,8 +1096,7 @@ descriptors = _descriptors.getMat();
 &#125;
 </code></pre>
 <p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD&#x3D;19。</p>
-<p><strong>注意，此时mvImagePyramid[level]存储的其实就是temp的图像，但它把指针指向了中间部分，下面其实就是对temp指向的那块内存区域进行操作，mvImagePyramid指针用来填充中间的图像，temp指针来填充边框。</strong></p>
-<p>接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，此时temp指向的图像中间部分就填充好了，然后copyMakeBorder函数主要是用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/4.png" alt="temp"><br>这就是temp图像，<strong>注意，这里mvImagePyramid[level]虽然指向的是temp的中间区域，但它保存的仍然是整个temp，并不是只有中间深灰色部分，它指向中间部分主要是为了上面进行缩放图像存储操作。</strong></p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
 <hr>
 <h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
 <p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
@@ -974,7 +1164,7 @@ for(int i=0; i&lt;nRows; i++)
 &#125;
 </code></pre>
 <p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
-<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度。这里也就体现了我们创建带padding的图像的意义了，原图像最边上的那些点进行角点检测就是用的padding里的像素。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell2.png" alt="cell2"></p>
+<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/cell2.png" alt="cell2"></p>
 <p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
 <pre><code>//声明一个对当前图层的特征点的容器的引用
 vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
@@ -1005,7 +1195,7 @@ for(int i=0; i&lt;nkps ; i++)
     keypoints[i].size = scaledPatchSize;
 &#125;
 </code></pre>
-<p>这里的PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
 <p>最后计算特征点方向</p>
 <pre><code>for (int level = 0; level &lt; nlevels; ++level)
     computeOrientation(mvImagePyramid[level],	//对应的图层的图像
@@ -1224,11 +1414,24 @@ mnNumDataset = 0;
 <hr>
 <h3 id="Tracking-GrabImageMonocular"><a href="#Tracking-GrabImageMonocular" class="headerlink" title="Tracking::GrabImageMonocular()"></a>Tracking::GrabImageMonocular()</h3><p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
 <hr>
-<h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><hr>
+<h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><ul>
+<li><strong>如果单目初始器还没有被创建，则创建。</strong><br>这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。<blockquote>
+<p>mInitialFrame将当前帧作为初始帧</p>
+</blockquote>
+<blockquote>
+<p>mvbPrevMatched用来存储当前帧的所有特征点</p>
+</blockquote>
+<blockquote>
+<p>初始化mvIniMatches，保存参考帧匹配到的特征点，index保存是参考帧对应特征点索引，值保存的是匹配到特征点索引。</p>
+</blockquote>
+成员变量初始化完成之后，将标志位mbReadyToInitializate置为true，等待下一帧。</li>
+<li><h2 id="单目初始器创建完成，且第二帧到来后-判断当前帧特征点数量是否足够，不够则重新构造初始器-在mInitialFrame与mCurrentFrame中找匹配的特征点对-创建ORBmatcher类对象matcher-ORBmatcher-matcher-0-9-true-调用matcher的SearchForInitialization-函数进行特征点匹配，具体见ORBmatcher-验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化"><a href="#单目初始器创建完成，且第二帧到来后-判断当前帧特征点数量是否足够，不够则重新构造初始器-在mInitialFrame与mCurrentFrame中找匹配的特征点对-创建ORBmatcher类对象matcher-ORBmatcher-matcher-0-9-true-调用matcher的SearchForInitialization-函数进行特征点匹配，具体见ORBmatcher-验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化" class="headerlink" title="单目初始器创建完成，且第二帧到来后- 判断当前帧特征点数量是否足够，不够则重新构造初始器- 在mInitialFrame与mCurrentFrame中找匹配的特征点对  + 创建ORBmatcher类对象matcher        ORBmatcher matcher(0.9,true);      + 调用matcher的SearchForInitialization()函数进行特征点匹配，具体见ORBmatcher  + 验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化"></a><strong>单目初始器创建完成，且第二帧到来后</strong><br>- 判断当前帧特征点数量是否足够，不够则重新构造初始器<br>- 在mInitialFrame与mCurrentFrame中找匹配的特征点对<br>  + 创建ORBmatcher类对象matcher<br>    <code>    ORBmatcher matcher(0.9,true);    </code><br>  + 调用matcher的SearchForInitialization()函数进行特征点匹配，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher</a><br>  + 验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化</h2></li>
+</ul>
+<hr>
 <h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong></p>
 <p><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。</p>
 <p><strong>3.判断地图是否被更新</strong></p>
-<p><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。</p>
+<p><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。</p>
 
           
         
@@ -1624,7 +1827,7 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
 <p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
 <p>System类对象的初始化基本就完成了。</p>
 <hr>
-<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数</p>
+<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
 <pre><code>Sophus::SE3f Tcw = mpTracker-&gt;GrabImageMonocular(imToFeed,timestamp,filename);
 </code></pre>
 <p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
@@ -1895,7 +2098,7 @@ ros::start();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
