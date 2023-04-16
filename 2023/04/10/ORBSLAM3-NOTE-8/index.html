@@ -320,8 +320,7 @@
 for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre>
-<p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+</code></pre><p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
 <p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
 <ul>
 <li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>

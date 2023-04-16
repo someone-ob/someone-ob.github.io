@@ -330,15 +330,14 @@
                                4);              //4表示从叶节点向前数的层数
     &#125;
 &#125;
-</code></pre>
-<hr>
-<h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map&lt;KeyFrame *, int&gt;类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
+</code></pre><hr>
+<h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map<KeyFrame *, int>类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
 <blockquote>
 <p>具体做法是先获得该关键帧的所有地图点。遍历地图点，根据地图点的成员变量mObservations，往KFcounter中添加键值对。</p>
 </blockquote>
-<p>2.创建vector&lt;pair&lt;int, KeyFrame *&gt;&gt;类变量vPairs，这里面存储与该关键帧共视点超过15的关键帧。</p>
+<p>2.创建vector<pair<int, KeyFrame *>&gt;类变量vPairs，这里面存储与该关键帧共视点超过15的关键帧。</p>
 <blockquote>
-<p>这步就是遍历KFcounter，把达到要求的共视关键帧以及共视点数目放入vPairs中。同时调用AddConnection(),给这个共视关键帧更新连接及权重。<br>AddConnection()就是为std::map&lt;KeyFrame*,int&gt;类成员变量<code>mConnectedKeyFrameWeights</code>赋值，之后调用UpdateBestCovisibles()，对连接关系按照权重(即共视点数目)从大到小排序，把排完序的关键帧和权重存入<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
+<p>这步就是遍历KFcounter，把达到要求的共视关键帧以及共视点数目放入vPairs中。同时调用AddConnection(),给这个共视关键帧更新连接及权重。<br>AddConnection()就是为std::map<KeyFrame*,int>类成员变量<code>mConnectedKeyFrameWeights</code>赋值，之后调用UpdateBestCovisibles()，对连接关系按照权重(即共视点数目)从大到小排序，把排完序的关键帧和权重存入<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
 </blockquote>
 <p>3 如果没有连接到关键帧（超过阈值的权重），则对权重最大的关键帧建立连接，同时调用AddConnection(),给这个权重最大的关键帧更新连接及权重。<br>4.对共视程度比较高的关键帧对更新连接关系及权重</p>
 <blockquote>
