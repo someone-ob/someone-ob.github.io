@@ -81,7 +81,7 @@
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="JZH&#39;s Blog">
-<meta property="og:url" content="http://example.com/archives/2023/index.html">
+<meta property="og:url" content="http://example.com/page/2/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="John Doe">
@@ -115,13 +115,13 @@
 
 
 
-  <link rel="canonical" href="http://example.com/archives/2023/"/>
+  <link rel="canonical" href="http://example.com/page/2/"/>
 
 
 
 
 
-  <title>Archive | JZH's Blog</title>
+  <title>JZH's Blog</title>
   
 
 
@@ -140,7 +140,8 @@
     
   
 
-  <div class="container sidebar-position-left page-archive">
+  <div class="container sidebar-position-left 
+  page-home">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -223,411 +224,199 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
+  <section id="posts" class="posts-expand">
+    
+      
+
+  
 
   
   
   
-  <div class="post-block archive">
-    <div id="posts" class="posts-collapse">
-      <span class="archive-move-on"></span>
 
-      <span class="archive-page-counter">
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/27/ORBSLAM3_NOTE_1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JZH's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
         
         
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/27/ORBSLAM3_NOTE_1/" itemprop="url">ORBSLAM3 Preview</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-27T19:05:31+08:00">
+                2023-03-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
         
           
-        
-        Um..! 11 posts in total. Keep on posting.
-      </span>
+            <h1 id="ORBSLAM3学习笔记-1"><a href="#ORBSLAM3学习笔记-1" class="headerlink" title="ORBSLAM3学习笔记(1)"></a>ORBSLAM3学习笔记(1)</h1><p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。ps:源码用的是计算机视觉life的注释版本</p>
+<hr>
+<h2 id="一、框架结构"><a href="#一、框架结构" class="headerlink" title="一、框架结构"></a>一、框架结构</h2><p>orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。</p>
+<p><strong>Examples目录</strong><br>examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br>除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS&#x2F;src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
+<hr>
+<h2 id="二、源码阅读笔记"><a href="#二、源码阅读笔记" class="headerlink" title="二、源码阅读笔记"></a>二、源码阅读笔记</h2><h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>main函数在ROS&#x2F;src目录下的ros_mono.cc文件，整体代码量不多，我就先放在下面了。</p>
+<pre><code>int main(int argc, char **argv)
+&#123;
+    ros::init(argc, argv, &quot;Mono&quot;);
+    ros::start();
 
-      
+    if(argc != 3)
+    &#123;
+        cerr &lt;&lt; endl &lt;&lt; &quot;Usage: rosrun ORB_SLAM3 Mono path_to_vocabulary path_to_settings&quot; &lt;&lt; endl;        
+        ros::shutdown();
+        return 1;
+    &#125;    
 
-        
-        
-        
+    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR,true);
 
-        
+    ImageGrabber igb(&amp;SLAM);
+
+    ros::NodeHandle nodeHandler;
+    ros::Subscriber sub = nodeHandler.subscribe(&quot;/camera/image_raw&quot;, 1, &amp;ImageGrabber::GrabImage,&amp;igb);
+
+    ros::spin();
+
+    // Stop all threads
+    SLAM.Shutdown();
+
+    // Save camera trajectory
+    SLAM.SaveKeyFrameTrajectoryTUM(&quot;KeyFrameTrajectory.txt&quot;);
+
+    ros::shutdown();
+
+    return 0;
+&#125;
+</code></pre>
+<p><strong>先解释一下main函数的运行流程</strong></p>
+<pre><code>ros::init(argc, argv, &quot;Mono&quot;);
+ros::start();
+</code></pre>
+<p>这两句用来启动ros结点，之后的if判断是否输入两个参数，这两个参数分别是词袋文件和标定文件的路径。</p>
+<pre><code>ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR,true);
+</code></pre>
+<p>这句是初始化一个slam系统，初始化包括定位、回环、查看线程。 首先会根据输入选择rgbd、mono等容器，然后初始化启动定位、关闭定位、换地图、reset地图等。ORB_SLAM3::System类在System.h中,具体实现在System.cc中，故具体初始化流程在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中会详细说明。</p>
+<p>初始化完成，创建ImageGrabber对象，在回调函数中调用ImageGrabber类的函数GrabImage</p>
+<pre><code>void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr&amp; msg)
+&#123;
+    // Copy the ros image message to cv::Mat.
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try
+    &#123;
+        cv_ptr = cv_bridge::toCvShare(msg);
+    &#125;
+    catch (cv_bridge::Exception&amp; e)
+    &#123;
+        ROS_ERROR(&quot;cv_bridge exception: %s&quot;, e.what());
+        return;
+    &#125;
+
+    mpSLAM-&gt;TrackMonocular(cv_ptr-&gt;image,cv_ptr-&gt;header.stamp.toSec());
+&#125;
+</code></pre>
+<p>ros结点接收发布方传来的图像，转换为一个 CvImage 对象，并将其赋值给 cv_ptr。调用mpSLAM的TrackMonocular函数时，作为参数传入，第一个是图像信息，第二个是时间戳。TrackMonocular()就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中讲了。</p>
+
           
-          <div class="collection-title">
-            <h1 class="archive-year" id="archive-year-2023">2023</h1>
-          </div>
         
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/04/13/ORBSLAM3-NOTE-11/" itemprop="url">
-              
-                <span itemprop="name">MapPoint.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-04-13T19:29:38+08:00"
-              content="2023-04-13" >
-          04-13
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
       
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/04/13/ORBSLAM3-NOTE-10/" itemprop="url">
-              
-                <span itemprop="name">KeyFrame.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-04-13T19:26:34+08:00"
-              content="2023-04-13" >
-          04-13
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/04/11/ORBSLAM3-NOTE-9/" itemprop="url">
-              
-                <span itemprop="name">TwoViewReconstruction.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-04-11T13:53:20+08:00"
-              content="2023-04-11" >
-          04-11
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/04/10/ORBSLAM3-NOTE-8/" itemprop="url">
-              
-                <span itemprop="name">ORBSLAM3-NOTE-8</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-04-10T11:34:02+08:00"
-              content="2023-04-10" >
-          04-10
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/31/ORBSLAM3-NOTE-7/" itemprop="url">
-              
-                <span itemprop="name">Frame.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-31T21:07:04+08:00"
-              content="2023-03-31" >
-          03-31
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/31/ORBSLAM3_NOTE_6/" itemprop="url">
-              
-                <span itemprop="name">LoopClosing.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-31T10:41:10+08:00"
-              content="2023-03-31" >
-          03-31
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_5/" itemprop="url">
-              
-                <span itemprop="name">LocalMapping.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-30T20:34:51+08:00"
-              content="2023-03-30" >
-          03-30
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_4/" itemprop="url">
-              
-                <span itemprop="name">ORBextractor.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-30T13:55:07+08:00"
-              content="2023-03-30" >
-          03-30
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/28/ORBSLAM3_NOTE_3/" itemprop="url">
-              
-                <span itemprop="name">Tracking.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-28T16:45:51+08:00"
-              content="2023-03-28" >
-          03-28
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2023/03/27/ORBSLAM3_NOTE_2/" itemprop="url">
-              
-                <span itemprop="name">System.cc</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2023-03-27T20:09:53+08:00"
-              content="2023-03-27" >
-          03-27
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
     </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
   </div>
   
   
   
+  </article>
+
+
+    
+  </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/archives/2023/page/2/">2</a><a class="extend next" rel="next" href="/archives/2023/page/2/">&lt;i class&#x3D;&quot;fa fa-angle-right&quot;&gt;&lt;&#x2F;i&gt;</a>
+    <a class="extend prev" rel="prev" href="/">&lt;i class&#x3D;&quot;fa fa-angle-left&quot;&gt;&lt;&#x2F;i&gt;</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
   </nav>
-
 
 
 
