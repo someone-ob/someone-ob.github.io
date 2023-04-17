@@ -696,7 +696,7 @@ const float dist = PC.norm();
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2023/04/10/ORBSLAM3-NOTE-8/" itemprop="url">ORBSLAM3-NOTE-8</a></h1>
+                <a class="post-title-link" href="/2023/04/10/ORBSLAM3-NOTE-8/" itemprop="url">ORBmatcher.cc</a></h1>
         
 
         <div class="post-meta">
@@ -1206,49 +1206,12 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
       
         
           
-            <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。</p>
+            <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
 <hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-LocalMapping"><a href="#LocalMapping-LocalMapping" class="headerlink" title="LocalMapping::LocalMapping()"></a>LocalMapping::LocalMapping()</h3><pre><code>LocalMapping::LocalMapping(System* pSys,    //系统类指针 
-    Atlas *pAtlas,                          //atlas 
-    const float bMonocular,                 //是否是单目 (bug)用float赋值了 
-    bool bInertial,                         //是否是惯性模式，传递过来的是false 
-    const string &amp;_strSeqName               //序列名字，没用到
-    ):
-    mpSystem(pSys), 
-    mbMonocular(bMonocular), 
-    mbInertial(bInertial), 
-    mbResetRequested(false),            //请求当前线程复位的标志。true，表示一直请求复位，但复位还未完成；表示复位完成为false 
-    mbResetRequestedActiveMap(false),
-    mbFinishRequested(false),           //请求终止当前线程的标志。注意只是请求，不一定终止。终止要看 mbFinished 
-    mbFinished(true),                   //判断最终LocalMapping::Run() 是否完成的标志。 
-    mpAtlas(pAtlas),
-    bInitializing(false),
-    mbAbortBA(false),                   //是否流产BA优化的标志位 
-    mbStopped(false),                   //为true表示可以并终止localmapping 线程 
-    mbStopRequested(false),             //外部线程调用，为true，表示外部线程请求停止 local mapping 
-    mbNotStop(false),                   //true，表示不要停止 localmapping 线程，因为要插入关键帧了。需要和 mbStopped 结合使用 
-    mbAcceptKeyFrames(true),            //true，允许接受关键帧。
-    mIdxInit(0), 
-    mScale(1.0), 
-    mInitSect(0), 
-    mbNotBA1(true), 
-    mbNotBA2(true), 
-    mIdxIteration(0), 
-    infoInertial(Eigen::MatrixXd::Zero(9,9))
-&#123;
-    mnMatchesInliers = 0;
-    mbBadImu = false;
-    mTinit = 0.f;
-    mNumLM = 0;
-    mNumKFCulling=0;
-#ifdef REGISTER_TIMES
-    nLBA_exec = 0;
-    nLBA_abort = 0;
-#endif
-&#125;
-</code></pre><p>这段已经注释的很清楚了，就不讲了。</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等</p>
 <hr>
-<h2 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h2>
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p><strong>1.从缓冲队列中取出一帧关键帧</strong></p>
+
           
         
       
@@ -1817,10 +1780,7 @@ mnNumDataset = 0;
 </li>
 </ul>
 <hr>
-<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong></p>
-<p><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。</p>
-<p><strong>3.判断地图是否被更新</strong></p>
-<p><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。</p>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
 <hr>
 <h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到mpAtlas的成员变量mpCurrentMap中。<br>4.遍历匹配点，进行一系列操作</p>
 <ul>
@@ -1831,14 +1791,14 @@ mnNumDataset = 0;
 <li><p>4.2 为该MapPoint添加属性</p>
 <ul>
 <li>4.2.1 首先把MapPoint添加到两个关键帧里面去。<blockquote>
-<p>就是把MapPoint存入关键帧对象的成员变量mvpMapPoints容器中，存的位置就是当前遍历到的特征点索引值。</p>
+<p>就是把MapPoint存入关键帧对象的成员变量<code>mvpMapPoints</code>容器中，<strong>存的位置就是当前遍历到的特征点索引值</strong>。</p>
 </blockquote>
 </li>
 <li><p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation()。</p>
 </li>
 <li><p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
 <blockquote>
-<p>该函数简单来说就是遍历能观察到它的关键帧，根据保存的特征点索引值，获取所有描述子，计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值，将这个最好的描述子存入成员变量mDescriptor中。</p>
+<p>该函数简单来说就是遍历能观察到它的关键帧，根据保存的特征点索引值，获取所有描述子，计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值，将这个最好的描述子存入成员变量<code>mDescriptor</code>中。</p>
 </blockquote>
 </li>
 <li>更新该MapPoint平均观测方向以及观测距离的范围，具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</li>
@@ -1854,9 +1814,12 @@ mnNumDataset = 0;
 <p>方法就是求得当前3D点的深度中位数，将平移向量和3D点坐标除以该值。</p>
 </blockquote>
 </li>
-<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。</li>
+<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。<blockquote>
+<p>这里会把两个关键帧插入<code>mpLocalMapper</code>的<code>mlNewKeyFrames</code>列表中,这样LocalMapping线程就能接收到关键帧来处理了。</p>
+</blockquote>
+</li>
 </ul>
-<p>到此为止，单目初始化终于完成了。</p>
+<p>到此为止，单目初始化终于完成了，这部分真的看了不少时间啊。</p>
 
           
         

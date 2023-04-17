@@ -79,15 +79,15 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。  源码阅读LocalMapping::LocalMapping()LocalMapping::LocalMapping(System* pSys,    &#x2F;&#x2F;系统类指针      Atlas *pAtlas,                          &#x2F;&#x2F;atlas      const float">
+<meta name="description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等  Local">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LocalMapping.cc">
 <meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
-<meta property="og:description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。  源码阅读LocalMapping::LocalMapping()LocalMapping::LocalMapping(System* pSys,    &#x2F;&#x2F;系统类指针      Atlas *pAtlas,                          &#x2F;&#x2F;atlas      const float">
+<meta property="og:description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等  Local">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-30T12:34:51.000Z">
-<meta property="article:modified_time" content="2023-03-31T02:25:20.710Z">
+<meta property="article:modified_time" content="2023-04-17T10:51:17.753Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -310,49 +310,12 @@
       
 
       
-        <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。</p>
+        <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
 <hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-LocalMapping"><a href="#LocalMapping-LocalMapping" class="headerlink" title="LocalMapping::LocalMapping()"></a>LocalMapping::LocalMapping()</h3><pre><code>LocalMapping::LocalMapping(System* pSys,    //系统类指针 
-    Atlas *pAtlas,                          //atlas 
-    const float bMonocular,                 //是否是单目 (bug)用float赋值了 
-    bool bInertial,                         //是否是惯性模式，传递过来的是false 
-    const string &amp;_strSeqName               //序列名字，没用到
-    ):
-    mpSystem(pSys), 
-    mbMonocular(bMonocular), 
-    mbInertial(bInertial), 
-    mbResetRequested(false),            //请求当前线程复位的标志。true，表示一直请求复位，但复位还未完成；表示复位完成为false 
-    mbResetRequestedActiveMap(false),
-    mbFinishRequested(false),           //请求终止当前线程的标志。注意只是请求，不一定终止。终止要看 mbFinished 
-    mbFinished(true),                   //判断最终LocalMapping::Run() 是否完成的标志。 
-    mpAtlas(pAtlas),
-    bInitializing(false),
-    mbAbortBA(false),                   //是否流产BA优化的标志位 
-    mbStopped(false),                   //为true表示可以并终止localmapping 线程 
-    mbStopRequested(false),             //外部线程调用，为true，表示外部线程请求停止 local mapping 
-    mbNotStop(false),                   //true，表示不要停止 localmapping 线程，因为要插入关键帧了。需要和 mbStopped 结合使用 
-    mbAcceptKeyFrames(true),            //true，允许接受关键帧。
-    mIdxInit(0), 
-    mScale(1.0), 
-    mInitSect(0), 
-    mbNotBA1(true), 
-    mbNotBA2(true), 
-    mIdxIteration(0), 
-    infoInertial(Eigen::MatrixXd::Zero(9,9))
-&#123;
-    mnMatchesInliers = 0;
-    mbBadImu = false;
-    mTinit = 0.f;
-    mNumLM = 0;
-    mNumKFCulling=0;
-#ifdef REGISTER_TIMES
-    nLBA_exec = 0;
-    nLBA_abort = 0;
-#endif
-&#125;
-</code></pre><p>这段已经注释的很清楚了，就不讲了。</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等</p>
 <hr>
-<h2 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h2>
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p><strong>1.从缓冲队列中取出一帧关键帧</strong></p>
+
       
     </div>
     
@@ -517,7 +480,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-5"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(5)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-LocalMapping"><span class="nav-number">1.1.1.</span> <span class="nav-text">LocalMapping::LocalMapping()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LocalMapping-Run"><span class="nav-number">1.2.</span> <span class="nav-text">LocalMapping::Run()</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-5"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(5)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-Run"><span class="nav-number">1.1.1.</span> <span class="nav-text">LocalMapping::Run()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-ProcessNewKeyFrame"><span class="nav-number">1.1.2.</span> <span class="nav-text">LocalMapping::ProcessNewKeyFrame()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
