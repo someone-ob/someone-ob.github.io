@@ -636,7 +636,7 @@ DBoW2::FeatureVector mFeatVec;
 <hr>
 <h3 id="6-由F恢复R-t"><a href="#6-由F恢复R-t" class="headerlink" title="6.由F恢复R,t"></a>6.由F恢复R,t</h3><hr>
 <h3 id="7-由H恢复R-t"><a href="#7-由H恢复R-t" class="headerlink" title="7.由H恢复R,t"></a>7.由H恢复R,t</h3><hr>
-<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为</p>
+<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为\[\lambda \left[ \begin{matrix}<br>   u  \\<br>   v  \\<br>   1  \\<br>\end{matrix} \right]=\underbrace{K\left[ R|t \right]}_{P}\left[ \begin{matrix}<br>   x  \\<br>   y  \\<br>   z  \\<br>   1  \\<br>\end{matrix} \right]\]\[\Downarrow \]\[\lambda \textbf{u}=\textbf{PX}\]</p>
 <hr>
 <h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。</p>
 <hr>
