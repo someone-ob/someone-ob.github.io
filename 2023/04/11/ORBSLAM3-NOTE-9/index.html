@@ -91,8 +91,9 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC1.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC2.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC3.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E4%B8%89%E8%A7%92%E5%8C%96.png">
 <meta property="article:published_time" content="2023-04-11T05:53:20.000Z">
-<meta property="article:modified_time" content="2023-04-24T05:31:37.578Z">
+<meta property="article:modified_time" content="2023-04-24T06:06:59.907Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -335,7 +336,7 @@
 <hr>
 <h3 id="6-由F恢复R-t"><a href="#6-由F恢复R-t" class="headerlink" title="6.由F恢复R,t"></a>6.由F恢复R,t</h3><hr>
 <h3 id="7-由H恢复R-t"><a href="#7-由H恢复R-t" class="headerlink" title="7.由H恢复R,t"></a>7.由H恢复R,t</h3><hr>
-<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为\[\lambda \left[ \begin{matrix}<br>   u  \\<br>   v  \\<br>   1  \\<br>\end{matrix} \right]=\underbrace{K\left[ R|t \right]}_{P}\left[ \begin{matrix}<br>   x  \\<br>   y  \\<br>   z  \\<br>   1  \\<br>\end{matrix} \right]\]\[\Downarrow \]\[\lambda \textbf{u}=\textbf{PX}\]</p>
+<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为\[\lambda \left[ \begin{matrix}<br>   u  \\<br>   v  \\<br>   1  \\<br>\end{matrix} \right]=\underbrace{K\left[ R|t \right]}_{P}\left[ \begin{matrix}<br>   x  \\<br>   y  \\<br>   z  \\<br>   1  \\<br>\end{matrix} \right]\]\[\Downarrow \]\[\lambda \textbf{u}=\textbf{PX}\]两边同时左叉乘$\textbf{u}$,有\[\textbf{u}\hat{\ }\textbf{PX}=0\]展开后可得\[\left[ \begin{matrix}<br>   0 &amp; -1 &amp; v  \\<br>   1 &amp; 0 &amp; -u  \\<br>   -v &amp; u &amp; 0  \\<br>\end{matrix} \right]\left[ \begin{matrix}<br>   P_1  \\<br>   P_2  \\<br>   P_3  \\<br>\end{matrix} \right]X=0\]\[\Downarrow \]\[\left\{ \begin{matrix}<br>   (v{P_3}-{P_2})X=0  \\<br>   ({P_1}-u{P_3})X=0  \\<br>   (u{P_2}-v{P_1})X=0  \\<br>\end{matrix} \right.\]上面的方程很明显是线性相关的，实际上只有两个约束，但我们这里有两帧上的匹配点，由此可以得到两组方程即四个约束：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/三角化.png" alt="三角化"><br>这里可以使用SVD求解，齐次坐标$\textbf{X}$即为$\textbf{H}$的最小奇异值的奇异向量。<br>这部分的代码实现在GeometricTools::Triangulate()函数中。</p>
 <hr>
 <h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。</p>
 <hr>
