@@ -88,7 +88,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png">
 <meta property="article:published_time" content="2023-04-10T03:34:02.000Z">
-<meta property="article:modified_time" content="2023-04-17T09:01:20.615Z">
+<meta property="article:modified_time" content="2023-04-21T13:19:59.295Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -329,6 +329,87 @@ const float factor = HISTO_LENGTH/360.0f;
 </ul>
 <p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
 <p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+<hr>
+<h3 id="ORBmatcher-SearchForTriangulation"><a href="#ORBmatcher-SearchForTriangulation" class="headerlink" title="ORBmatcher::SearchForTriangulation()"></a>ORBmatcher::SearchForTriangulation()</h3><p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
+<blockquote>
+<p>直接看我下面的注释就行</p>
+</blockquote>
+<pre><code>Sophus::SE3f T1w = pKF1-&gt;GetPose();
+Sophus::SE3f T2w = pKF2-&gt;GetPose();
+Sophus::SE3f Tw2 = pKF2-&gt;GetPoseInverse(); // for convenience
+//Cw是关键帧1的光心的世界坐标系下·的坐标
+Eigen::Vector3f Cw = pKF1-&gt;GetCameraCenter();
+//C2是关键帧1的光心的在关键帧2的坐标系下的坐标
+Eigen::Vector3f C2 = T2w * Cw;
+//ep是关键帧1的光心在关键帧2上的投影坐标
+Eigen::Vector2f ep = pKF2-&gt;mpCamera-&gt;project(C2);
+//T12是关键帧2坐标系到关键帧1坐标系的变换矩阵，R12，t12分别存储T12的旋转和平移
+Sophus::SE3f T12;
+Sophus::SE3f Tll, Tlr, Trl, Trr;
+Eigen::Matrix3f R12; // for fastest computation
+Eigen::Vector3f t12; // for fastest computation
+
+GeometricCamera* pCamera1 = pKF1-&gt;mpCamera, *pCamera2 = pKF2-&gt;mpCamera;
+
+if(!pKF1-&gt;mpCamera2 &amp;&amp; !pKF2-&gt;mpCamera2)&#123;//单目
+    T12 = T1w * Tw2;
+    R12 = T12.rotationMatrix();
+    t12 = T12.translation();
+&#125;
+else&#123;//双目
+    Sophus::SE3f Tr1w = pKF1-&gt;GetRightPose();
+    Sophus::SE3f Twr2 = pKF2-&gt;GetRightPoseInverse();
+    Tll = T1w * Tw2;
+    Tlr = T1w * Twr2;
+    Trl = Tr1w * Tw2;
+    Trr = Tr1w * Twr2;
+&#125;
+Eigen::Matrix3f Rll = Tll.rotationMatrix(), Rlr  = Tlr.rotationMatrix(), Rrl  = Trl.rotationMatrix(), Rrr  = Trr.rotationMatrix();
+Eigen::Vector3f tll = Tll.translation(), tlr = Tlr.translation(), trl = Trl.translation(), trr = Trr.translation();
+
+//下面这些参数用处就和上面SearchForInitialization()里面一样了。
+int nmatches=0;
+// 记录匹配是否成功，避免重复匹配
+vector&lt;bool&gt; vbMatched2(pKF2-&gt;N,false);        
+vector&lt;int&gt; vMatches12(pKF1-&gt;N,-1);
+// 用于统计匹配点对旋转差的直方图
+vector&lt;int&gt; rotHist[HISTO_LENGTH];
+for(int i=0;i&lt;HISTO_LENGTH;i++)
+    rotHist[i].reserve(500);
+
+const float factor = HISTO_LENGTH/360.0f;
+</code></pre><p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
+<pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
+DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
+DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
+DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
+</code></pre><p>这里要指导vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+<p>2.1 遍历pKF1和pKF2中的node节点</p>
+<blockquote>
+<p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
+</blockquote>
+<p>下面讲f1it和f2it属于同一个node节点时该怎么操作</p>
+<ol>
+<li>遍历该node节点下<strong>f1it</strong>下的所有特征点</li>
+<li>通过特征点索引idx1在pKF1中取出对应的MapPoint<blockquote>
+<p>若MapPoint存在，则直接进入下一次循环，遍历下一个特征点。若MapPoint不存在，说明该特征点是从未匹配过的。通过这一步骤，我们就能避免重复匹配，导致获得已存在的地图点了。</p>
+</blockquote>
+</li>
+<li>通过特征点索引idx1在pKF1中取出对应的特征点，并取出对应的特征点的描述子。</li>
+<li>遍历该node节点下<strong>f2it</strong>对应KF2中的所有特征点</li>
+<li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
+<li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
+<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+</blockquote>
+</li>
+<li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
+<p>这个就不细嗦了，这里其实和TwoViewReconstruction.cc那篇博客里的关于F矩阵的卡方检验是一样的。</p>
+</blockquote>
+</li>
+<li>记录匹配结果，记录旋转差直方图信息</li>
+</ol>
+<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
 
       
     </div>
@@ -494,7 +575,7 @@ const float factor = HISTO_LENGTH/360.0f;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-8"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(8)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-SearchForInitialization"><span class="nav-number">1.1.1.</span> <span class="nav-text">ORBmatcher::SearchForInitialization()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-8"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(8)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-SearchForInitialization"><span class="nav-number">1.1.1.</span> <span class="nav-text">ORBmatcher::SearchForInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-SearchForTriangulation"><span class="nav-number">1.1.2.</span> <span class="nav-text">ORBmatcher::SearchForTriangulation()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

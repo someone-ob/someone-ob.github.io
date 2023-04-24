@@ -312,7 +312,7 @@
           
             <h1 id="ORBSLAM3学习笔记-11"><a href="#ORBSLAM3学习笔记-11" class="headerlink" title="ORBSLAM3学习笔记(11)"></a>ORBSLAM3学习笔记(11)</h1><p>这篇博客主要是对MapPoint.cc文件的学习。</p>
 <hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="MapPoint-AddObservation"><a href="#MapPoint-AddObservation" class="headerlink" title="MapPoint::AddObservation()"></a>MapPoint::AddObservation()</h3><p>这个函数引用的参数为(KeyFrame<em> pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。<br>首先，它的类型为std::map&lt;KeyFrame</em>,std::tuple<int,int>&gt; 这是一个map容器，键值为我们传过来的KeyFrame，value是一个元组类型std::tuple&lt; int,int&gt;，由于我们看的是单目，其实我们只用得到元组的第一个位置，存储的是该MapPoint在该关键帧的投影特征点的索引值。<br>最后还要更新成员int nObs，该成员记录了当前地图点被多少个关键帧相机观测到了(单目关键帧每次观测算1个相机,双目/RGBD帧每次观测算2个相机)。</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="MapPoint-AddObservation"><a href="#MapPoint-AddObservation" class="headerlink" title="MapPoint::AddObservation()"></a>MapPoint::AddObservation()</h3><p>这个函数引用的参数为(KeyFrame* pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。<br>首先，它的类型为std::map<KeyFrame\*,std::tuple<int,int>&gt; 这是一个map容器，键值为我们传过来的KeyFrame，value是一个元组类型std::tuple&lt; int,int&gt;，由于我们看的是单目，其实我们只用得到元组的第一个位置，存储的是该MapPoint在该关键帧的投影特征点的索引值。<br>最后还要更新成员int nObs，该成员记录了当前地图点被多少个关键帧相机观测到了(单目关键帧每次观测算1个相机,双目/RGBD帧每次观测算2个相机)。</p>
 <hr>
 <h3 id="MapPoint-UpdateNormalAndDepth"><a href="#MapPoint-UpdateNormalAndDepth" class="headerlink" title="MapPoint::UpdateNormalAndDepth()"></a>MapPoint::UpdateNormalAndDepth()</h3><p>该函数的功能是更新地图点平均观测方向和观测距离范围。首先看一下观测距离范围是什么意思，这部分就参考博客<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116784652?spm=1001.2014.3001.5502">ORB-SLAM2代码详解03: 地图点MapPoint</a>，然后在看具体代码。</p>
 <p><strong>基本概念</strong><br>MapPoint类中观测距离范围的由成员变量mfMaxDistance和mfMinDistance表示。</p>
@@ -456,7 +456,7 @@ const float dist = PC.norm();
 <hr>
 <h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="KeyFrame-KeyFrame"><a href="#KeyFrame-KeyFrame" class="headerlink" title="KeyFrame::KeyFrame()"></a>KeyFrame::KeyFrame()</h3><p>就是通过传来的参数给相应的成员变量赋值。传来的pMap对象是指针型的，故KeyFrame类对象的成员变量mpMap指向的是Atlas类对象的成员变量mpCurrentMap。</p>
 <hr>
-<h3 id="KeyFrame-ComputeBoW"><a href="#KeyFrame-ComputeBoW" class="headerlink" title="KeyFrame::ComputeBoW()"></a>KeyFrame::ComputeBoW()</h3><p>这里就是给mBowVec和mFeatVec两个成员变量赋值了，变量含义看注释。</p>
+<h3 id="KeyFrame-ComputeBoW"><a href="#KeyFrame-ComputeBoW" class="headerlink" title="KeyFrame::ComputeBoW()"></a>KeyFrame::ComputeBoW()</h3><p>这里就是给mBowVec和mFeatVec两个成员变量赋值。这里可以直接看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41694024/article/details/126328833">ORB-SLAM2 —— Frame::ComputeBoW函数</a>,这篇博客讲得细致清晰，我就不多做赘述了，就直接放下源码注释。</p>
 <pre><code>void KeyFrame::ComputeBoW()
 &#123;
     // 只有当词袋向量或者节点和特征序号的特征向量为空的时候执行
@@ -472,6 +472,14 @@ const float dist = PC.norm();
                                4);              //4表示从叶节点向前数的层数
     &#125;
 &#125;
+</code></pre><p>关于mBowVec和mFeatVec的具体类型，看以下注释。</p>
+<pre><code>// Bag of Words Vector structures.
+// 内部实际存储的是std::map&lt;WordId, WordValue&gt;
+// WordId 和 WordValue 表示Word在叶子中的id 和权重
+DBoW2::BowVector mBowVec;
+// 内部实际存储 std::map&lt;NodeId, std::vector&lt;unsigned int&gt; &gt;
+// NodeId 表示节点id，std::vector&lt;unsigned int&gt; 中实际存的是该节点id下所有特征点在图像中的索引
+DBoW2::FeatureVector mFeatVec;
 </code></pre><hr>
 <h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map<KeyFrame *, int>类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
 <blockquote>
@@ -624,9 +632,13 @@ const float dist = PC.norm();
 <hr>
 <h3 id="4-RANSAC方法"><a href="#4-RANSAC方法" class="headerlink" title="4.RANSAC方法"></a>4.RANSAC方法</h3><p>RANSAC就是随机采样一致，简单理解为随机取一小部分样本计算模型，然后统计在该模型下的内点数（inliers），重复很多次，取内点数最多的那次的模型为最优结果。随机抽取一部分样本计算模型，而不是用整个样本计算，是因为样本中存在outliers，一起计算会影响结果。ransac寄希望于取的那小部分样本全都是优秀的inliers，这样算出来的模型就会是很好的，所以要重复很多次。<br>orbslam3用的是简化过的RANSAC方法，它就是每次去8个不同的点，计算H或F，然后用这个H或F对所有匹配点计算双向重投影误差，利用卡方检验，评判H或F好坏。重复若干次，取其中最好的H或F。<br>下面讲一下通常的RANSAC方法<br>1.随机的从S中选择s个数据点组成一个样本做为模型的一个示例。其中s是构建模型需要最少的点，如拟合直线s=2。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC1.png" alt="RANSAC1"><br>2.计算S中所有点与模型的距离，确定在模型距离阈值t内的数据点集Si，Si称为采样的一致集并定义为S的内点。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC2.png" alt="RANSAC2"><br>3.如果Si的大小（内点的数目）大于某个阈值T，用Si的所有点重新估计模型并结束。<br>4.如果Si的大小小于T，选择一个新的子集并重复1，2，3的过程。<br>5.经过N次试验选择最大一致集Si，并用Si所有点重新估计模型。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC3.png" alt="RANSAC2"></p>
 <hr>
-<h3 id="5-卡方检验"><a href="#5-卡方检验" class="headerlink" title="5.卡方检验"></a>5.卡方检验</h3><p>RANSAC迭代过程中，由于可能使用的点是外点，结果会有很大误差，我们要剔除这些结果，只留下最好的H或F。因此我们要去评估求得的结果的误差大小，而卡方检验正好满足我们的需求。<br>卡方检验我们需要了解三个东西卡方值，自由度，卡方检验表。首先是卡方值，我们先计算重投影误差，这也就是残差，而残差的平方除以随机项方差服从卡方分布，这是因为 残差平方和中每一项都服从N（0,1）也就是标准正态分布，故他们之和服从卡方分布，这是卡方分布的基本定义。由此我们可以得出该问题的卡方值就是残差的平方除以随机项方差。然后根据自由度，查卡方检验表，得到阈值。比较卡方值和阈值，超出的我们就舍弃，在范围内的，我们就代入公式计算得分。<br>对于H\[p_2=H_{21}p_1,p_1=H_{12}p_2\]将$p_1$通过$H_{21}$投影得到$p_2’$，同理将 $p_2$通过$H_{12}$投影得到$p_1’$，卡方值就是$\frac{p_1-p_1’}{\sigma ^2}$和$\frac{p_2-p_2’}{\sigma ^2}$，其中$\sigma=1$,该模型下的自由度为2，因为计算的是坐标(u,v)的残差。取95%置信度下的自由度为2的卡方检验统计量阈值等于5.991。然后比较卡方值和阈值，若超过，则内点标志位置为false，反之，则用阈值减去卡方值，算入得分中。<br>对于F，残差其实是投影点到极线的距离。$Fp_1$得到的三个值a,b,c,很明显，$p_2$就在直线ax+by+c=0上，但由于误差存在，$p_2$位置肯定会有所偏移，由此计算点到线的距离为残差。这里的自由度为1(z这里没太搞懂)，取95%置信度下的自由度为1的卡方检验统计量阈值,然后和上面步骤差不多。</p>
+<h3 id="5-卡方检验"><a href="#5-卡方检验" class="headerlink" title="5.卡方检验"></a>5.卡方检验</h3><p>RANSAC迭代过程中，由于可能使用的点是外点，结果会有很大误差，我们要剔除这些结果，只留下最好的H或F。因此我们要去评估求得的结果的误差大小，而卡方检验正好满足我们的需求。<br>卡方检验我们需要了解三个东西卡方值，自由度，卡方检验表。首先是卡方值，我们先计算重投影误差，这也就是残差，而残差的平方除以随机项方差服从卡方分布，这是因为残差平方和中每一项都服从N（0,1）也就是标准正态分布，故他们之和服从卡方分布，这是卡方分布的基本定义。由此我们可以得出该问题的卡方值就是残差的平方除以随机项方差。然后根据自由度，查卡方检验表，得到阈值。比较卡方值和阈值，超出的我们就舍弃，在范围内的，我们就代入公式计算得分。<br>对于H\[p_2=H_{21}p_1,p_1=H_{12}p_2\]将$p_1$通过$H_{21}$投影得到$p_2’$，同理将 $p_2$通过$H_{12}$投影得到$p_1’$，卡方值就是$\frac{||p_1-p_1’||^2_2}{\sigma ^2}$和$\frac{||p_2-p_2’||^2_2}{\sigma ^2}$，其中$\sigma=1$,该模型下的自由度为2，因为计算的是坐标(u,v)的残差。取95%置信度下的自由度为2的卡方检验统计量阈值等于5.991。然后比较卡方值和阈值，若超过，则内点标志位置为false，反之，则用阈值减去卡方值，算入得分中。<br>对于F，残差其实是投影点到极线的距离。$Fp_1$得到的三个值a,b,c,很明显，$p_2$就在直线ax+by+c=0上，但由于误差存在，$p_2$位置肯定会有所偏移，由此计算点到线的距离为残差。这里的自由度为1(z这里没太搞懂)，取95%置信度下的自由度为1的卡方检验统计量阈值,然后和上面步骤差不多。</p>
 <hr>
-<h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。关于F或H还原R，t，以及三角化还原深度以后回来推。</p>
+<h3 id="6-由F恢复R-t"><a href="#6-由F恢复R-t" class="headerlink" title="6.由F恢复R,t"></a>6.由F恢复R,t</h3><hr>
+<h3 id="7-由H恢复R-t"><a href="#7-由H恢复R-t" class="headerlink" title="7.由H恢复R,t"></a>7.由H恢复R,t</h3><hr>
+<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为</p>
+<hr>
+<h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。</p>
 <hr>
 <h3 id="TwoViewReconstruction-FindHomography"><a href="#TwoViewReconstruction-FindHomography" class="headerlink" title="TwoViewReconstruction::FindHomography()"></a>TwoViewReconstruction::FindHomography()</h3><p>首先调用函数Normalize()，将坐标归一化，并得到归一化坐标使用的变换矩阵。然后用归一化后的200组点，对每组点用ComputeH21()函数计算出归一化后H矩阵，再用变换矩阵还原H，使用函数CheckHomography()函数对H打分，最后选择得分最高的H。上面调用的函数，具体原理写在最前面了。</p>
 
@@ -765,6 +777,87 @@ const float factor = HISTO_LENGTH/360.0f;
 </ul>
 <p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
 <p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+<hr>
+<h3 id="ORBmatcher-SearchForTriangulation"><a href="#ORBmatcher-SearchForTriangulation" class="headerlink" title="ORBmatcher::SearchForTriangulation()"></a>ORBmatcher::SearchForTriangulation()</h3><p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
+<blockquote>
+<p>直接看我下面的注释就行</p>
+</blockquote>
+<pre><code>Sophus::SE3f T1w = pKF1-&gt;GetPose();
+Sophus::SE3f T2w = pKF2-&gt;GetPose();
+Sophus::SE3f Tw2 = pKF2-&gt;GetPoseInverse(); // for convenience
+//Cw是关键帧1的光心的世界坐标系下·的坐标
+Eigen::Vector3f Cw = pKF1-&gt;GetCameraCenter();
+//C2是关键帧1的光心的在关键帧2的坐标系下的坐标
+Eigen::Vector3f C2 = T2w * Cw;
+//ep是关键帧1的光心在关键帧2上的投影坐标
+Eigen::Vector2f ep = pKF2-&gt;mpCamera-&gt;project(C2);
+//T12是关键帧2坐标系到关键帧1坐标系的变换矩阵，R12，t12分别存储T12的旋转和平移
+Sophus::SE3f T12;
+Sophus::SE3f Tll, Tlr, Trl, Trr;
+Eigen::Matrix3f R12; // for fastest computation
+Eigen::Vector3f t12; // for fastest computation
+
+GeometricCamera* pCamera1 = pKF1-&gt;mpCamera, *pCamera2 = pKF2-&gt;mpCamera;
+
+if(!pKF1-&gt;mpCamera2 &amp;&amp; !pKF2-&gt;mpCamera2)&#123;//单目
+    T12 = T1w * Tw2;
+    R12 = T12.rotationMatrix();
+    t12 = T12.translation();
+&#125;
+else&#123;//双目
+    Sophus::SE3f Tr1w = pKF1-&gt;GetRightPose();
+    Sophus::SE3f Twr2 = pKF2-&gt;GetRightPoseInverse();
+    Tll = T1w * Tw2;
+    Tlr = T1w * Twr2;
+    Trl = Tr1w * Tw2;
+    Trr = Tr1w * Twr2;
+&#125;
+Eigen::Matrix3f Rll = Tll.rotationMatrix(), Rlr  = Tlr.rotationMatrix(), Rrl  = Trl.rotationMatrix(), Rrr  = Trr.rotationMatrix();
+Eigen::Vector3f tll = Tll.translation(), tlr = Tlr.translation(), trl = Trl.translation(), trr = Trr.translation();
+
+//下面这些参数用处就和上面SearchForInitialization()里面一样了。
+int nmatches=0;
+// 记录匹配是否成功，避免重复匹配
+vector&lt;bool&gt; vbMatched2(pKF2-&gt;N,false);        
+vector&lt;int&gt; vMatches12(pKF1-&gt;N,-1);
+// 用于统计匹配点对旋转差的直方图
+vector&lt;int&gt; rotHist[HISTO_LENGTH];
+for(int i=0;i&lt;HISTO_LENGTH;i++)
+    rotHist[i].reserve(500);
+
+const float factor = HISTO_LENGTH/360.0f;
+</code></pre><p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
+<pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
+DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
+DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
+DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
+</code></pre><p>这里要指导vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+<p>2.1 遍历pKF1和pKF2中的node节点</p>
+<blockquote>
+<p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
+</blockquote>
+<p>下面讲f1it和f2it属于同一个node节点时该怎么操作</p>
+<ol>
+<li>遍历该node节点下<strong>f1it</strong>下的所有特征点</li>
+<li>通过特征点索引idx1在pKF1中取出对应的MapPoint<blockquote>
+<p>若MapPoint存在，则直接进入下一次循环，遍历下一个特征点。若MapPoint不存在，说明该特征点是从未匹配过的。通过这一步骤，我们就能避免重复匹配，导致获得已存在的地图点了。</p>
+</blockquote>
+</li>
+<li>通过特征点索引idx1在pKF1中取出对应的特征点，并取出对应的特征点的描述子。</li>
+<li>遍历该node节点下<strong>f2it</strong>对应KF2中的所有特征点</li>
+<li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
+<li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
+<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+</blockquote>
+</li>
+<li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
+<p>这个就不细嗦了，这里其实和TwoViewReconstruction.cc那篇博客里的关于F矩阵的卡方检验是一样的。</p>
+</blockquote>
+</li>
+<li>记录匹配结果，记录旋转差直方图信息</li>
+</ol>
+<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
 
           
         
@@ -1208,10 +1301,76 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
           
             <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
 <hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br><strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
+<blockquote>
+<p>调用函数ProcessNewKeyFrame()</p>
+</blockquote>
+<p><strong>2.根据地图点的观测情况剔除质量不好的地图点</strong></p>
+<blockquote>
+<p>调用函数MapPointCulling()</p>
+</blockquote>
+<p><strong>3.当前关键帧与相邻关键帧通过三角化产生新的地图点，使得跟踪更稳</strong></p>
+<blockquote>
+<p>调用函数CreateNewMapPoints()</p>
+</blockquote>
+<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧帧（两级相邻）中重复的地图点</strong></p>
+<blockquote>
+<p>调用函数SearchInNeighbors()</p>
+</blockquote>
 <hr>
-<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p><strong>1.从缓冲队列中取出一帧关键帧</strong></p>
-
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br><strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br><strong>2.计算该关键帧特征点的Bow信息</strong><br><strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
+<ul>
+<li><p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
+</li>
+<li><p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
+</li>
+</ul>
+<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br><strong>5.将该关键帧插入到地图中</strong></p>
+<hr>
+<h3 id="LocalMapping-MapPointCulling"><a href="#LocalMapping-MapPointCulling" class="headerlink" title="LocalMapping::MapPointCulling()"></a>LocalMapping::MapPointCulling()</h3><p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
+<pre><code>int nThObs;
+if(mbMonocular)
+    nThObs = 2;
+else
+    nThObs = 3;
+const int cnThObs = nThObs;
+</code></pre><p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+<blockquote>
+<p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
+<ul>
+<li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound/mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound/mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
+<li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
+</ul>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-CreateNewMapPoints"><a href="#LocalMapping-CreateNewMapPoints" class="headerlink" title="LocalMapping::CreateNewMapPoints()"></a>LocalMapping::CreateNewMapPoints()</h3><p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
+<blockquote>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector<KeyFrame*>类变量vpNeighKFs中。</p>
+</blockquote>
+<p>2.遍历相邻关键帧vpNeighKFs<br>2.1 判断相机运动的基线是不是足够长</p>
+<blockquote>
+<p>单目相机情况,计算邻接关键帧的场景深度中值，然后得到基线(即两个光心的距离)与景深的比例，若比例特别小，基线太短恢复3D点不准，那么跳过当前邻接的关键帧，不生成3D点。</p>
+</blockquote>
+<p>2.2 通过BoW对两关键帧的未匹配的特征点快速匹配，用极线约束抑制离群点，生成新的匹配点对。具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a>。</p>
+<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br>3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br>3.2 利用匹配点反投影得到视差角</p>
+<blockquote>
+<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{=}\frac{\text{u}-c_x}{f_x},Y=\frac{v-c_y}{f_y},Z=1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
+</blockquote>
+<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br>3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br>3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br>3.6 检查尺度连续性</p>
+<blockquote>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist = d2/d1，ratioOctave=s1/s2,ratioFactor = 1.5f<em>1.2(1.2就是基础缩放比例);若ratioDist\</em>ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+</blockquote>
+<p>3.7 构造地图点，为地图点添加属性，分别是</p>
+<ul>
+<li>观测到该MapPoint的关键帧</li>
+<li>该MapPoint的描述子</li>
+<li>该MapPoint的平均观测方向和深度范围</li>
+</ul>
+<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br>3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
+<hr>
+<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3>
           
         
       
@@ -1782,7 +1941,7 @@ mnNumDataset = 0;
 <hr>
 <h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
 <hr>
-<h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到mpAtlas的成员变量mpCurrentMap中。<br>4.遍历匹配点，进行一系列操作</p>
+<h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br>4.遍历匹配点，进行一系列操作</p>
 <ul>
 <li>4.1 用3D点构造地图点<blockquote>
 <p>这步就是用遍历的特征点对应的3D点创建MapPoint*类对象pMP。</p>
@@ -1791,10 +1950,10 @@ mnNumDataset = 0;
 <li><p>4.2 为该MapPoint添加属性</p>
 <ul>
 <li>4.2.1 首先把MapPoint添加到两个关键帧里面去。<blockquote>
-<p>就是把MapPoint存入关键帧对象的成员变量<code>mvpMapPoints</code>容器中，<strong>存的位置就是当前遍历到的特征点索引值</strong>。</p>
+<p>就是把MapPoint存入pKFini,pKFcur的成员变量<code>mvpMapPoints</code>容器中，<strong>存的位置就是当前遍历到的特征点索引值</strong>。</p>
 </blockquote>
 </li>
-<li><p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation()。</p>
+<li><p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation(),具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</p>
 </li>
 <li><p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
 <blockquote>
@@ -1804,7 +1963,7 @@ mnNumDataset = 0;
 <li>更新该MapPoint平均观测方向以及观测距离的范围，具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</li>
 </ul>
 </li>
-<li>4.3 将MapPoint存入mCurrentFrame的mvpMapPoints容器中，位置就是对应特征点的索引值。同时，将mvbOutlier容器同样位置存入false，表示该特征点不是异常值。</li>
+<li>4.3 将MapPoint存入<code>mCurrentFrame</code>的<code>mvpMapPoints</code>容器中，位置就是对应特征点的索引值。同时，将<code>mvbOutlier</code>容器同样位置存入false，表示该特征点不是异常值。</li>
 <li>5.更新关键帧间的连接关系，调用了函数UpdateConnections()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a>。</li>
 <li>6.全局BA优化，同时优化所有位姿和三维点。<blockquote>
 <p>调用了函数Optimizer::GlobalBundleAdjustemnt(),它接收两个参数，一个是优化目标，此处即是mpMap，里面包括了关键帧pose和地图点坐标；第二个是迭代次数，此处为20次。在函数内部，调用了BundleAdjustment函数——实现了最小化重投影误差的优化问题，并利用g2o框架求解。</p>
@@ -2028,7 +2187,7 @@ float thFarPoints_;
 mStrSaveAtlasToFile = settings_-&gt;atlasSaveFile();
 </code></pre><p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
 <pre><code>mpVocabulary = new ORBVocabulary();
-</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">这篇博客</a>。</p>
+</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
 <hr>
 <h4 id="KeyFrameDatabase类对象的初始化"><a href="#KeyFrameDatabase类对象的初始化" class="headerlink" title="KeyFrameDatabase类对象的初始化"></a>KeyFrameDatabase类对象的初始化</h4><p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
 <pre><code>mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
