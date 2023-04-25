@@ -87,7 +87,7 @@
 <meta property="og:description" content="ORBSLAM3学习笔记(3)这篇博客主要是对Tracking.cc文件的学习。  源码阅读Tracking::Tracking()构造函数首先从配置文件中加载相机参数 newParameterLoader(settings); 我们马上具体看这个函数是如何实现的： 1. 读取相机1 mpCamera &#x3D; settings-&gt;camera1(); mpCamera &#x3D; mpAtlas-&amp;gt">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-28T08:45:51.000Z">
-<meta property="article:modified_time" content="2023-04-17T12:09:17.117Z">
+<meta property="article:modified_time" content="2023-04-25T13:52:57.390Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -384,7 +384,17 @@ mnNumDataset = 0;
 </li>
 </ul>
 <hr>
-<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
+<ul>
+<li>5.1 检查并更新上一帧被替换的MapPoints<blockquote>
+<p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
+</blockquote>
+</li>
+<li>5.2 若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则恒速模型跟踪。<blockquote>
+<p>调用函数TrackReferenceKeyFrame()或TrackReferenceKeyFrame()。</p>
+</blockquote>
+</li>
+</ul>
 <hr>
 <h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br>4.遍历匹配点，进行一系列操作</p>
 <ul>
@@ -424,7 +434,27 @@ mnNumDataset = 0;
 </li>
 </ul>
 <p>到此为止，单目初始化终于完成了，这部分真的看了不少时间啊。</p>
-
+<hr>
+<h3 id="Tracking-TrackReferenceKeyFrame"><a href="#Tracking-TrackReferenceKeyFrame" class="headerlink" title="Tracking::TrackReferenceKeyFrame()"></a>Tracking::TrackReferenceKeyFrame()</h3><ol>
+<li>将当前帧的描述子转化为BoW向量</li>
+<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配<blockquote>
+<p>这里调用了函数ORBmatcher::SearchByBoW(),其实和我们之前看的ORBmatcher::SearchForTriangulation()中间部分差不多，就一点差别，就不细讲了。</p>
+</blockquote>
+</li>
+<li>将上一帧的位姿态作为当前帧位姿的初始值</li>
+<li>通过优化3D-2D的重投影误差来获得位姿<blockquote>
+<p>这里其实就是对单帧位姿的BA优化，优化过程中还会对残差进行卡方检验，由此确定内外点。</p>
+</blockquote>
+</li>
+<li>剔除优化后的匹配点中的外点<blockquote>
+<p>这里由于第四步已经找出内外点了，所以只需遍历mvpMapPoints，若此时mvbOutlier为true，则将该点先拷贝到pMP中，将mvpMapPoints中的该点置为空，mvbOutlier置为false，再将pMP的mbTrackInView置为false，mnLastFrameSeen赋值为mCurrentFrame的mnId;</p>
+</blockquote>
+</li>
+<li>跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</li>
+</ol>
+<hr>
+<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><hr>
+<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3>
       
     </div>
     
@@ -589,7 +619,7 @@ mnNumDataset = 0;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-GrabImageMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">Tracking::GrabImageMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-MonocularInitialization"><span class="nav-number">1.1.3.</span> <span class="nav-text">Tracking::MonocularInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Track"><span class="nav-number">1.1.4.</span> <span class="nav-text">Tracking::Track()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateInitialMapMonocular"><span class="nav-number">1.1.5.</span> <span class="nav-text">Tracking::CreateInitialMapMonocular()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-GrabImageMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">Tracking::GrabImageMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-MonocularInitialization"><span class="nav-number">1.1.3.</span> <span class="nav-text">Tracking::MonocularInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Track"><span class="nav-number">1.1.4.</span> <span class="nav-text">Tracking::Track()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateInitialMapMonocular"><span class="nav-number">1.1.5.</span> <span class="nav-text">Tracking::CreateInitialMapMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackReferenceKeyFrame"><span class="nav-number">1.1.6.</span> <span class="nav-text">Tracking::TrackReferenceKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackWithMotionModel"><span class="nav-number">1.1.7.</span> <span class="nav-text">Tracking::TrackWithMotionModel()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Relocalization"><span class="nav-number">1.1.8.</span> <span class="nav-text">Tracking::Relocalization()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

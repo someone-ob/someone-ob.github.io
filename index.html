@@ -321,7 +321,7 @@
 <li><code>mfMinDistance</code>表示若地图点匹配在某特征提取器图像金字塔第0层上的某特征点,观测距离值<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/观测尺度1.png" alt="观测尺度"><br>这里的dist是由参考关键帧得到的，参考关键帧就是创建MapPoint对象时传递过去的KeyFrame参数。dist与mfMaxDistance，mfMinDistance之间的换算关系为\[\frac{mfMaxDistance}{dist}\text={1.2^{level}},\frac{dist}{mfMinDistance}\text={1.2^{(n-1-\text{level})}}\]<script type="math/tex">level</script>是MapPoint在参考关键帧中对应关键点的金字塔层数，$n$是金字塔的总层数。</li>
 </ul>
 <p><strong>平均观测方向</strong><br>遍历每个观测到该地图点的关键帧，求他们光心到该地图点的向量，即观测方向，光心就是该关键帧的位姿变换的平移部分。然后将该向量归一化，将所有向量加起来除以向量个数。</p>
-<p><strong>观测距离范围</strong><br>得到参考关键帧与地图点之间的距离</p>
+<p><strong>观测距离范围</strong><br>得到参考关键帧(即地图点第一次创建时的关键帧)与地图点之间的距离</p>
 <pre><code>Eigen::Vector3f PC = Pos - pRefKF-&gt;GetCameraCenter(); 
 const float dist = PC.norm(); 
 </code></pre><p>然后根据上面的公式求得最大距离和最小距离。</p>
@@ -333,6 +333,20 @@ const float dist = PC.norm();
 <li>地图点世界坐标mWorldPos发生变化时(BA优化之后),调用该函数初始化其观测信息.</li>
 </ul>
 <p>总结成一句话: 只要地图点本身或关键帧对该地图点的观测发生变化,就应该调用该函数更新其观测尺度和方向信息。</p>
+<hr>
+<h3 id="MapPoint-Replace"><a href="#MapPoint-Replace" class="headerlink" title="MapPoint::Replace()"></a>MapPoint::Replace()</h3><p>函数的调用形式为pMPinKF-&gt;Replace(pMP)。将pMPinKF地图点替换成pMP。下面看具体步骤：</p>
+<ol>
+<li>先将mMutexFeatures，mMutexPos上锁(这里是避免track线程里获取mpReplaced时冲突)，将pMP赋值给mpReplaced;</li>
+<li>我们先把pMPinKF的<code>mObservations</code>拷贝到obs，再将<code>mObservations</code>清空。</li>
+<li>遍历obs，每次拿出一组关键帧pKF和对应索引值indexes，判断传过来的pMP是否在pKF中：</li>
+</ol>
+<ul>
+<li>若不在，把pMP存到pKF的<code>mvpMapPoints</code>的indexes的位置，这里本来存储的是pMPinKF，这一步就是用pMP把pMPinKF覆盖了。再把pKF添加到pMP的<code>mObservations</code>中。</li>
+<li>若存在，我们直接把pKF中的pMPinKF删掉就行。</li>
+</ul>
+<ol>
+<li>将当前地图点的观测数据等其他数据都”叠加”到新的地图点上，包括nfound，nvisible，更新地图点描述子，删掉地图中的pMPinKF。</li>
+</ol>
 
           
         
@@ -831,7 +845,7 @@ const float factor = HISTO_LENGTH/360.0f;
 DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
 DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
 DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
-</code></pre><p>这里要指导vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+</code></pre><p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
 <p>2.1 遍历pKF1和pKF2中的node节点</p>
 <blockquote>
 <p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
@@ -858,6 +872,35 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <li>记录匹配结果，记录旋转差直方图信息</li>
 </ol>
 <p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
+<hr>
+<h3 id="ORBmatcher-Fuse"><a href="#ORBmatcher-Fuse" class="headerlink" title="ORBmatcher::Fuse()"></a>ORBmatcher::Fuse()</h3><p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br>在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
+<ul>
+<li>若地图点反投影对应位置上的特征点不存在地图点,说明该特征点之前可能漏掉了，则直接添加观测。</li>
+<li>若地图点反投影位置上存在对应地图点,说明两帧中的特征点对应的可能是同一个地图点，但之前出现了误差，则将两个地图点合并到其中观测较多的那个。</li>
+</ul>
+<p>下面看具体代码：<br>1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br>2.遍历所有的待投影地图点，进行如下判断：</p>
+<ul>
+<li>若该地图点地图点无效 或 已经是该帧的地图点（无需融合），跳过。</li>
+<li>将地图点变换到关键帧pKF的相机坐标系下，深度值为负，跳过。</li>
+<li>将地图点投影到关键帧pKF的像素坐标系下，若超出了像素坐标系，跳过。</li>
+<li>地图点到关键帧相机光心距离需满足在有效范围内，不满足，跳过。</li>
+<li>地图点到光心的连线与该地图点的平均观测向量之间夹角要小于60°，不满足跳过。</li>
+</ul>
+<p>3.在投影点附近搜索窗口内找到候选匹配点的索引</p>
+<blockquote>
+<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br>首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
+</blockquote>
+<p>4.遍历候选匹配点，寻找最佳匹配点<br>对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
+<ul>
+<li>金字塔层级要接近（同一层或小一层），否则跳过</li>
+<li>计算投影点与候选匹配特征点的距离，进行卡方检验，若超过阈值，直接跳过。</li>
+</ul>
+<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br>5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
+<ul>
+<li>地图点反投影位置上存在对应地图点,则将两个地图点合并到其中观测较多的那个则直接添加观测</li>
+<li>如果最佳匹配点没有对应地图点，该地图点观测中添加该帧，该帧添加该地图点。</li>
+</ul>
+<hr>
 
           
         
@@ -1313,10 +1356,20 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
 <blockquote>
 <p>调用函数CreateNewMapPoints()</p>
 </blockquote>
-<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧帧（两级相邻）中重复的地图点</strong></p>
+<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧（两级相邻）帧中重复的地图点</strong></p>
 <blockquote>
 <p>调用函数SearchInNeighbors()</p>
 </blockquote>
+<p><strong>5.如果已经处理完队列中的最后的一个关键帧，并且闭环检测没有请求停止LocalMapping，进行局部BA优化</strong></p>
+<ul>
+<li>当前关键帧的一级共视关键帧位姿会被优化;二极共视关键帧会加入优化图,但其位姿不会被优化。</li>
+<li>所有局部地图点位姿都会被优化</li>
+</ul>
+<p><strong>6.检测并剔除当前帧相邻的关键帧中冗余的关键帧</strong></p>
+<blockquote>
+<p>调用函数KeyFrameCulling()</p>
+</blockquote>
+<p><strong>7.将当前帧加入到闭环检测队列中</strong></p>
 <hr>
 <h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br><strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br><strong>2.计算该关键帧特征点的Bow信息</strong><br><strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
 <ul>
@@ -1370,7 +1423,29 @@ const int cnThObs = nThObs;
 </ul>
 <p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br>3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
 <hr>
-<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3>
+<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3><p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br>2.存储一级相邻关键帧及其二级相邻关键帧</p>
+<blockquote>
+<p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
+</blockquote>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 — 正向</p>
+<blockquote>
+<p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
+</blockquote>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 — 反向</p>
+<ul>
+<li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
+<li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
+</ul>
+<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br>6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
+<blockquote>
+<p>即更新共视关系，调用函数KeyFrame::UpdateConnections()</p>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-KeyFrameCulling"><a href="#LocalMapping-KeyFrameCulling" class="headerlink" title="LocalMapping::KeyFrameCulling()"></a>LocalMapping::KeyFrameCulling()</h3><p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br>对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
+<p>遍历到的关键帧为pKF，规定第一个关键帧不能删除（初始化的第一帧），提取每个共视关键帧的地图点vpMapPoints（vpLocalKeyFrames的地图点），遍历每一个地图点：</p>
+<p>如果该地图点的被观测次数超过阈值thObs，获取能看见该地图点的关键帧的集合observations，遍历观测到该地图点的关键帧，获得该地图点在关键帧中对应的特征点在图像金字塔的层数，若层数不超过其在pKF中的层数，则nObs++，最后若nObs&gt;3,则该地图点为冗余地图点。</p>
+<p>如果该关键帧90%以上的有效地图点被判断为冗余的，则认为该关键帧是冗余的，需要删除该关键帧。</p>
+
           
         
       
@@ -1939,7 +2014,17 @@ mnNumDataset = 0;
 </li>
 </ul>
 <hr>
-<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，MonocularInitialization()才能彻底完成初始化。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
+<ul>
+<li>5.1 检查并更新上一帧被替换的MapPoints<blockquote>
+<p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
+</blockquote>
+</li>
+<li>5.2 若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则恒速模型跟踪。<blockquote>
+<p>调用函数TrackReferenceKeyFrame()或TrackReferenceKeyFrame()。</p>
+</blockquote>
+</li>
+</ul>
 <hr>
 <h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br>4.遍历匹配点，进行一系列操作</p>
 <ul>
@@ -1979,7 +2064,27 @@ mnNumDataset = 0;
 </li>
 </ul>
 <p>到此为止，单目初始化终于完成了，这部分真的看了不少时间啊。</p>
-
+<hr>
+<h3 id="Tracking-TrackReferenceKeyFrame"><a href="#Tracking-TrackReferenceKeyFrame" class="headerlink" title="Tracking::TrackReferenceKeyFrame()"></a>Tracking::TrackReferenceKeyFrame()</h3><ol>
+<li>将当前帧的描述子转化为BoW向量</li>
+<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配<blockquote>
+<p>这里调用了函数ORBmatcher::SearchByBoW(),其实和我们之前看的ORBmatcher::SearchForTriangulation()中间部分差不多，就一点差别，就不细讲了。</p>
+</blockquote>
+</li>
+<li>将上一帧的位姿态作为当前帧位姿的初始值</li>
+<li>通过优化3D-2D的重投影误差来获得位姿<blockquote>
+<p>这里其实就是对单帧位姿的BA优化，优化过程中还会对残差进行卡方检验，由此确定内外点。</p>
+</blockquote>
+</li>
+<li>剔除优化后的匹配点中的外点<blockquote>
+<p>这里由于第四步已经找出内外点了，所以只需遍历mvpMapPoints，若此时mvbOutlier为true，则将该点先拷贝到pMP中，将mvpMapPoints中的该点置为空，mvbOutlier置为false，再将pMP的mbTrackInView置为false，mnLastFrameSeen赋值为mCurrentFrame的mnId;</p>
+</blockquote>
+</li>
+<li>跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</li>
+</ol>
+<hr>
+<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><hr>
+<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3>
           
         
       
