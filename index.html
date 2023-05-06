@@ -239,6 +239,146 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/27/ORBSLAM3-NOTE-12/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JZH's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/27/ORBSLAM3-NOTE-12/" itemprop="url">KeyFrameDatabase.cc</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-27T15:31:18+08:00">
+                2023-04-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-12"><a href="#ORBSLAM3学习笔记-12" class="headerlink" title="ORBSLAM3学习笔记(12)"></a>ORBSLAM3学习笔记(12)</h1><p>这篇博客主要是对KeyFrameDatabase.cc文件的学习，这部分的内容很少，原来不打算专门写一篇的，但写在别的地方又太乱了，还是在这里记录一下吧。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="KeyFrameDatabase-DetectRelocalizationCandidates"><a href="#KeyFrameDatabase-DetectRelocalizationCandidates" class="headerlink" title="KeyFrameDatabase::DetectRelocalizationCandidates()"></a>KeyFrameDatabase::DetectRelocalizationCandidates()</h3><ol>
+<li>找出和当前帧具有公共单词的所有关键帧<blockquote>
+<p>这里是通过遍历成员变量mvInvertedFile得到的，mvInvertedFile就是存储每个单词所有的关键帧的。把关键帧添加到mvInvertedFile的步骤是在闭环线程进行的。</p>
+</blockquote>
+</li>
+<li>统计上述关键帧中与当前帧F具有共同单词最多的单词数，用来设定阈值1<blockquote>
+<p>阈值1是最小公共单词数为最大公共单词数目的0.8倍</p>
+</blockquote>
+</li>
+<li>遍历上述关键帧，挑选出共有单词数大于阈值1的及其和当前帧单词匹配得分存入lScoreAndMatch<blockquote>
+<p>这里的得分是通过DBoW2库的score()函数计算得来的，用mBowVec来计算两帧的相似度得分，具体代码就先不看了。</p>
+</blockquote>
+</li>
+<li>计算lScoreAndMatch中每个关键帧的共视关键帧组的总得分，得到最高组得分bestAccScore，并以此决定阈值2<blockquote>
+<p>注意，这里将与关键帧共视程度最高的前十个关键帧归为一组，计算累计得分。阈值2是最高得分组的0.75倍</p>
+</blockquote>
+</li>
+<li>得到所有组中总得分大于阈值2的，组内得分最高的关键帧，作为候选关键帧组。</li>
+</ol>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/13/ORBSLAM3-NOTE-11/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1988,6 +2128,64 @@ mnNumDataset = 0;
 </code></pre><hr>
 <h3 id="Tracking-GrabImageMonocular"><a href="#Tracking-GrabImageMonocular" class="headerlink" title="Tracking::GrabImageMonocular()"></a>Tracking::GrabImageMonocular()</h3><p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
 <hr>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong><br>这里就只看slam模式下的代码，这部分最关键的就是mState和bOk两个标志位的值，要注意观察其变化。</p>
+<ul>
+<li>若<strong>mState==OK</strong><ul>
+<li>1.检查并更新上一帧被替换的MapPoints<blockquote>
+<p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
+</blockquote>
+</li>
+<li>2.若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则先用恒速模型跟踪，跟踪失败再换参考关键帧跟踪。<blockquote>
+<p>这里对bOk进行了改变，<strong>bOK</strong>=TrackReferenceKeyFrame()或TrackReferenceKeyFrame()，这两个函数写在后面了。</p>
+</blockquote>
+</li>
+<li>3.若上面跟踪失败，即bOK==false，则要对<code>mState</code>进行更新。<blockquote>
+<p>1.如果当前帧距离上次重定位成功不到1s，且为单目+IMU 或者 双目+IMU模式，<strong>mState = LOST</strong><br>2.当前地图中关键帧数目较多（大于10），且当前帧距离上次重定位帧超过1s或者非IMU模式，<strong>mState = RECENTLY_LOST</strong>，且要记录丢失时间，存在mTimeStampLost里。<br>3.其他情况下，<strong>mState = LOST</strong></p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>若<strong>mState!=OK</strong><ul>
+<li>若<strong>mState == RECENTLY_LOST</strong><blockquote>
+<p>由于我们看的纯单目，所以直接调用重定位函数，<strong>bOK</strong> = Relocalization()，若重定位失败，且当前帧时间和丢失时间超过3了，令<strong>mState = LOST</strong></p>
+</blockquote>
+</li>
+<li>若<strong>mState == LOST</strong>,直接开启新地图，<em>返回</em>。</li>
+</ul>
+</li>
+<li>若<strong>bOK==true</strong>，说明上一步跟踪成功，进行局部地图跟踪<blockquote>
+<p>这里调用了函数<code>TrackLocalMap()</code>,这里对bOK也进行了更改，<strong>bOK =</strong> TrackLocalMap()。<br>虽然前面也进行了跟踪，但只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化。</p>
+</blockquote>
+</li>
+<li>更新mState状态。<ul>
+<li>若<strong>bOK==true</strong>,说明上一步的局部地图跟踪也成功了，令<strong>mState = OK</strong>。</li>
+<li>若<strong>bOK==false，但mState == OK</strong><blockquote>
+<p>这里只有第一阶段跟踪成功，但第二阶段局部地图跟踪失败时执行，这里就是让<strong>mState=RECENTLY_LOST</strong>，记录丢失时间。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>若<strong>bOK == true或mState==RECENTLY_LOST</strong>，更新速度，清除无效地图点，按需创建关键帧。<ul>
+<li>1.更新恒速运动模型<blockquote>
+<p>这里将上一帧到当前帧的变换存入了mVelocity，将mbVelocity置为true。</p>
+</blockquote>
+</li>
+<li>2.清除观测不到的地图点</li>
+<li>3.根据条件来判断是否插入关键帧<blockquote>
+<p>需要同时满足bNeedKF=true且bOK=true跟踪成功，bNeedKF的值是由函数NeedNewKeyFrame()得到的。若满足条件，则调用函数CreateNewKeyFrame()创建新关键帧</p>
+</blockquote>
+</li>
+<li>删除当前帧中那些在BA中检测为外点的地图点。</li>
+</ul>
+</li>
+<li>若<strong>mState==LOST</strong><blockquote>
+<p>如果地图中关键帧小于10，重置当前地图，退出当前跟踪，若大于10，保存当前地图，创建新的地图。</p>
+</blockquote>
+</li>
+<li>记录位姿信息，用于最后保存所有的轨迹<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<hr>
 <h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><ul>
 <li><p><strong>如果单目初始器还没有被创建，则创建。</strong><br>这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
 <blockquote>
@@ -2011,18 +2209,6 @@ mnNumDataset = 0;
 <li>将初始化的第一帧作为世界坐标系，因此第一帧变换矩阵为单位矩阵,把之前得到的两帧之间的变换矩阵存入当前帧对象中。</li>
 <li>调用CreateInitialMapMonocular()函数，创建初始化地图点MapPoints。</li>
 </ul>
-</li>
-</ul>
-<hr>
-<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong></p>
-<ul>
-<li>5.1 检查并更新上一帧被替换的MapPoints<blockquote>
-<p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
-</blockquote>
-</li>
-<li>5.2 若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则恒速模型跟踪。<blockquote>
-<p>调用函数TrackReferenceKeyFrame()或TrackReferenceKeyFrame()。</p>
-</blockquote>
 </li>
 </ul>
 <hr>
@@ -2084,377 +2270,10 @@ mnNumDataset = 0;
 </ol>
 <hr>
 <h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><hr>
-<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/27/ORBSLAM3_NOTE_2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="JZH's Blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2023/03/27/ORBSLAM3_NOTE_2/" itemprop="url">System.cc</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-27T20:09:53+08:00">
-                2023-03-27
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="ORBSLAM3学习笔记-2"><a href="#ORBSLAM3学习笔记-2" class="headerlink" title="ORBSLAM3学习笔记(2)"></a>ORBSLAM3学习笔记(2)</h1><p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
-<h2 id="System-lt-span-gt-cc"><a href="#System-lt-span-gt-cc" class="headerlink" title="System.&lt;/span&gt;cc"></a>System.&lt;/span&gt;cc</h2><h3 id="System-System"><a href="#System-System" class="headerlink" title="System::System()"></a>System::System()</h3><p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br>先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br>1.读取当前传感器类型<br>2.读取配置文件<br>3.加载Vocabulary<br>4.创建关键帧库<br>5.创建多地图<br>6.创建线程 跟踪、局部建图、回环、显示路径。</p>
-<p>首先看构造函数引用的参数以及部分成员变量的初始化</p>
-<pre><code>System::System(const string &amp;strVocFile,    //词袋文件所在路径
-    const string &amp;strSettingsFile,          //配置文件所在路径
-    const eSensor sensor,                   //传感器类型
-    const bool bUseViewer,                  //是否使用可视化界面
-    const int initFr,                       //表示初始化帧的id,开始设置为0 
-    const string &amp;strSequence               //序列名,在跟踪线程和局部建图线程用得到
-    ):
-    mSensor(sensor),                        //初始化传感器类型
-    mpViewer(static_cast&lt;Viewer*&gt;(NULL)),   //给Viewer类初始化空指针对象
-    mbReset(false),mbResetActiveMap(false),
-    mbActivateLocalizationMode(false),      //是否开启局部地图定位开关 
-    mbDeactivateLocalizationMode(false), 
-    mbShutDown(false)
-</code></pre><p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br>其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
-<pre><code>enum eSensor&#123;
-    MONOCULAR=0,
-    STEREO=1,
-    RGBD=2,
-    IMU_MONOCULAR=3,
-    IMU_STEREO=4,
-    IMU_RGBD=5,
-&#125;;
-</code></pre><hr>
-<h4 id="Settings类对象的初始化"><a href="#Settings类对象的初始化" class="headerlink" title="Settings类对象的初始化"></a>Settings类对象的初始化</h4><p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
-<pre><code>settings_ = new Settings(strSettingsFile,mSensor);
-</code></pre><p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
-<p>先看构造函数引用的参数以及部分成员变量的初始化</p>
-<pre><code>Settings::Settings(
-    const std::string &amp;configFile,  //配置文件
-    const int &amp;sensor               //传感器类型
-    ): 
-    bNeedToUndistort_(false),       //是否需要去畸变 
-    bNeedToRectify_(false), 
-    bNeedToResize1_(false),
-    bNeedToResize2_(false)
-</code></pre><p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
-<pre><code>readCamera1(fSettings);
-</code></pre><p>该函数主要实现了将三个setting类的成员变量初始化:<br><strong>1.GeometricCamera* calibration1_</strong><br>calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
-<pre><code>Pinhole(const std::vector&lt;float&gt; _vParameters) : GeometricCamera(_vParameters), tvr(nullptr) &#123;
-    assert(mvParameters.size() == 4);
-    mnId=nNextId++;
-    mnType = CAM_PINHOLE;
-&#125;
-</code></pre><p>GeometricCamera类有三个成员变量，分别是               </p>
-<pre><code>std::vector&lt;float&gt; mvParameters;
-unsigned int mnId;
-unsigned int mnType;
-</code></pre><p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br>故calibration1_对象中保存了相机的内参，id和类型。</p>
-<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br>即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
-<p><strong>3.bool bNeedToUndistort_</strong><br>判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
-<p>读取完Camera1再根据sensor_类型判断是否需要调用readCamera2(fSettings)函数，由于我现在看的是单目相机，就不需要执行这个函数了。然后调用函数</p>
-<pre><code>readImageInfo(fSettings);
-</code></pre><p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
-<p>接着根据sensor_类型判断是否需要调用readIMU(fSettings)和readRGBD(fSettings)。然后调用函数</p>
-<pre><code>readORB(fSettings);
-</code></pre><p>该函数初始化成员变量<br><strong>int nFeatures_</strong> 指定要提取的特征点数目<br><strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br><strong>int nLevels_</strong> 指定图像金字塔的层数<br><strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br><strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
-<p>接下来仍然是调用函数初始化成员变量，分别调用了readViewer(fSettings)，readLoadAndSave(fSettings)，readOtherParameters(fSettings)，以下变量被初始化</p>
-<pre><code>/*
-* Viewer stuff
-*/
-float keyFrameSize_;
-float keyFrameLineWidth_;
-float graphLineWidth_;
-float pointSize_;
-float cameraSize_;
-float cameraLineWidth_;
-float viewPointX_, viewPointY_, viewPointZ_, viewPointF_;
-float imageViewerScale_;
-
-/*
-* Save &amp; load maps
-*/
-std::string sLoadFrom_, sSaveto_;
-
-/*
-* Other stuff
-*/
-float thFarPoints_;
-</code></pre><p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
-<p>总结，Settings类主要就是将配置文件里的数据读取到Settings类的对象中，总体比较简单。</p>
-<hr>
-<p>settings_初始化完成后，保存及加载地图的名字，目前这两个参数都是空的。</p>
-<pre><code>mStrLoadAtlasFromFile = settings_-&gt;atlasLoadFile();
-mStrSaveAtlasToFile = settings_-&gt;atlasSaveFile();
-</code></pre><p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
-<pre><code>mpVocabulary = new ORBVocabulary();
-</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
-<hr>
-<h4 id="KeyFrameDatabase类对象的初始化"><a href="#KeyFrameDatabase类对象的初始化" class="headerlink" title="KeyFrameDatabase类对象的初始化"></a>KeyFrameDatabase类对象的初始化</h4><p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
-<pre><code>mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-</code></pre><p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
-<pre><code>protected:
-// Associated vocabulary
-const ORBVocabulary* mpVoc;
-
-// Inverted file
-std::vector&lt;list&lt;KeyFrame*&gt; &gt; mvInvertedFile;
-
-// For save relation without pointer, this is necessary for save/load function
-std::vector&lt;list&lt;long unsigned int&gt; &gt; mvBackupInvertedFileId;
-
-// Mutex
-std::mutex mMutex;
-</code></pre><p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br>接下来看KeyFrameDatabase类的构造函数</p>
-<pre><code>// 构造函数
-KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;voc)
-&#123;
-    mvInvertedFile.resize(voc.size());
-&#125;
-</code></pre><p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
-<hr>
-<h4 id="Atlas类对象的初始化"><a href="#Atlas类对象的初始化" class="headerlink" title="Atlas类对象的初始化"></a>Atlas类对象的初始化</h4><p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
-<pre><code>mpAtlas = new Atlas(0);
-</code></pre><p>直接来看Atlas类的构造函数</p>
-<pre><code>Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid), mHasViewer(false)
-&#123;
-    mpCurrentMap = static_cast&lt;Map *&gt;(NULL);
-    CreateNewMap();
-&#125;
-</code></pre><p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
-<pre><code>void Atlas::CreateNewMap()
-&#123;
-    // 锁住地图集
-    unique_lock&lt;mutex&gt; lock(mMutexAtlas);
-    cout &lt;&lt; &quot;Creation of new map with id: &quot; &lt;&lt; Map::nNextId &lt;&lt; endl;
-    // 如果当前活跃地图有效，先存储当前地图为不活跃地图后退出
-    if (mpCurrentMap)
-    &#123;
-        // mnLastInitKFidMap为当前地图创建时第1个关键帧的id，它是在上一个地图最大关键帧id的基础上增加1
-        if (!mspMaps.empty() &amp;&amp; mnLastInitKFidMap &lt; mpCurrentMap-&gt;GetMaxKFid())
-            mnLastInitKFidMap = mpCurrentMap-&gt;GetMaxKFid() + 1; // The init KF is the next of current maximum
-
-        // 将当前地图储存起来，其实就是把mIsInUse标记为false
-        mpCurrentMap-&gt;SetStoredMap();
-        cout &lt;&lt; &quot;Stored map with ID: &quot; &lt;&lt; mpCurrentMap-&gt;GetId() &lt;&lt; endl;
-
-        // if(mHasViewer)
-        //     mpViewer-&gt;AddMapToCreateThumbnail(mpCurrentMap);
-    &#125;
-    cout &lt;&lt; &quot;Creation of new map with last KF id: &quot; &lt;&lt; mnLastInitKFidMap &lt;&lt; endl;
-
-    mpCurrentMap = new Map(mnLastInitKFidMap);  //新建地图
-    mpCurrentMap-&gt;SetCurrentMap();              //设置为活跃地图
-    mspMaps.insert(mpCurrentMap);               //插入地图集
-&#125;
-</code></pre><p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
-<hr>
-<p>接下来将用于显示帧和地图的成员变量初始化，由Viewer调用。</p>
-<pre><code>mpFrameDrawer = new FrameDrawer(mpAtlas);
-mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-</code></pre><p>先看FrameDrawer类的构造函数</p>
-<pre><code>FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
-&#123;
-    mState=Tracking::SYSTEM_NOT_READY;
-    mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
-    mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
-&#125;
-</code></pre><p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
-<p>再看MapDrawer类的构造函数</p>
-<pre><code>MapDrawer::MapDrawer(Atlas* pAtlas, const string &amp;strSettingPath, Settings* settings):mpAtlas(pAtlas)
-&#123;
-    if(settings)&#123;
-        newParameterLoader(settings);
-    &#125;
-    else&#123;
-        cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-        bool is_correct = ParseViewerParamFile(fSettings);
-
-        if(!is_correct)
-        &#123;
-            std::cerr &lt;&lt; &quot;**ERROR in the config file, the format is not correct**&quot; &lt;&lt; std::endl;
-            try
-            &#123;
-                throw -1;
-            &#125;
-            catch(exception &amp;e)
-            &#123;
-
-            &#125;
-        &#125;
-    &#125;
-&#125;
-</code></pre><p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
-<pre><code>void MapDrawer::newParameterLoader(Settings *settings) &#123;
-    mKeyFrameSize = settings-&gt;keyFrameSize();
-    mKeyFrameLineWidth = settings-&gt;keyFrameLineWidth();
-    mGraphLineWidth = settings-&gt;graphLineWidth();
-    mPointSize = settings-&gt;pointSize();
-    mCameraSize = settings-&gt;cameraSize();
-    mCameraLineWidth  = settings-&gt;cameraLineWidth();
-&#125;
-</code></pre><hr>
-<h4 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h4><p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
-<pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
-                         mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-</code></pre><p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
-<hr>
-<h4 id="创建并开启local-mapping线程"><a href="#创建并开启local-mapping线程" class="headerlink" title="创建并开启local mapping线程"></a>创建并开启local mapping线程</h4><p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
-<pre><code>mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
-                                 mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-</code></pre><p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
-<pre><code>mptLocalMapping = new thread(&amp;ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
-</code></pre><p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
-<p>上面执行完后(LocalMapping::Run 函数还在子线程中继续跑)，执行下面的内容，对mpLocalMapper对象剩下的一些成员变量初始化。</p>
-<pre><code>// 设置最远3D地图点的深度值，如果超过阈值，说明可能三角化不太准确，丢弃
-if(settings_)
-    mpLocalMapper-&gt;mThFarPoints = settings_-&gt;thFarPoints();
-else
-    mpLocalMapper-&gt;mThFarPoints = fsSettings[&quot;thFarPoints&quot;];
-// ? 这里有个疑问,C++中浮点型跟0比较是否用精确?
-if(mpLocalMapper-&gt;mThFarPoints!=0)
-&#123;
-    cout &lt;&lt; &quot;Discard points further than &quot; &lt;&lt; mpLocalMapper-&gt;mThFarPoints &lt;&lt; &quot; m from current camera&quot; &lt;&lt; endl;
-    mpLocalMapper-&gt;mbFarPoints = true;
-&#125;
-else
-    mpLocalMapper-&gt;mbFarPoints = false;
-</code></pre><hr>
-<h4 id="创建并开启闭环线程"><a href="#创建并开启闭环线程" class="headerlink" title="创建并开启闭环线程"></a>创建并开启闭环线程</h4><pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
-mptLoopClosing = new thread(&amp;ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-</code></pre><p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
-<hr>
-<h4 id="设置线程间的指针"><a href="#设置线程间的指针" class="headerlink" title="设置线程间的指针"></a>设置线程间的指针</h4><pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
-mpTracker-&gt;SetLoopClosing(mpLoopCloser);
-
-mpLocalMapper-&gt;SetTracker(mpTracker);
-mpLocalMapper-&gt;SetLoopCloser(mpLoopCloser);
-
-mpLoopCloser-&gt;SetTracker(mpTracker);
-mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
-</code></pre><p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
-<hr>
-<h4 id="创建并开启显示线程"><a href="#创建并开启显示线程" class="headerlink" title="创建并开启显示线程"></a>创建并开启显示线程</h4><pre><code>if(bUseViewer)
-//if(false) // TODO
-&#123;
-    mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile,settings_);
-    mptViewer = new thread(&amp;Viewer::Run, mpViewer);
-    mpTracker-&gt;SetViewer(mpViewer);
-    mpLoopCloser-&gt;mpViewer = mpViewer;
-    mpViewer-&gt;both = mpFrameDrawer-&gt;both;
-&#125;
-</code></pre><p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
-<p>System类对象的初始化基本就完成了。</p>
-<hr>
-<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
-<pre><code>Sophus::SE3f Tcw = mpTracker-&gt;GrabImageMonocular(imToFeed,timestamp,filename);
-</code></pre><p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
-<p>待更新。</p>
-
+<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3><hr>
+<h3 id="Tracking-TrackLocalMap"><a href="#Tracking-TrackLocalMap" class="headerlink" title="Tracking::TrackLocalMap()"></a>Tracking::TrackLocalMap()</h3><hr>
+<h3 id="Tracking-NeedNewKeyFrame"><a href="#Tracking-NeedNewKeyFrame" class="headerlink" title="Tracking::NeedNewKeyFrame()"></a>Tracking::NeedNewKeyFrame()</h3><hr>
+<h3 id="Tracking-CreateNewKeyFrame"><a href="#Tracking-CreateNewKeyFrame" class="headerlink" title="Tracking::CreateNewKeyFrame()"></a>Tracking::CreateNewKeyFrame()</h3>
           
         
       
@@ -2539,7 +2358,7 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-count">12</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
