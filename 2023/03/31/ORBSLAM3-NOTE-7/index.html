@@ -88,7 +88,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png">
 <meta property="article:published_time" content="2023-03-31T13:07:04.000Z">
-<meta property="article:modified_time" content="2023-04-16T10:50:14.285Z">
+<meta property="article:modified_time" content="2023-05-07T14:30:41.060Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -394,7 +394,31 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
 </code></pre><p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
 <hr>
 <h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点"></p>
+<hr>
+<h3 id="Frame-isInFrustum"><a href="#Frame-isInFrustum" class="headerlink" title="Frame::isInFrustum()"></a>Frame::isInFrustum()</h3><p>1.获得这个地图点的世界坐标<br>2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br>3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br>4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
+<blockquote>
+<p>这里的尺度是0.8 <em> mfMinDistance到1.2 </em> mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
+</blockquote>
+<p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br>6.根据地图点到光心的距离来预测一个尺度</p>
+<blockquote>
+<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}=ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
+</blockquote>
+<p>7.记录计算得到的一些参数</p>
+<pre><code>pMP-&gt;mbTrackInView = true;
+// 该地图点投影在当前图像（一般是左图）的像素横坐标
+pMP-&gt;mTrackProjX = uv(0);
+// bf/z其实是视差，相减得到右图（如有）中对应点的横坐标
+pMP-&gt;mTrackProjXR = uv(0) - mbf*invz;
 
+pMP-&gt;mTrackDepth = Pc_dist;
+
+// 该地图点投影在当前图像（一般是左图）的像素纵坐标
+pMP-&gt;mTrackProjY = uv(1);
+// 根据地图点到光心距离，预测的该地图点的尺度层级
+pMP-&gt;mnTrackScaleLevel= nPredictedLevel;
+// 保存当前视角和法线夹角的余弦值
+pMP-&gt;mTrackViewCos = viewCos;
+</code></pre>
       
     </div>
     
@@ -559,7 +583,7 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-amp-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-AssignFeaturesToGrid"><span class="nav-number">1.1.4.</span> <span class="nav-text">Frame::AssignFeaturesToGrid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-GetFeaturesInArea"><span class="nav-number">1.1.5.</span> <span class="nav-text">Frame::GetFeaturesInArea()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-amp-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-AssignFeaturesToGrid"><span class="nav-number">1.1.4.</span> <span class="nav-text">Frame::AssignFeaturesToGrid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-GetFeaturesInArea"><span class="nav-number">1.1.5.</span> <span class="nav-text">Frame::GetFeaturesInArea()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-isInFrustum"><span class="nav-number">1.1.6.</span> <span class="nav-text">Frame::isInFrustum()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

@@ -87,7 +87,7 @@
 <meta property="og:description" content="ORBSLAM3学习笔记(3)这篇博客主要是对Tracking.cc文件的学习。  源码阅读Tracking::Tracking()构造函数首先从配置文件中加载相机参数 newParameterLoader(settings); 我们马上具体看这个函数是如何实现的： 1. 读取相机1 mpCamera &#x3D; settings-&gt;camera1(); mpCamera &#x3D; mpAtlas-&amp;gt">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-28T08:45:51.000Z">
-<meta property="article:modified_time" content="2023-05-06T13:47:05.196Z">
+<meta property="article:modified_time" content="2023-05-08T07:59:48.037Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -412,9 +412,12 @@ mnNumDataset = 0;
 <p>如果地图中关键帧小于10，重置当前地图，退出当前跟踪，若大于10，保存当前地图，创建新的地图。</p>
 </blockquote>
 </li>
-<li>记录位姿信息，用于最后保存所有的轨迹<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<li>设置了参考关键帧,保存上一帧的数据,当前帧变上一帧<blockquote>
+<p>mCurrentFrame.mpReferenceKF = mpReferenceKF;<br>mLastFrame = Frame(mCurrentFrame);</p>
+</blockquote>
 </li>
 </ul>
+<p><strong>6.记录位姿信息，用于最后保存所有的轨迹</strong><br>  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure></p>
 <hr>
 <h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><ul>
 <li><p><strong>如果单目初始器还没有被创建，则创建。</strong><br>这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
@@ -499,11 +502,84 @@ mnNumDataset = 0;
 <li>跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</li>
 </ol>
 <hr>
-<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><hr>
+<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><p>1.更新上一帧的位姿</p>
+<blockquote>
+<p>调用了函数UpdateLastFrame(),由于是单目模式，所以这里的操作很少，简单介绍一下：<br>首先，得到lastframe的参考关键帧到lastframe的位姿变换Tlr，这个存储在mlRelativeFramePoses，然后再用Tlr乘以参考关键帧的位姿Trw，就得到了上一张位姿Tlw。</p>
+</blockquote>
+<p>2.根据恒速模型得到当前帧的初始位姿。</p>
+<blockquote>
+<p>这里就是假定相机恒速运动，每次位姿变化相同，当前的位姿就为mVelocity * mLastFrame.GetPose()。</p>
+</blockquote>
+<p>3.用上一帧地图点进行投影匹配，如果匹配点不够，则扩大搜索半径再来一次。</p>
+<blockquote>
+<p>这里调用了函数<code>SearchByProjection()</code>,这里不用词袋加速匹配是因为我们通过恒速模型已经得到了初始位姿，可以直接通过2D-3D的投影关系搜索匹配点，速度更快。<br>具体步骤简单来说就是把3D点位姿变换，然后投影得到2D坐标，以该坐标为圆形，在搜索半径内找到可以匹配的点，然后就是找最佳匹配点，用旋转差直方图来筛掉错误匹配对等一系列操作了。</p>
+</blockquote>
+<p>4.通过优化3D-2D的重投影误差来获得位姿</p>
+<blockquote>
+<p>这里和上面的参考关键帧跟踪一样，就是当前帧的初始位姿不同。</p>
+</blockquote>
+<p>5.剔除优化后的匹配点中的外点<br>6.跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</p>
+<hr>
 <h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3><hr>
-<h3 id="Tracking-TrackLocalMap"><a href="#Tracking-TrackLocalMap" class="headerlink" title="Tracking::TrackLocalMap()"></a>Tracking::TrackLocalMap()</h3><hr>
-<h3 id="Tracking-NeedNewKeyFrame"><a href="#Tracking-NeedNewKeyFrame" class="headerlink" title="Tracking::NeedNewKeyFrame()"></a>Tracking::NeedNewKeyFrame()</h3><hr>
-<h3 id="Tracking-CreateNewKeyFrame"><a href="#Tracking-CreateNewKeyFrame" class="headerlink" title="Tracking::CreateNewKeyFrame()"></a>Tracking::CreateNewKeyFrame()</h3>
+<h3 id="Tracking-TrackLocalMap"><a href="#Tracking-TrackLocalMap" class="headerlink" title="Tracking::TrackLocalMap()"></a>Tracking::TrackLocalMap()</h3><p>1.更新局部关键帧和局部地图点</p>
+<blockquote>
+<p>调用函数UpdateLocalMap()，该函数中有两个函数UpdateLocalKeyFrames()和UpdateLocalPoints()，分别实现局部关键帧和局部地图点的更新，用于局部跟踪。<br><strong>UpdateLocalKeyFrames()</strong>:该函数的作用就是更新成员变量<code>mvpLocalKeyFrames</code>,将三种关键帧存入该向量中，分别是①能观测到当前帧地图点的关键帧，也称一级共视关键帧;②一级共视关键帧的共视关键帧，称为二级共视关键帧;③一级共视关键帧的子关键帧、父关键帧。<br><strong>UpdateLocalPoints()</strong>:该函数的作用是更新成员变量<code>mvpLocalMapPoints</code>,遍历<code>mvpLocalKeyFrames</code>，将其中关键帧的地图点存入该变量。</p>
+</blockquote>
+<p>2.筛选局部地图中新增的在视野范围内的地图点，得到更多的匹配关系</p>
+<blockquote>
+<p>调用函数SearchLocalPoints()。</p>
+</blockquote>
+<p>3.利用前面新增的更多的匹配关系，BA优化得到更准确位姿<br>4.遍历当前帧地图点，更新当前帧的地图点被观测程度，并统计跟踪局部地图后匹配数目</p>
+<blockquote>
+<p>这里就是更新两个成员变量，若当前帧的地图点不是外点，该地图点的<code>mnFound</code>++。成员变量<code>mnMatchesInliers</code>++，记录当前帧跟踪到的地图点数目，用于统计跟踪效果。<br>5.纯单目情况下，<code>mnMatchesInliers</code>大于30，则跟踪成功。</p>
+</blockquote>
+<hr>
+<h3 id="Tracking-SearchLocalPoints"><a href="#Tracking-SearchLocalPoints" class="headerlink" title="Tracking::SearchLocalPoints()"></a>Tracking::SearchLocalPoints()</h3><p>1.遍历当前帧的地图点，标记这些地图点不参与之后的投影搜索匹配。</p>
+<pre><code>// 更新能观测到该点的帧数加1(被当前帧观测了)
+pMP-&gt;IncreaseVisible(); //mnVisible++
+// 标记该点被当前帧观测到
+pMP-&gt;mnLastFrameSeen = mCurrentFrame.mnId;
+// 标记该点在后面搜索匹配时不被投影，因为已经有匹配了
+pMP-&gt;mbTrackInView = false;
+pMP-&gt;mbTrackInViewR = false;
+</code></pre><p>2.判断所有局部地图点中除当前帧地图点外的点，是否在当前帧视野范围内</p>
+<blockquote>
+<p>调用函数isInFrustum(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>,若在视野内，则pMP-&gt;IncreaseVisible()，nToMatch++。接下来判断pMP的mbTrackInView是否为true(若在视野内，isInFrustum()会将其置为true)，然后将该3D点的投影坐标存入mCurrentFrame.mmProjectPoints[ pMP-&gt;mnId]中。</p>
+</blockquote>
+<p>3.设置搜索阈值，调用函数SearchByProjection()进行匹配。</p>
+<blockquote>
+<p>这里讲一下SearchByProjection()(由于这个函数有5种重载，就不在ORBmatcher.cc文件里一个个列出来讲了，毕竟有很多地方都是重复的)。<br>1.遍历有效的局部地图点，主要是根据mbTrackInView(判断地图点是否在视野内时更新过)，bFarPoints和thFarPoints判断<br>2.设定搜索搜索窗口的大小。若当前视角和平均视角夹角较小时, r取2.5，否则取4<br>3.通过投影点以及搜索窗口和预测的尺度进行搜索, 找出搜索半径内的候选匹配点索引<br>接下来就是那些通用步骤了，不过这里不用旋转差直方图来筛选。</p>
+</blockquote>
+<hr>
+<h3 id="Tracking-NeedNewKeyFrame"><a href="#Tracking-NeedNewKeyFrame" class="headerlink" title="Tracking::NeedNewKeyFrame()"></a>Tracking::NeedNewKeyFrame()</h3><p>该函数用来判断当前帧是否需要插入关键帧<br>1.纯跟踪模式下不插入关键帧，如果局部地图被闭环检测使用，则不插入关键帧<br>2.如果距离上一次重定位比较近，或者关键帧数目超出最大限制，不插入关键帧<br>3.得到参考关键帧跟踪到的地图点数量</p>
+<blockquote>
+<p>只有当地图点被2或3个以上关键帧观测到才会被计数，结果存入nRefMatches中。</p>
+</blockquote>
+<p>4.查询局部地图管理器是否繁忙,也就是当前能否接受新的关键帧<br>5.决策是否需要插入关键帧</p>
+<blockquote>
+<p>单目情况下，要进行以下判断：<br>条件a1:很长时间没有插入关键帧<br>条件a2:满足插入关键帧的最小间隔并且localMapper处于空闲状态<br>条件b:mnMatchesInliers&lt; nRefMatches*0.9且mnMatchesInliers&gt;15<br>若a1或a2任一满足，且b满足，则local mapping线程空闲时或者正在做imu初始化时可以直接插入，不空闲的时候要根据情况插入。</p>
+</blockquote>
+<p>以上判断是纯单目下的，若加上imu或者是双目，rgbd会复杂一些。</p>
+<hr>
+<h3 id="Tracking-CreateNewKeyFrame"><a href="#Tracking-CreateNewKeyFrame" class="headerlink" title="Tracking::CreateNewKeyFrame()"></a>Tracking::CreateNewKeyFrame()</h3><p>1.将当前帧构造成关键帧<br>2.将当前关键帧设置为当前帧的参考关键帧</p>
+<pre><code>mpReferenceKF = pKF;
+mCurrentFrame.mpReferenceKF = pKF;
+
+if(mpLastKeyFrame)
+&#123;
+    pKF-&gt;mPrevKF = mpLastKeyFrame;
+    mpLastKeyFrame-&gt;mNextKF = pKF;
+&#125;
+</code></pre><p>3.关键帧插入到列表mlNewKeyFrames中，等待local mapping线程处理</p>
+<pre><code>mpLocalMapper-&gt;InsertKeyFrame(pKF);
+
+// 插入好了，允许局部建图停止
+mpLocalMapper-&gt;SetNotStop(false);
+
+// 当前帧成为新的关键帧，更新
+mnLastKeyFrameId = mCurrentFrame.mnId;
+mpLastKeyFrame = pKF;
+</code></pre>
       
     </div>
     
@@ -668,7 +744,7 @@ mnNumDataset = 0;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-GrabImageMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">Tracking::GrabImageMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Track"><span class="nav-number">1.1.3.</span> <span class="nav-text">Tracking::Track()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-MonocularInitialization"><span class="nav-number">1.1.4.</span> <span class="nav-text">Tracking::MonocularInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateInitialMapMonocular"><span class="nav-number">1.1.5.</span> <span class="nav-text">Tracking::CreateInitialMapMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackReferenceKeyFrame"><span class="nav-number">1.1.6.</span> <span class="nav-text">Tracking::TrackReferenceKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackWithMotionModel"><span class="nav-number">1.1.7.</span> <span class="nav-text">Tracking::TrackWithMotionModel()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Relocalization"><span class="nav-number">1.1.8.</span> <span class="nav-text">Tracking::Relocalization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackLocalMap"><span class="nav-number">1.1.9.</span> <span class="nav-text">Tracking::TrackLocalMap()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-NeedNewKeyFrame"><span class="nav-number">1.1.10.</span> <span class="nav-text">Tracking::NeedNewKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateNewKeyFrame"><span class="nav-number">1.1.11.</span> <span class="nav-text">Tracking::CreateNewKeyFrame()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-3"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Tracking"><span class="nav-number">1.1.1.</span> <span class="nav-text">Tracking::Tracking()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-GrabImageMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">Tracking::GrabImageMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Track"><span class="nav-number">1.1.3.</span> <span class="nav-text">Tracking::Track()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-MonocularInitialization"><span class="nav-number">1.1.4.</span> <span class="nav-text">Tracking::MonocularInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateInitialMapMonocular"><span class="nav-number">1.1.5.</span> <span class="nav-text">Tracking::CreateInitialMapMonocular()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackReferenceKeyFrame"><span class="nav-number">1.1.6.</span> <span class="nav-text">Tracking::TrackReferenceKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackWithMotionModel"><span class="nav-number">1.1.7.</span> <span class="nav-text">Tracking::TrackWithMotionModel()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-Relocalization"><span class="nav-number">1.1.8.</span> <span class="nav-text">Tracking::Relocalization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-TrackLocalMap"><span class="nav-number">1.1.9.</span> <span class="nav-text">Tracking::TrackLocalMap()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-SearchLocalPoints"><span class="nav-number">1.1.10.</span> <span class="nav-text">Tracking::SearchLocalPoints()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-NeedNewKeyFrame"><span class="nav-number">1.1.11.</span> <span class="nav-text">Tracking::NeedNewKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tracking-CreateNewKeyFrame"><span class="nav-number">1.1.12.</span> <span class="nav-text">Tracking::CreateNewKeyFrame()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
