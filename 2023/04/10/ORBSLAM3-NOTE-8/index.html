@@ -81,14 +81,14 @@
 
 <meta name="description" content="ORBSLAM3学习笔记(8)这篇博客主要是对ORBmatcher.cc文件的学习。  源码阅读ORBmatcher::SearchForInitialization()1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&lt;HIS">
 <meta property="og:type" content="article">
-<meta property="og:title" content="ORBmatcher.cc">
+<meta property="og:title" content="ORB-SLAM3源码阅读:ORBmatcher">
 <meta property="og:url" content="http://example.com/2023/04/10/ORBSLAM3-NOTE-8/index.html">
 <meta property="og:site_name" content="JZH&#39;s Blog">
 <meta property="og:description" content="ORBSLAM3学习笔记(8)这篇博客主要是对ORBmatcher.cc文件的学习。  源码阅读ORBmatcher::SearchForInitialization()1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&lt;HIS">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png">
 <meta property="article:published_time" content="2023-04-10T03:34:02.000Z">
-<meta property="article:modified_time" content="2023-04-25T12:20:36.633Z">
+<meta property="article:modified_time" content="2023-05-18T07:36:13.442Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -128,7 +128,7 @@
 
 
 
-  <title>ORBmatcher.cc | JZH's Blog</title>
+  <title>ORB-SLAM3源码阅读:ORBmatcher | JZH's Blog</title>
   
 
 
@@ -262,7 +262,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">ORBmatcher.cc</h1>
+          <h1 class="post-title" itemprop="name headline">ORB-SLAM3源码阅读:ORBmatcher</h1>
         
 
         <div class="post-meta">
@@ -469,8 +469,8 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2023/03/31/ORBSLAM3-NOTE-7/" rel="next" title="Frame.cc">
-                <i class="fa fa-chevron-left"></i> Frame.cc
+              <a href="/2023/03/31/ORBSLAM3-NOTE-7/" rel="next" title="ORB-SLAM3源码阅读:Frame">
+                <i class="fa fa-chevron-left"></i> ORB-SLAM3源码阅读:Frame
               </a>
             
           </div>
@@ -479,8 +479,8 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2023/04/11/ORBSLAM3-NOTE-9/" rel="prev" title="TwoViewReconstruction.cc">
-                TwoViewReconstruction.cc <i class="fa fa-chevron-right"></i>
+              <a href="/2023/04/11/ORBSLAM3-NOTE-9/" rel="prev" title="ORB-SLAM3源码阅读:TwoViewReconstruction">
+                ORB-SLAM3源码阅读:TwoViewReconstruction <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
