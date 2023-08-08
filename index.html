@@ -1,23 +1,2579 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
-{% block title %}{{ config.title }}{% if theme.index_with_subtitle and config.subtitle %} - {{config.subtitle }}{% endif %}{% endblock %}
 
-{% block page_class %}
-  {% if is_home() %}page-home{% endif -%}
-{% endblock %}
 
-{% block content %}
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=" color="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '',
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    fancybox: false,
+    tabs: ,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: 'undefined',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+
+
+
+  <title>Hexo</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '[object Object]', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left 
+  page-home">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
   <section id="posts" class="posts-expand">
-    {% for post in page.posts %}
-      {{ post_template.render(post, true) }}
-    {% endfor %}
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/18/VIO_NOTE_01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/05/18/VIO_NOTE_01/" itemprop="url">VIO_NOTE_01</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-05-18T15:42:41+08:00">
+                2023-05-18
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T19:37:32+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="从零手写VIO笔记-1"><a href="#从零手写VIO笔记-1" class="headerlink" title="从零手写VIO笔记(1)"></a>从零手写VIO笔记(1)</h1><p>这篇博客开始是对深蓝学院的从零手写VIO课程的学习笔记，第一讲基本是基础内容回顾，这里我就把之前还不太懂的四元数和李代数部分重新记录一下。</p>
+<hr>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/27/ORBSLAM3-NOTE-12/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/27/ORBSLAM3-NOTE-12/" itemprop="url">ORB-SLAM3源码阅读:KeyFrameDatabase</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-27T15:31:18+08:00">
+                2023-04-27
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:37+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-12"><a href="#ORBSLAM3学习笔记-12" class="headerlink" title="ORBSLAM3学习笔记(12)"></a>ORBSLAM3学习笔记(12)</h1><p>这篇博客主要是对KeyFrameDatabase.cc文件的学习，这部分的内容很少，原来不打算专门写一篇的，但写在别的地方又太乱了，还是在这里记录一下吧。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="KeyFrameDatabase-DetectRelocalizationCandidates"><a href="#KeyFrameDatabase-DetectRelocalizationCandidates" class="headerlink" title="KeyFrameDatabase::DetectRelocalizationCandidates()"></a>KeyFrameDatabase::DetectRelocalizationCandidates()</h3><ol>
+<li>找出和当前帧具有公共单词的所有关键帧<blockquote>
+<p>这里是通过遍历成员变量mvInvertedFile得到的，mvInvertedFile就是存储每个单词所有的关键帧的。把关键帧添加到mvInvertedFile的步骤是在闭环线程进行的。</p>
+</blockquote>
+</li>
+<li>统计上述关键帧中与当前帧F具有共同单词最多的单词数，用来设定阈值1<blockquote>
+<p>阈值1是最小公共单词数为最大公共单词数目的0.8倍</p>
+</blockquote>
+</li>
+<li>遍历上述关键帧，挑选出共有单词数大于阈值1的及其和当前帧单词匹配得分存入lScoreAndMatch<blockquote>
+<p>这里的得分是通过DBoW2库的score()函数计算得来的，用mBowVec来计算两帧的相似度得分，具体代码就先不看了。</p>
+</blockquote>
+</li>
+<li>计算lScoreAndMatch中每个关键帧的共视关键帧组的总得分，得到最高组得分bestAccScore，并以此决定阈值2<blockquote>
+<p>注意，这里将与关键帧共视程度最高的前十个关键帧归为一组，计算累计得分。阈值2是最高得分组的0.75倍</p>
+</blockquote>
+</li>
+<li>得到所有组中总得分大于阈值2的，组内得分最高的关键帧，作为候选关键帧组。</li>
+</ol>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/13/ORBSLAM3-NOTE-11/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/13/ORBSLAM3-NOTE-11/" itemprop="url">ORB-SLAM3源码阅读:MapPoint</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-13T19:29:38+08:00">
+                2023-04-13
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:31+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-11"><a href="#ORBSLAM3学习笔记-11" class="headerlink" title="ORBSLAM3学习笔记(11)"></a>ORBSLAM3学习笔记(11)</h1><p>这篇博客主要是对MapPoint.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="MapPoint-AddObservation"><a href="#MapPoint-AddObservation" class="headerlink" title="MapPoint::AddObservation()"></a>MapPoint::AddObservation()</h3><p>这个函数引用的参数为(KeyFrame* pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。<br>首先，它的类型为std::map&lt;KeyFrame*,std::tuple&lt;int,int&gt;&gt; 这是一个map容器，键值为我们传过来的KeyFrame，value是一个元组类型std::tuple&lt; int,int&gt;，由于我们看的是单目，其实我们只用得到元组的第一个位置，存储的是该MapPoint在该关键帧的投影特征点的索引值。<br>最后还要更新成员int nObs，该成员记录了当前地图点被多少个关键帧相机观测到了(单目关键帧每次观测算1个相机,双目&#x2F;RGBD帧每次观测算2个相机)。</p>
+<hr>
+<h3 id="MapPoint-UpdateNormalAndDepth"><a href="#MapPoint-UpdateNormalAndDepth" class="headerlink" title="MapPoint::UpdateNormalAndDepth()"></a>MapPoint::UpdateNormalAndDepth()</h3><p>该函数的功能是更新地图点平均观测方向和观测距离范围。首先看一下观测距离范围是什么意思，这部分就参考博客<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116784652?spm=1001.2014.3001.5502">ORB-SLAM2代码详解03: 地图点MapPoint</a>，然后在看具体代码。</p>
+<p><strong>基本概念</strong><br>MapPoint类中观测距离范围的由成员变量mfMaxDistance和mfMinDistance表示。</p>
+<ul>
+<li><code>mfMaxDistance</code>表示若地图点匹配在某特征提取器图像金字塔第7层上的某特征点,观测距离值</li>
+<li><code>mfMinDistance</code>表示若地图点匹配在某特征提取器图像金字塔第0层上的某特征点,观测距离值<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E8%A7%82%E6%B5%8B%E5%B0%BA%E5%BA%A61.png" alt="观测尺度"><br>这里的dist是由参考关键帧得到的，参考关键帧就是创建MapPoint对象时传递过去的KeyFrame参数。dist与mfMaxDistance，mfMinDistance之间的换算关系为\[\frac{mfMaxDistance}{dist}\text&#x3D;{1.2^{level}},\frac{dist}{mfMinDistance}\text&#x3D;{1.2^{(n-1-\text{level})}}\]$$level$$是MapPoint在参考关键帧中对应关键点的金字塔层数，$n$是金字塔的总层数。</li>
+</ul>
+<p><strong>平均观测方向</strong><br>遍历每个观测到该地图点的关键帧，求他们光心到该地图点的向量，即观测方向，光心就是该关键帧的位姿变换的平移部分。然后将该向量归一化，将所有向量加起来除以向量个数。</p>
+<p><strong>观测距离范围</strong><br>得到参考关键帧(即地图点第一次创建时的关键帧)与地图点之间的距离</p>
+<pre><code>Eigen::Vector3f PC = Pos - pRefKF-&gt;GetCameraCenter(); 
+const float dist = PC.norm(); 
+</code></pre>
+<p>然后根据上面的公式求得最大距离和最小距离。</p>
+<p>最后，该函数就是把平均观测方向存入mNormalVector中，把最大和最小距离存入mfMaxDistance和mfMinDistance中。</p>
+<p><strong>函数MapPoint::UpdateNormalAndDepth()的调用时机:</strong></p>
+<ul>
+<li>创建地图点时调用该函数初始化其观测信息。</li>
+<li>地图点对关键帧的观测<code>mObservations</code>更新时(<strong>跟踪局部地图添加或删除对关键帧的观测</strong>时、<strong>LocalMapping线程删除冗余关键帧</strong>时或<strong>LoopClosing线程闭环矫正</strong>时),调用该函数初始化其观测信息。</li>
+<li>地图点世界坐标mWorldPos发生变化时(BA优化之后),调用该函数初始化其观测信息.</li>
+</ul>
+<p>总结成一句话: 只要地图点本身或关键帧对该地图点的观测发生变化,就应该调用该函数更新其观测尺度和方向信息。</p>
+<hr>
+<h3 id="MapPoint-Replace"><a href="#MapPoint-Replace" class="headerlink" title="MapPoint::Replace()"></a>MapPoint::Replace()</h3><p>函数的调用形式为pMPinKF-&gt;Replace(pMP)。将pMPinKF地图点替换成pMP。下面看具体步骤：</p>
+<ol>
+<li>先将mMutexFeatures，mMutexPos上锁(这里是避免track线程里获取mpReplaced时冲突)，将pMP赋值给mpReplaced;</li>
+<li>我们先把pMPinKF的<code>mObservations</code>拷贝到obs，再将<code>mObservations</code>清空。</li>
+<li>遍历obs，每次拿出一组关键帧pKF和对应索引值indexes，判断传过来的pMP是否在pKF中：</li>
+</ol>
+<ul>
+<li>若不在，把pMP存到pKF的<code>mvpMapPoints</code>的indexes的位置，这里本来存储的是pMPinKF，这一步就是用pMP把pMPinKF覆盖了。再把pKF添加到pMP的<code>mObservations</code>中。</li>
+<li>若存在，我们直接把pKF中的pMPinKF删掉就行。</li>
+</ul>
+<ol>
+<li>将当前地图点的观测数据等其他数据都”叠加”到新的地图点上，包括nfound，nvisible，更新地图点描述子，删掉地图中的pMPinKF。</li>
+</ol>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/13/ORBSLAM3-NOTE-10/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/13/ORBSLAM3-NOTE-10/" itemprop="url">ORB-SLAM3源码阅读:KeyFrame</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-13T19:26:34+08:00">
+                2023-04-13
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:26+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-10"><a href="#ORBSLAM3学习笔记-10" class="headerlink" title="ORBSLAM3学习笔记(10)"></a>ORBSLAM3学习笔记(10)</h1><p>这篇博客主要是对KeyFrame.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="KeyFrame-KeyFrame"><a href="#KeyFrame-KeyFrame" class="headerlink" title="KeyFrame::KeyFrame()"></a>KeyFrame::KeyFrame()</h3><p>就是通过传来的参数给相应的成员变量赋值。传来的pMap对象是指针型的，故KeyFrame类对象的成员变量mpMap指向的是Atlas类对象的成员变量mpCurrentMap。</p>
+<hr>
+<h3 id="KeyFrame-ComputeBoW"><a href="#KeyFrame-ComputeBoW" class="headerlink" title="KeyFrame::ComputeBoW()"></a>KeyFrame::ComputeBoW()</h3><p>这里就是给mBowVec和mFeatVec两个成员变量赋值。这里可以直接看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41694024/article/details/126328833">ORB-SLAM2 —- Frame::ComputeBoW函数</a>,这篇博客讲得细致清晰，我就不多做赘述了，就直接放下源码注释。</p>
+<pre><code>void KeyFrame::ComputeBoW()
+&#123;
+    // 只有当词袋向量或者节点和特征序号的特征向量为空的时候执行
+    if (mBowVec.empty() || mFeatVec.empty())
+    &#123;
+        // 将描述子mDescriptors转换为DBOW要求的输入格式
+        vector&lt;cv::Mat&gt; vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
+
+        // 将特征点的描述子转换成词袋向量mBowVec以及特征向量mFeatVec
+        mpORBvocabulary-&gt;transform(vCurrentDesc,    //当前的描述子vector
+                               mBowVec,         //输出，词袋向量，记录的是单词的id及其对应权重TF-IDF值
+                               mFeatVec,        //输出，记录node id及其对应的图像 feature对应的索引
+                               4);              //4表示从叶节点向前数的层数
+    &#125;
+&#125;
+</code></pre>
+<p>关于mBowVec和mFeatVec的具体类型，看以下注释。</p>
+<pre><code>// Bag of Words Vector structures.
+// 内部实际存储的是std::map&lt;WordId, WordValue&gt;
+// WordId 和 WordValue 表示Word在叶子中的id 和权重
+DBoW2::BowVector mBowVec;
+// 内部实际存储 std::map&lt;NodeId, std::vector&lt;unsigned int&gt; &gt;
+// NodeId 表示节点id，std::vector&lt;unsigned int&gt; 中实际存的是该节点id下所有特征点在图像中的索引
+DBoW2::FeatureVector mFeatVec;
+</code></pre>
+<hr>
+<h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map&lt;KeyFrame *, int&gt;类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
+<blockquote>
+<p>具体做法是先获得该关键帧的所有地图点。遍历地图点，根据地图点的成员变量mObservations，往KFcounter中添加键值对。</p>
+</blockquote>
+<p>2.创建vector&lt;pair&lt;int, KeyFrame *&gt;&gt;类变量vPairs，这里面存储与该关键帧共视点超过15的关键帧。</p>
+<blockquote>
+<p>这步就是遍历KFcounter，把达到要求的共视关键帧以及共视点数目放入vPairs中。同时调用AddConnection(),给这个共视关键帧更新连接及权重。<br>AddConnection()就是为std::map&lt;KeyFrame*,int&gt;类成员变量<code>mConnectedKeyFrameWeights</code>赋值，之后调用UpdateBestCovisibles()，对连接关系按照权重(即共视点数目)从大到小排序，把排完序的关键帧和权重存入<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
+</blockquote>
+<p>3 如果没有连接到关键帧（超过阈值的权重），则对权重最大的关键帧建立连接，同时调用AddConnection(),给这个权重最大的关键帧更新连接及权重。<br>4.对共视程度比较高的关键帧对更新连接关系及权重</p>
+<blockquote>
+<p>前面我们已经把共视程度比较高的关键帧存入vPairs中了，也为这些关键帧更新了连接关系及权重，但我们自己还没更新。这步就是给自己更新的，操作和上面差不多，排好序后，存入成员变量<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
+</blockquote>
+<p>5.更新生成树的连接</p>
+<blockquote>
+<p>将该关键帧的成员变量<code>mpParent</code>指向共视程度最高的那个关键帧，得到了该关键帧的父关键帧。<br>mpParent调用函数AddChild(),在这个父关键帧的成员变量<code>mspChildrens</code>容器中添加了一个关键帧，即我们目前的关键帧，表明这个关键帧是父关键帧的子关键帧。</p>
+</blockquote>
+<p><strong>总结</strong><br>该函数为调用该函数的关键帧的成员变量<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>赋值，里面保存了共视程度比较高的关键帧和权重。同时，也在这些共视程度比较高的关键帧的<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中添加了该关键帧和对应权重。<br>最后，将<code>mpParent</code>指向共视程度最高的那个关键帧，也在那个共视程度最高的那个关键帧的<code>mspChildrens</code>中添加了该关键帧。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/11/ORBSLAM3-NOTE-9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/11/ORBSLAM3-NOTE-9/" itemprop="url">ORB-SLAM3源码阅读:TwoViewReconstruction</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-11T13:53:20+08:00">
+                2023-04-11
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:20+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-9"><a href="#ORBSLAM3学习笔记-9" class="headerlink" title="ORBSLAM3学习笔记(9)"></a>ORBSLAM3学习笔记(9)</h1><p>这篇博客主要是对TwoViewReconstruction.cc文件的学习。</p>
+<hr>
+<h2 id="一、基本原理"><a href="#一、基本原理" class="headerlink" title="一、基本原理"></a>一、基本原理</h2><p>这个文件用来完成单目初始化，里面涉及特征点坐标的归一化，对极约束求基础矩阵，求单应矩阵，RANSAC方法，双向重投影误差</p>
+<hr>
+<h3 id="1-特征点归一化"><a href="#1-特征点归一化" class="headerlink" title="1.特征点归一化"></a>1.特征点归一化</h3><p>矩阵A是利用8点法求基础矩阵的关键,所以Hartey就认为,利用8点法求基础矩阵不稳定的一个主要原因就是原始的图像像点坐标组成的系数矩阵A不好造成的,而造成A不好的原因是像点的齐次坐标各个分量的数量级相差太大。基于这个原因,Hartey提出一种改进的8点法,在应用8点法求基础矩阵之前,先对像点坐标进行归一化处理,即对原始的图像坐标做同向性变换,这样就可以减少噪声的干扰,大大的提高8点法的精度。</p>
+<p>预先对图像坐标进行归一化有以下好处：<br>1.能够提高运算结果的精度。<br>2.利用归一化处理后的图像坐标,对任何尺度缩放和原点的选择是不变的。归一化步骤预先为图像坐标选择了一个标准的坐标系中,消除了坐标变换对结果的影响。</p>
+<p>坐标归一化主要分为平移和缩放，具体步骤如下：<br><strong>平移</strong><br>首先求均值<br>$\begin{cases} x_{mean}&#x3D;\frac{1}{N}\sum_{i}^{N}{p_x^i}\ y_{mean}&#x3D;\frac{1}{N}\sum_{i}^{N}{p_y^i} \end{cases}$<br>得到均值后，用原坐标减去均值，这里的均值相当于新的坐标原点<br>$p_x^i&#x3D;p_x^i-x_{mean},p_y^i&#x3D;p_y^i-y_{mean}$<br><strong>缩放</strong><br>首先求系数$s_x$和$s_y$，系数的几何意义就是单位距离。求法就是所有坐标到新原点$(x_{mean},y_{mean})$的距离之和的均值。<br>$\begin{cases} s_x &#x3D; \frac{\sum\limits_{i &#x3D; 0}^N {|p_x^i - x_{mean}|}}N\s_y &#x3D; \frac{\sum\limits_{i &#x3D; 0}^N {|p_y^i - y_{mean}|} }N\end{cases}$<br>得到系数后，将平移后的坐标乘以单位距离，就得到归一化的坐标了。<br>$p_x^i&#x3D;s_xp_x^i,p_y^i&#x3D;s_yp_y^i$</p>
+<p>这两个过程可以用一个变换T来描述<br>$p’ &#x3D; Tp$<br>$T&#x3D;\left[ \begin{matrix}<br>   s_x &amp; 0 &amp; -{x_{mean}}s_x  \<br>   0 &amp; s_y &amp; -{y_{mean}}s_y  \<br>   0 &amp; 0 &amp; 1  \<br>\end{matrix} \right]$<br>这个T要保存一下，等会计算出来H、F，是归一化后的，以H为例，要用$T^{-1}HT$还原回来。</p>
+<hr>
+<h3 id="2-基础矩阵求解"><a href="#2-基础矩阵求解" class="headerlink" title="2.基础矩阵求解"></a>2.基础矩阵求解</h3><p>这一部分十四讲讲得还是比较细致的，图我就不放了，就直接进行一下运算推导吧<br>已知$p_1,p_2$是路标点$P$的像素坐标，得到\[s_1p_1&#x3D;KP,s_2p_2&#x3D;K(RP+t)\]这里的$s_1,s_2$就是路标点的深度信息。现在取\[x_1&#x3D;K^{-1}p_1,x_2&#x3D;K^{-1}p_2\]显然，$x_1,x_2$是两个像素点的归一化平面上的坐标。这里我们不用尺度意义相等，直接代入上式，得\[s_2x_2&#x3D;s_1R{x_1}+t\]然后两边同时与t做外积\[s_2t\hat{\ }x_2&#x3D;s_1t\hat{\ }R{x_1}\]然后，两侧同时左乘$x_2^T$,由于左边的向量垂直于$x_2$，两个垂直向量的内积为0，故得到\[\frac{s_1}{s_2}x_2^Tt\hat{\ }Rx_1&#x3D;0\]由这个式子可以看出，$s_1,s_2$无论取什么值都是没有意义的，取什么式子都成立，故路标点的深度信息缺失了，上式有尺度不确定性。<br>我们把$s_1,s_2$约掉，重新代入$p_1,p_2$得\[p_2^TK^{-1}t\hat{\ }RK^{-1}p_1&#x3D;0 \]令$E&#x3D;t\hat{\ }R,F&#x3D;K^{-T}EK^{-1}$,E就是本质矩阵，F就是基础矩阵，下面求解基础矩阵。<br>展开成矩阵形式\[\left( u_2,v_2,1 \right)\left( \begin{matrix}<br>   f_1 &amp; f_2 &amp; f_3  \<br>   f_4 &amp; f_5 &amp; f_6  \<br>   f_7 &amp; f_8 &amp; f_9  \<br>\end{matrix} \right)\left( \begin{matrix}<br>   u_1  \<br>   v_1  \<br>   1  \<br>\end{matrix} \right)&#x3D;0\]整理成$Ax&#x3D;0$的形式:\[\left[ u_2u_1,u_2v_1,u_2v_2,u_1,v_2v_1,v_2,u_1,v_1,1 \right]f&#x3D;0\]这里一个点对形成一个约束，$f$有9个变量，但$t\hat{\ }R$实际上只有6个自由度，再加上缺少深度信息，有尺度不确定性，其实只有5自由度。我们选择8个点对，求解出$f$的参数。<br>基础矩阵F可以做奇异值分解得\[F&#x3D;UΣV^T\]我们需要根据$U,Σ,V$来求$R,t$,且$Σ&#x3D;diag(σ,σ,0)$,这是本质矩阵的基本性质，但我们根据线性方程解出来的$F$很可能不满足该性质，因此一般都是$F$矩阵进行奇异值分解，强制令最小奇异值为0，然后重构回来得到$F$。<br>最后，关于我们求得的$R,t$尺度不确定性的问题，由于旋转矩阵$R$有其自身的约束，我们就认为这份不确定性在t上，为了解决这个问题，我们把t归一化，让它长度为一。这样，我们就把尺度定好了，接下来，我们就能用这个单位长度为1的t来求路标点深度，接下来的t也都以此为参考，这样我们初始化的目标就达到了。</p>
+<hr>
+<h3 id="3-单应矩阵求解"><a href="#3-单应矩阵求解" class="headerlink" title="3.单应矩阵求解"></a>3.单应矩阵求解</h3><p>单应矩阵的推导十四讲里写得很简略，我们这里先看图<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E5%8D%95%E5%BA%94%E7%9F%A9%E9%98%B5.png" alt="示例图"><br>上图表示场景中的平面$π$在两相机的成像，P是平面上的路标点(图片中是X)，设平面$π$在第一个相机坐标系下的单位法向量为$n$，平面到第一个相机中心（坐标原点）的距离为d，则平面$π$满足方程：\[n^TP&#x3D;d\]这个式子还是好理解的，就是光心到P点的向量点乘法向量，就是$P$在法向量的投影长度乘以法向量单位长度1，很明显就是对于d。将上式变换为\[\frac1dn^TP&#x3D;1\]把上式代入$p_2≃K(RP+t)$中，得到\[p_2≃K\left( RP+t\left( \frac{n^TP}d \right) \right)≃K\left( R-\frac{tn^T}d \right)P≃K\left( R-\frac{tn^T}d \right)K^{-1}p_1\]中间部分记为H，则\[p_2≃Hp_1\]将该式矩阵展开\[\left[ \begin{matrix}<br>   u_2  \<br>   v_2  \<br>   1  \<br>\end{matrix} \right]≃\left[ \begin{matrix}<br>   h_1 &amp; h_2 &amp; h_3  \<br>   h_4 &amp; h_5 &amp; h_6  \<br>   h_7 &amp; h_8 &amp; h_9  \<br>\end{matrix} \right]\left[ \begin{matrix}<br>   u_1  \<br>   v_1  \<br>   1  \<br>\end{matrix} \right]\]分开写\[u_2&#x3D;\frac{h_1u_1+h_2v_1+h_3}{h_7u_1+h_8v_1+h_9}\]\[v_2&#x3D;\frac{h_4u_1+h_5v_1+h_6}{h_7u_1+h_8v_1+h_9}\]<br>整理成$Ax&#x3D;0$的形式<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/6.png" alt="公式"><br>根据上面的式子可以看出一对匹配点可以构造两个约束，其实我们用四对点就能解了，但还是和上面保持一致，用8组点。对于最小二乘法问题$Ax&#x3D;0$，有很多解法，orbslam3直接进行SVD分解，最小奇异值对应的奇异向量就是x的解。</p>
+<hr>
+<h3 id="4-RANSAC方法"><a href="#4-RANSAC方法" class="headerlink" title="4.RANSAC方法"></a>4.RANSAC方法</h3><p>RANSAC就是随机采样一致，简单理解为随机取一小部分样本计算模型，然后统计在该模型下的内点数（inliers），重复很多次，取内点数最多的那次的模型为最优结果。随机抽取一部分样本计算模型，而不是用整个样本计算，是因为样本中存在outliers，一起计算会影响结果。ransac寄希望于取的那小部分样本全都是优秀的inliers，这样算出来的模型就会是很好的，所以要重复很多次。<br>orbslam3用的是简化过的RANSAC方法，它就是每次去8个不同的点，计算H或F，然后用这个H或F对所有匹配点计算双向重投影误差，利用卡方检验，评判H或F好坏。重复若干次，取其中最好的H或F。<br>下面讲一下通常的RANSAC方法<br>1.随机的从S中选择s个数据点组成一个样本做为模型的一个示例。其中s是构建模型需要最少的点，如拟合直线s&#x3D;2。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC1.png" alt="RANSAC1"><br>2.计算S中所有点与模型的距离，确定在模型距离阈值t内的数据点集Si，Si称为采样的一致集并定义为S的内点。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC2.png" alt="RANSAC2"><br>3.如果Si的大小（内点的数目）大于某个阈值T，用Si的所有点重新估计模型并结束。<br>4.如果Si的大小小于T，选择一个新的子集并重复1，2，3的过程。<br>5.经过N次试验选择最大一致集Si，并用Si所有点重新估计模型。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC3.png" alt="RANSAC2"></p>
+<hr>
+<h3 id="5-卡方检验"><a href="#5-卡方检验" class="headerlink" title="5.卡方检验"></a>5.卡方检验</h3><p>RANSAC迭代过程中，由于可能使用的点是外点，结果会有很大误差，我们要剔除这些结果，只留下最好的H或F。因此我们要去评估求得的结果的误差大小，而卡方检验正好满足我们的需求。<br>卡方检验我们需要了解三个东西卡方值，自由度，卡方检验表。首先是卡方值，我们先计算重投影误差，这也就是残差，而残差的平方除以随机项方差服从卡方分布，这是因为残差平方和中每一项都服从N（0,1）也就是标准正态分布，故他们之和服从卡方分布，这是卡方分布的基本定义。由此我们可以得出该问题的卡方值就是残差的平方除以随机项方差。然后根据自由度，查卡方检验表，得到阈值。比较卡方值和阈值，超出的我们就舍弃，在范围内的，我们就代入公式计算得分。<br>对于H\[p_2&#x3D;H_{21}p_1,p_1&#x3D;H_{12}p_2\]将$p_1$通过$H_{21}$投影得到$p_2’$，同理将 $p_2$通过$H_{12}$投影得到$p_1’$，卡方值就是$\frac{||p_1-p_1’||^2_2}{\sigma ^2}$和$\frac{||p_2-p_2’||^2_2}{\sigma ^2}$，其中$\sigma&#x3D;1$,该模型下的自由度为2，因为计算的是坐标(u,v)的残差。取95%置信度下的自由度为2的卡方检验统计量阈值等于5.991。然后比较卡方值和阈值，若超过，则内点标志位置为false，反之，则用阈值减去卡方值，算入得分中。<br>对于F，残差其实是投影点到极线的距离。$Fp_1$得到的三个值a,b,c,很明显，$p_2$就在直线ax+by+c&#x3D;0上，但由于误差存在，$p_2$位置肯定会有所偏移，由此计算点到线的距离为残差。这里的自由度为1(z这里没太搞懂)，取95%置信度下的自由度为1的卡方检验统计量阈值,然后和上面步骤差不多。</p>
+<hr>
+<h3 id="6-由F恢复R-t"><a href="#6-由F恢复R-t" class="headerlink" title="6.由F恢复R,t"></a>6.由F恢复R,t</h3><hr>
+<h3 id="7-由H恢复R-t"><a href="#7-由H恢复R-t" class="headerlink" title="7.由H恢复R,t"></a>7.由H恢复R,t</h3><hr>
+<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为\[\lambda \left[ \begin{matrix}<br>   u  \<br>   v  \<br>   1  \<br>\end{matrix} \right]&#x3D;\underbrace{K\left[ R|t \right]}_{P}\left[ \begin{matrix}<br>   x  \<br>   y  \<br>   z  \<br>   1  \<br>\end{matrix} \right]\]\[\Downarrow \]\[\lambda \textbf{u}&#x3D;\textbf{PX}\]两边同时左叉乘$\textbf{u}$,有\[\textbf{u}\hat{\ }\textbf{PX}&#x3D;0\]展开后可得\[\left[ \begin{matrix}<br>   0 &amp; -1 &amp; v  \<br>   1 &amp; 0 &amp; -u  \<br>   -v &amp; u &amp; 0  \<br>\end{matrix} \right]\left[ \begin{matrix}<br>   P_1  \<br>   P_2  \<br>   P_3  \<br>\end{matrix} \right]X&#x3D;0\]\[\Downarrow \]\[\left{ \begin{matrix}<br>   (v{P_3}-{P_2})X&#x3D;0  \<br>   ({P_1}-u{P_3})X&#x3D;0  \<br>   (u{P_2}-v{P_1})X&#x3D;0  \<br>\end{matrix} \right.\]上面的方程很明显是线性相关的，实际上只有两个约束，但我们这里有两帧上的匹配点，由此可以得到两组方程即四个约束：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E4%B8%89%E8%A7%92%E5%8C%96.png" alt="三角化"><br>这里可以使用SVD求解，齐次坐标$\textbf{X}$即为$\textbf{H}$的最小奇异值的奇异向量。<br>这部分的代码实现在GeometricTools::Triangulate()函数中。</p>
+<hr>
+<h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。</p>
+<hr>
+<h3 id="TwoViewReconstruction-FindHomography"><a href="#TwoViewReconstruction-FindHomography" class="headerlink" title="TwoViewReconstruction::FindHomography()"></a>TwoViewReconstruction::FindHomography()</h3><p>首先调用函数Normalize()，将坐标归一化，并得到归一化坐标使用的变换矩阵。然后用归一化后的200组点，对每组点用ComputeH21()函数计算出归一化后H矩阵，再用变换矩阵还原H，使用函数CheckHomography()函数对H打分，最后选择得分最高的H。上面调用的函数，具体原理写在最前面了。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/10/ORBSLAM3-NOTE-8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/10/ORBSLAM3-NOTE-8/" itemprop="url">ORB-SLAM3源码阅读:ORBmatcher</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-10T11:34:02+08:00">
+                2023-04-10
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:13+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-8"><a href="#ORBSLAM3学习笔记-8" class="headerlink" title="ORBSLAM3学习笔记(8)"></a>ORBSLAM3学习笔记(8)</h1><p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBmatcher-SearchForInitialization"><a href="#ORBmatcher-SearchForInitialization" class="headerlink" title="ORBmatcher::SearchForInitialization()"></a>ORBmatcher::SearchForInitialization()</h3><p><strong>1.创建一个旋转直方图</strong></p>
+<pre><code>vector&lt;int&gt; rotHist[HISTO_LENGTH];
+// 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量
+for(int i=0;i&lt;HISTO_LENGTH;i++)
+    rotHist[i].reserve(500);
+const float factor = HISTO_LENGTH/360.0f;
+</code></pre>
+<p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
+<ul>
+<li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
+<li>遍历搜索搜索窗口中的所有潜在的匹配候选点，找到最优的和次优的。匹配的优劣根据描述子的距离判断，两个二进制串之间的汉明距离，指的是其不同位数的个数。</li>
+<li>判断最优结果是否满足阈值，判断最佳距离比次佳距离是否小于设定的比例。判断找到的候选特征点对应F1中特征点是否已经匹配过了，如果已经匹配过了，我觉得应该是将这个和原来的匹配都删掉，但源码中是删掉原来的匹配，存入这个新的匹配。如果上面的条件都满足，计算匹配点之间的距离，存入直方图对应的bin中。</li>
+</ul>
+<p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
+<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+<hr>
+<h3 id="ORBmatcher-SearchForTriangulation"><a href="#ORBmatcher-SearchForTriangulation" class="headerlink" title="ORBmatcher::SearchForTriangulation()"></a>ORBmatcher::SearchForTriangulation()</h3><p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
+<blockquote>
+<p>直接看我下面的注释就行</p>
+</blockquote>
+<pre><code>Sophus::SE3f T1w = pKF1-&gt;GetPose();
+Sophus::SE3f T2w = pKF2-&gt;GetPose();
+Sophus::SE3f Tw2 = pKF2-&gt;GetPoseInverse(); // for convenience
+//Cw是关键帧1的光心的世界坐标系下·的坐标
+Eigen::Vector3f Cw = pKF1-&gt;GetCameraCenter();
+//C2是关键帧1的光心的在关键帧2的坐标系下的坐标
+Eigen::Vector3f C2 = T2w * Cw;
+//ep是关键帧1的光心在关键帧2上的投影坐标
+Eigen::Vector2f ep = pKF2-&gt;mpCamera-&gt;project(C2);
+//T12是关键帧2坐标系到关键帧1坐标系的变换矩阵，R12，t12分别存储T12的旋转和平移
+Sophus::SE3f T12;
+Sophus::SE3f Tll, Tlr, Trl, Trr;
+Eigen::Matrix3f R12; // for fastest computation
+Eigen::Vector3f t12; // for fastest computation
+
+GeometricCamera* pCamera1 = pKF1-&gt;mpCamera, *pCamera2 = pKF2-&gt;mpCamera;
+
+if(!pKF1-&gt;mpCamera2 &amp;&amp; !pKF2-&gt;mpCamera2)&#123;//单目
+    T12 = T1w * Tw2;
+    R12 = T12.rotationMatrix();
+    t12 = T12.translation();
+&#125;
+else&#123;//双目
+    Sophus::SE3f Tr1w = pKF1-&gt;GetRightPose();
+    Sophus::SE3f Twr2 = pKF2-&gt;GetRightPoseInverse();
+    Tll = T1w * Tw2;
+    Tlr = T1w * Twr2;
+    Trl = Tr1w * Tw2;
+    Trr = Tr1w * Twr2;
+&#125;
+Eigen::Matrix3f Rll = Tll.rotationMatrix(), Rlr  = Tlr.rotationMatrix(), Rrl  = Trl.rotationMatrix(), Rrr  = Trr.rotationMatrix();
+Eigen::Vector3f tll = Tll.translation(), tlr = Tlr.translation(), trl = Trl.translation(), trr = Trr.translation();
+
+//下面这些参数用处就和上面SearchForInitialization()里面一样了。
+int nmatches=0;
+// 记录匹配是否成功，避免重复匹配
+vector&lt;bool&gt; vbMatched2(pKF2-&gt;N,false);        
+vector&lt;int&gt; vMatches12(pKF1-&gt;N,-1);
+// 用于统计匹配点对旋转差的直方图
+vector&lt;int&gt; rotHist[HISTO_LENGTH];
+for(int i=0;i&lt;HISTO_LENGTH;i++)
+    rotHist[i].reserve(500);
+
+const float factor = HISTO_LENGTH/360.0f;
+</code></pre>
+<p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
+<pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
+DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
+DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
+DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
+</code></pre>
+<p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+<p>2.1 遍历pKF1和pKF2中的node节点</p>
+<blockquote>
+<p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
+</blockquote>
+<p>下面讲f1it和f2it属于同一个node节点时该怎么操作</p>
+<ol>
+<li>遍历该node节点下<strong>f1it</strong>下的所有特征点</li>
+<li>通过特征点索引idx1在pKF1中取出对应的MapPoint<blockquote>
+<p>若MapPoint存在，则直接进入下一次循环，遍历下一个特征点。若MapPoint不存在，说明该特征点是从未匹配过的。通过这一步骤，我们就能避免重复匹配，导致获得已存在的地图点了。</p>
+</blockquote>
+</li>
+<li>通过特征点索引idx1在pKF1中取出对应的特征点，并取出对应的特征点的描述子。</li>
+<li>遍历该node节点下<strong>f2it</strong>对应KF2中的所有特征点</li>
+<li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
+<li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
+<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale&#x3D;1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+</blockquote>
+</li>
+<li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
+<p>这个就不细嗦了，这里其实和TwoViewReconstruction.cc那篇博客里的关于F矩阵的卡方检验是一样的。</p>
+</blockquote>
+</li>
+<li>记录匹配结果，记录旋转差直方图信息</li>
+</ol>
+<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
+<hr>
+<h3 id="ORBmatcher-Fuse"><a href="#ORBmatcher-Fuse" class="headerlink" title="ORBmatcher::Fuse()"></a>ORBmatcher::Fuse()</h3><p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br>在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
+<ul>
+<li>若地图点反投影对应位置上的特征点不存在地图点,说明该特征点之前可能漏掉了，则直接添加观测。</li>
+<li>若地图点反投影位置上存在对应地图点,说明两帧中的特征点对应的可能是同一个地图点，但之前出现了误差，则将两个地图点合并到其中观测较多的那个。</li>
+</ul>
+<p>下面看具体代码：<br>1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br>2.遍历所有的待投影地图点，进行如下判断：</p>
+<ul>
+<li>若该地图点地图点无效 或 已经是该帧的地图点（无需融合），跳过。</li>
+<li>将地图点变换到关键帧pKF的相机坐标系下，深度值为负，跳过。</li>
+<li>将地图点投影到关键帧pKF的像素坐标系下，若超出了像素坐标系，跳过。</li>
+<li>地图点到关键帧相机光心距离需满足在有效范围内，不满足，跳过。</li>
+<li>地图点到光心的连线与该地图点的平均观测向量之间夹角要小于60°，不满足跳过。</li>
+</ul>
+<p>3.在投影点附近搜索窗口内找到候选匹配点的索引</p>
+<blockquote>
+<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br>首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
+</blockquote>
+<p>4.遍历候选匹配点，寻找最佳匹配点<br>对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
+<ul>
+<li>金字塔层级要接近（同一层或小一层），否则跳过</li>
+<li>计算投影点与候选匹配特征点的距离，进行卡方检验，若超过阈值，直接跳过。</li>
+</ul>
+<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br>5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
+<ul>
+<li>地图点反投影位置上存在对应地图点,则将两个地图点合并到其中观测较多的那个则直接添加观测</li>
+<li>如果最佳匹配点没有对应地图点，该地图点观测中添加该帧，该帧添加该地图点。</li>
+</ul>
+<hr>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/31/ORBSLAM3-NOTE-7/" itemprop="url">ORB-SLAM3源码阅读:Frame</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-31T21:07:04+08:00">
+                2023-03-31
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:06+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-7"><a href="#ORBSLAM3学习笔记-7" class="headerlink" title="ORBSLAM3学习笔记(7)"></a>ORBSLAM3学习笔记(7)</h1><p>这篇博客主要是对Frame.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
+<hr>
+<h3 id="Frame-Frame-const-Frame-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
+<hr>
+<h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
+<pre><code>mnId=nNextId++;
+</code></pre>
+<p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
+<p><strong>3.提取orb特征点</strong></p>
+<pre><code>ExtractORB(0,imGray,0,1000);
+</code></pre>
+<p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
+<pre><code>void Frame::ExtractORB(int flag, const cv::Mat &amp;im, const int x0, const int x1)
+&#123;
+    vector&lt;int&gt; vLapping = &#123;x0,x1&#125;;
+    // 判断是左图还是右图
+    if(flag==0)
+        // 左图的话就套使用左图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+    else
+        // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
+&#125;
+</code></pre>
+<p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+<p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
+<pre><code>UndistortKeyPoints();
+</code></pre>
+<p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
+<pre><code>mvuRight = vector&lt;float&gt;(N,-1);
+mvDepth = vector&lt;float&gt;(N,-1);
+mnCloseMPs = 0;
+</code></pre>
+<p><strong>5.初始化本帧的地图点</strong></p>
+<pre><code>mvpMapPoints = vector&lt;MapPoint*&gt;(N,static_cast&lt;MapPoint*&gt;(NULL));
+
+mmProjectPoints.clear();// = map&lt;long unsigned int, cv::Point2f&gt;(N, static_cast&lt;cv::Point2f&gt;(NULL));
+mmMatchedInImage.clear();
+</code></pre>
+<p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
+<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br>存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
+<ul>
+<li>若图像是第一帧或者是相机标定参数发生变化，则<ul>
+<li>计算去畸变后图像的边界，这里也是用opencv库里的函数，这步将mnMinX，mnMaxX，mnMinY，mnMaxY初始化。</li>
+<li>计算一个图像像素在网格中占的宽和高mfGridElementWidthInv，mfGridElementHeightInv，这两个变量用来确定特征点在哪个网格。</li>
+<li>特殊的初始化过程完成，标志复位mbInitialComputations&#x3D;false;</li>
+</ul>
+</li>
+<li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure></li>
+<li>将特征点分配到图像网格中 ，调用函数AssignFeaturesToGrid()</li>
+</ul>
+<hr>
+<h3 id="Frame-AssignFeaturesToGrid"><a href="#Frame-AssignFeaturesToGrid" class="headerlink" title="Frame::AssignFeaturesToGrid()"></a>Frame::AssignFeaturesToGrid()</h3><p><strong>1.给存储特征点的网格数组 Frame::mGrid 预分配空间</strong></p>
+<pre><code>const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
+
+int nReserve = 0.5f*N/(nCells);
+
+// 开始对mGrid这个二维数组中的每一个vector元素遍历并预分配空间
+for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
+    for (unsigned int j=0; j&lt;FRAME_GRID_ROWS;j++)&#123;
+        mGrid[i][j].reserve(nReserve);
+        if(Nleft != -1)&#123;
+            mGridRight[i][j].reserve(nReserve);
+        &#125;
+    &#125;
+</code></pre>
+<p>这里nReserve定义为0.5f*N&#x2F;(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
+<p><strong>2.遍历每个特征点，将每个特征点在mvKeysUn中的索引值放到对应的网格mGrid中</strong></p>
+<pre><code>for(int i=0;i&lt;N;i++)
+&#123;
+    const cv::KeyPoint &amp;kp = (Nleft == -1) ? mvKeysUn[i]
+                                             : (i &lt; Nleft) ? mvKeys[i]
+                                                             : mvKeysRight[i - Nleft];
+    // 存储某个特征点所在网格的网格坐标，nGridPosX范围：[0,FRAME_GRID_COLS], nGridPosY范围：[0,FRAME_GRID_ROWS]
+    int nGridPosX, nGridPosY;
+    // 计算某个特征点所在网格的网格坐标，如果找到特征点所在的网格坐标，记录在nGridPosX,nGridPosY里，返回true，没找到返回false
+    if(PosInGrid(kp,nGridPosX,nGridPosY))&#123;
+        if(Nleft == -1 || i &lt; Nleft)
+            // 如果找到特征点所在网格坐标，将这个特征点的索引添加到对应网格的数组mGrid中
+            mGrid[nGridPosX][nGridPosY].push_back(i);
+        else
+            mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
+    &#125;
+&#125;
+</code></pre>
+<p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
+<hr>
+<h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点"></p>
+<hr>
+<h3 id="Frame-isInFrustum"><a href="#Frame-isInFrustum" class="headerlink" title="Frame::isInFrustum()"></a>Frame::isInFrustum()</h3><p>1.获得这个地图点的世界坐标<br>2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br>3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br>4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
+<blockquote>
+<p>这里的尺度是0.8 * mfMinDistance到1.2 * mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
+</blockquote>
+<p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br>6.根据地图点到光心的距离来预测一个尺度</p>
+<blockquote>
+<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}&#x3D;ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
+</blockquote>
+<p>7.记录计算得到的一些参数</p>
+<pre><code>pMP-&gt;mbTrackInView = true;
+// 该地图点投影在当前图像（一般是左图）的像素横坐标
+pMP-&gt;mTrackProjX = uv(0);
+// bf/z其实是视差，相减得到右图（如有）中对应点的横坐标
+pMP-&gt;mTrackProjXR = uv(0) - mbf*invz;
+
+pMP-&gt;mTrackDepth = Pc_dist;
+
+// 该地图点投影在当前图像（一般是左图）的像素纵坐标
+pMP-&gt;mTrackProjY = uv(1);
+// 根据地图点到光心距离，预测的该地图点的尺度层级
+pMP-&gt;mnTrackScaleLevel= nPredictedLevel;
+// 保存当前视角和法线夹角的余弦值
+pMP-&gt;mTrackViewCos = viewCos;
+</code></pre>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/31/ORBSLAM3_NOTE_6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/31/ORBSLAM3_NOTE_6/" itemprop="url">ORB-SLAM3源码阅读:LoopClosing</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-31T10:41:10+08:00">
+                2023-03-31
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:35:59+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-6"><a href="#ORBSLAM3学习笔记-6" class="headerlink" title="ORBSLAM3学习笔记(6)"></a>ORBSLAM3学习笔记(6)</h1><p>这篇博客主要是对LoopClosing.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_5/" itemprop="url">ORB-SLAM3源码阅读:LocalMapping</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T20:34:51+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:35:51+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br><strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
+<blockquote>
+<p>调用函数ProcessNewKeyFrame()</p>
+</blockquote>
+<p><strong>2.根据地图点的观测情况剔除质量不好的地图点</strong></p>
+<blockquote>
+<p>调用函数MapPointCulling()</p>
+</blockquote>
+<p><strong>3.当前关键帧与相邻关键帧通过三角化产生新的地图点，使得跟踪更稳</strong></p>
+<blockquote>
+<p>调用函数CreateNewMapPoints()</p>
+</blockquote>
+<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧（两级相邻）帧中重复的地图点</strong></p>
+<blockquote>
+<p>调用函数SearchInNeighbors()</p>
+</blockquote>
+<p><strong>5.如果已经处理完队列中的最后的一个关键帧，并且闭环检测没有请求停止LocalMapping，进行局部BA优化</strong></p>
+<ul>
+<li>当前关键帧的一级共视关键帧位姿会被优化;二极共视关键帧会加入优化图,但其位姿不会被优化。</li>
+<li>所有局部地图点位姿都会被优化</li>
+</ul>
+<p><strong>6.检测并剔除当前帧相邻的关键帧中冗余的关键帧</strong></p>
+<blockquote>
+<p>调用函数KeyFrameCulling()</p>
+</blockquote>
+<p><strong>7.将当前帧加入到闭环检测队列中</strong></p>
+<hr>
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br><strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br><strong>2.计算该关键帧特征点的Bow信息</strong><br><strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
+<ul>
+<li><p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
+</li>
+<li><p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
+</li>
+</ul>
+<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br><strong>5.将该关键帧插入到地图中</strong></p>
+<hr>
+<h3 id="LocalMapping-MapPointCulling"><a href="#LocalMapping-MapPointCulling" class="headerlink" title="LocalMapping::MapPointCulling()"></a>LocalMapping::MapPointCulling()</h3><p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
+<pre><code>int nThObs;
+if(mbMonocular)
+    nThObs = 2;
+else
+    nThObs = 3;
+const int cnThObs = nThObs;
+</code></pre>
+<p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+<blockquote>
+<p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
+<ul>
+<li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound&#x2F;mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound&#x2F;mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
+<li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
+</ul>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-CreateNewMapPoints"><a href="#LocalMapping-CreateNewMapPoints" class="headerlink" title="LocalMapping::CreateNewMapPoints()"></a>LocalMapping::CreateNewMapPoints()</h3><p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
+<blockquote>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector&lt;KeyFrame*&gt;类变量vpNeighKFs中。</p>
+</blockquote>
+<p>2.遍历相邻关键帧vpNeighKFs<br>2.1 判断相机运动的基线是不是足够长</p>
+<blockquote>
+<p>单目相机情况,计算邻接关键帧的场景深度中值，然后得到基线(即两个光心的距离)与景深的比例，若比例特别小，基线太短恢复3D点不准，那么跳过当前邻接的关键帧，不生成3D点。</p>
+</blockquote>
+<p>2.2 通过BoW对两关键帧的未匹配的特征点快速匹配，用极线约束抑制离群点，生成新的匹配点对。</p>
+<blockquote>
+<p>调用函数SearchForTriangulation(),具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a>。</p>
+</blockquote>
+<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br>3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br>3.2 利用匹配点反投影得到视差角</p>
+<blockquote>
+<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{&#x3D;}\frac{\text{u}-c_x}{f_x},Y&#x3D;\frac{v-c_y}{f_y},Z&#x3D;1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
+</blockquote>
+<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br>3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br>3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br>3.6 检查尺度连续性</p>
+<blockquote>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist &#x3D; d2&#x2F;d1，ratioOctave&#x3D;s1&#x2F;s2,ratioFactor &#x3D; 1.5f*1.2(1.2就是基础缩放比例);若ratioDist*ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+</blockquote>
+<p>3.7 构造地图点，为地图点添加属性，分别是</p>
+<ul>
+<li>观测到该MapPoint的关键帧</li>
+<li>该MapPoint的描述子</li>
+<li>该MapPoint的平均观测方向和深度范围</li>
+</ul>
+<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br>3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
+<hr>
+<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3><p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br>2.存储一级相邻关键帧及其二级相邻关键帧</p>
+<blockquote>
+<p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
+</blockquote>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 – 正向</p>
+<blockquote>
+<p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
+</blockquote>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 – 反向</p>
+<ul>
+<li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
+<li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
+</ul>
+<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br>6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
+<blockquote>
+<p>即更新共视关系，调用函数KeyFrame::UpdateConnections()</p>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-KeyFrameCulling"><a href="#LocalMapping-KeyFrameCulling" class="headerlink" title="LocalMapping::KeyFrameCulling()"></a>LocalMapping::KeyFrameCulling()</h3><p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br>对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
+<p>遍历到的关键帧为pKF，规定第一个关键帧不能删除（初始化的第一帧），提取每个共视关键帧的地图点vpMapPoints（vpLocalKeyFrames的地图点），遍历每一个地图点：</p>
+<p>如果该地图点的被观测次数超过阈值thObs，获取能看见该地图点的关键帧的集合observations，遍历观测到该地图点的关键帧，获得该地图点在关键帧中对应的特征点在图像金字塔的层数，若层数不超过其在pKF中的层数，则nObs++，最后若nObs&gt;3,则该地图点为冗余地图点。</p>
+<p>如果该关键帧90%以上的有效地图点被判断为冗余的，则认为该关键帧是冗余的，需要删除该关键帧。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_4/" itemprop="url">ORB-SLAM3源码阅读:ORBextractor</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T13:55:07+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:35:45+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
+<hr>
+<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><h3 id="1-关键点提取"><a href="#1-关键点提取" class="headerlink" title="1.关键点提取"></a>1.关键点提取</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points"></p>
+<p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。</p>
+<h3 id="2-描述子获取"><a href="#2-描述子获取" class="headerlink" title="2.描述子获取"></a>2.描述子获取</h3><p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
+<p><strong>(1)灰度质心法原理</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B"><br>该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
+<ul>
+<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩$m_{pq}$定义为:</li>
+</ul>
+<p>&ensp;&ensp;&ensp; $\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q&#x3D;{0, 1} $</p>
+<ul>
+<li>图像块<em>B</em>的质心可以通过公式中的矩找到：</li>
+</ul>
+<p>&ensp;&ensp;&ensp;&ensp;$C &#x3D;\left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right)$</p>
+<ul>
+<li>方向向量$\overrightarrow{OC}$可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向$\theta$为：</li>
+</ul>
+<p>&ensp;&ensp;&ensp;&ensp;$\theta &#x3D; arctan(\frac{m_{01}}{m_{10}})$</p>
+<p><strong>(2)方向不变性的使用</strong><br>首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
+<p>点对的选取是程序中默认给出的，若不考虑特征点方向，就可能出现一个问题，两帧图片之间是发生了旋转的，若直接选取点对，比如都选取点对(1,1)和(2,2),它们看似坐标一样，但在两幅图片中相对于特征点的位置是不一样的，那这样得到的描述子，进行匹配的时候，是没有参考意义的。</p>
+<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向$\theta$，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
+<p>旋转前坐标为$(x,y)$, 旋转后坐标$(x’,y’)$推导，$\theta$在求角度时得到，则<br>$x’&#x3D; xcos(θ) - ysin(θ),  y’&#x3D; xsin(θ) + ycos(θ)$</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBextractor-ORBextractor"><a href="#ORBextractor-ORBextractor" class="headerlink" title="ORBextractor::ORBextractor()"></a>ORBextractor::ORBextractor()</h3><p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
+<pre><code>std::vector&lt;cv::Point&gt; pattern;     
+
+int nfeatures;      //指定要提取的特征点数目
+double scaleFactor; //指定图像金字塔的缩放系数
+int nlevels;        //指定图像金字塔的层数
+int iniThFAST;      //指定初始的FAST特征点提取参数，可以提取出最明显的角点
+int minThFAST;      //如果因为图像纹理不丰富提取出的特征点不多，为了达到想要的特征点数目，
+                    //就使用这个参数提取出不是那么明显的角点
+
+std::vector&lt;int&gt; mnFeaturesPerLevel;    //每层需要提取出来的特征点个数
+
+std::vector&lt;int&gt; umax;
+
+std::vector&lt;float&gt; mvScaleFactor;       //存储每层图像缩放系数
+std::vector&lt;float&gt; mvInvScaleFactor;    //存储每层图像缩放系数的倒数
+std::vector&lt;float&gt; mvLevelSigma2;       //存储每层图像相对初始图像缩放因子的平方
+std::vector&lt;float&gt; mvInvLevelSigma2;    //存储每层图像相对初始图像缩放因子的平方的倒数
+</code></pre>
+<p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br>nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
+<p>mvScaleFactor到mvInvLevelSigma2都是根据nlevels确定向量长度，根据scaleFactor确定向量里面的内容，这些向量的第一个变量都是1，因为金字塔最底层是原始图像，不需要缩放。</p>
+<p>mnFeaturesPerLevel是根据nfeatures得到的，nfeatures是我们一共要获得的特征点数量，我们从金字塔的每层（除最高层）选取一部分特征点，然后总数为nfeatures。其中第一层选取的个数如下：</p>
+<pre><code>float nDesiredFeaturesPerScale = nfeatures*(1 - factor)/(1 - (float)pow((double)factor, (double)nlevels));
+</code></pre>
+<p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
+<p>pattern就是把按数组定义的点对坐标，存储到Point类型的向量中。</p>
+<p>umax的作用和初始化我们根据下面的图和代码一起看<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax"></p>
+<pre><code>//下面的内容是和特征点的旋转计算有关的
+//预先计算圆形patch中行的结束位置
+//+1中的1表示那个圆的中间行
+umax.resize(HALF_PATCH_SIZE + 1);
+
+//cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
+int v,		//循环辅助变量
+    v0,		//辅助变量
+    vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);	//计算圆的最大行号，+1应该是把中间行也给考虑进去了
+            //NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
+            //是因为圆周上的对称特性
+            
+//这里的二分之根2就是对应那个45°圆心角
+
+int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
+//半径的平方
+const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
+
+//利用圆的方程计算每行像素的u坐标边界（max）
+for (v = 0; v &lt;= vmax; ++v)
+    umax[v] = cvRound(sqrt(hp2 - v * v));		//结果都是大于0的结果，表示x坐标在这一行的边界
+
+// Make sure we are symmetric
+//这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
+//同时这些随机采样的特征点集也不能够满足旋转之后的采样不变性了）
+for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
+&#123;
+    while (umax[v0] == umax[v0 + 1])
+        ++v0;
+    umax[v] = v0;
+    ++v0;
+&#125;
+</code></pre>
+<p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
+<hr>
+<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
+<pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
+    InputArray _mask,                           //掩膜mask,为空，估计没什么用
+    vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
+    OutputArray _descriptors,                   //存储特征点描述子的矩阵 
+    std::vector&lt;int&gt; &amp;vLappingArea              //界限
+    )
+</code></pre>
+<p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
+<pre><code>ComputePyramid(image);
+</code></pre>
+<p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
+<pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
+vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
+//使用四叉树的方式计算每层图像的特征点并进行分配
+ComputeKeyPointsOctTree(allKeypoints);
+</code></pre>
+<p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br><strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br>这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
+<pre><code>//如果图像金字塔中有特征点，那么就创建这个存储描述子的矩阵，注意这个矩阵是存储整个图像金字塔中特征点的描述子的
+_descriptors.create(nkeypoints,		//矩阵的行数，对应为特征点的总个数
+                    32, 			//矩阵的列数，对应为使用32*8=256位描述子
+                    CV_8U);			//矩阵元素的格式
+//获取这个描述子的矩阵信息
+descriptors = _descriptors.getMat();
+</code></pre>
+<p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br>5-1.对图像进行高斯模糊<br>5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br>5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
+<hr>
+<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
+&#123;
+    //开始遍历所有的图层
+    for (int level = 0; level &lt; nlevels; ++level)
+    &#123;
+        //获取本层图像的缩放系数
+        float scale = mvInvScaleFactor[level];
+        //计算本层图像的像素尺寸大小
+        Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
+        //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+        Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
+        // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+        Mat temp(wholeSize, image.type()), masktemp;
+        // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+        mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+
+        // Compute the resized image
+        //计算第0层以上resize后的图像
+        if( level != 0 )
+        &#123;
+            //将上一层金字塔图像根据设定sz缩放到当前层级
+            resize(mvImagePyramid[level-1],	//输入图像
+                mvImagePyramid[level], 	//输出图像
+                sz, 				    //输出图像的尺寸
+                0, 				        //水平方向上的缩放系数，留0表示自动计算
+                0,  				    //垂直方向上的缩放系数，留0表示自动计算
+                cv::INTER_LINEAR);		//图像缩放的差值算法类型，这里的是线性插值算法
+
+            //这样做是为了能够正确提取边界的FAST角点		
+            copyMakeBorder(mvImagePyramid[level], 	        //源图像
+                        temp, 					            //目标图像（此时其实就已经有大了一圈的尺寸了）
+                        EDGE_THRESHOLD, EDGE_THRESHOLD, 	//top &amp; bottom 需要扩展的border大小
+                        EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
+                        BORDER_REFLECT_101+BORDER_ISOLATED);//扩充方式
+        &#125;
+        else
+        &#123;
+            //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            copyMakeBorder(image,			
+                        temp, 
+                        EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
+                        BORDER_REFLECT_101);            
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD&#x3D;19。</p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
+<hr>
+<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
+<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
+<p>代码运行流程如下:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree"></p>
+<p>下面具体看代码，主要看遍历网格部分，这段计算机视觉life的注释不太对，我改了一下</p>
+<pre><code>//开始遍历图像网格，还是以行开始遍历的
+for(int i=0; i&lt;nRows; i++)
+&#123;
+    //计算当前网格初始行坐标
+    const float iniY =minBorderY+i*hCell;
+    float maxY = iniY+hCell+6;
+
+    //如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
+    if(iniY&gt;=maxBorderY-3)
+        continue;
+    //如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
+    if(maxY&gt;maxBorderY)
+        maxY = maxBorderY;
+
+    //开始列的遍历
+    for(int j=0; j&lt;nCols; j++)
+    &#123;
+        const float iniX =minBorderX+j*wCell;
+        float maxX = iniX+wCell+6;				
+        if(iniX&gt;=maxBorderX-3)
+            continue;
+        if(maxX&gt;maxBorderX)
+            maxX = maxBorderX;
+
+        //这个容器存储提取到的特征点
+        vector&lt;cv::KeyPoint&gt; vKeysCell;
+
+        //FAST提取特征点，调用opencv的库函数来检测FAST角点
+        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像，这里就是当前遍历到的图像块
+            vKeysCell,      //存储角点位置的容器
+            iniThFAST,		//检测阈值
+            true);			//使能非极大值抑制
+
+        //如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
+        if(vKeysCell.empty())
+        &#123;
+            //那么就使用更低的阈值来进行重新检测
+            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像
+                vKeysCell,		//存储角点位置的容器
+                minThFAST,		//更低的检测阈值
+                true);			//使能非极大值抑制
+        &#125;
+
+        //当图像cell中检测到FAST角点的时候执行下面的语句
+        if(!vKeysCell.empty())
+        &#123;
+            //遍历其中的所有FAST角点
+            for(vector&lt;cv::KeyPoint&gt;::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
+            &#123;
+                //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
+                //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
+                //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
+                (*vit).pt.x+=j*wCell;
+                (*vit).pt.y+=i*hCell;
+                //然后将其加入到”等待被分配“的特征点容器中
+                vToDistributeKeys.push_back(*vit);
+            &#125;//遍历图像cell中的所有的提取出来的FAST角点，并且恢复其在整个金字塔当前层图像下的坐标
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
+<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2"></p>
+<p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
+<pre><code>//声明一个对当前图层的特征点的容器的引用
+vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
+//并且调整其大小为欲提取出来的特征点个数
+keypoints.reserve(nfeatures);
+
+// 根据mnFeatuvector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
+//返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
+//得到的特征点的坐标，依旧是在当前图层下来讲的
+keypoints = DistributeOctTree(vToDistributeKeys, 			//当前图层提取出来的特征点
+                            minBorderX, maxBorderX,		    //当前图层图像的边界
+                            minBorderY, maxBorderY,
+                            mnFeaturesPerLevel[level], 	    //希望保留下来的当前层图像的特征点个数
+                            level);						    //当前层图像所在的图层
+
+//PATCH_SIZE是对于底层的初始图像来说的，现在要根据当前图层的尺度缩放倍数进行缩放得到缩放后的PATCH大小 和特征点的方向计算有关
+const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
+
+//获取剔除过程后保留下来的特征点数目
+//然后开始遍历这些特征点，恢复其在当前图层图像坐标系下的坐标
+for(int i=0; i&lt;nkps ; i++)
+&#123;
+    keypoints[i].pt.x+=minBorderX;
+    keypoints[i].pt.y+=minBorderY;
+    //记录特征点来源的图像金字塔图层
+    keypoints[i].octave=level;
+    //记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
+    keypoints[i].size = scaledPatchSize;
+&#125;
+</code></pre>
+<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+<p>最后计算特征点方向</p>
+<pre><code>for (int level = 0; level &lt; nlevels; ++level)
+    computeOrientation(mvImagePyramid[level],	//对应的图层的图像
+                       allKeypoints[level], 	//这个图层中提取并保留下来的特征点容器
+                       umax);					//以及PATCH的横坐标边界
+</code></pre>
+<p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
+<hr>
+<h3 id="ORBextractor-DistributeOctTree"><a href="#ORBextractor-DistributeOctTree" class="headerlink" title="ORBextractor::DistributeOctTree()"></a>ORBextractor::DistributeOctTree()</h3><p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br>这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree"></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
   </section>
 
-  {% include '_partials/pagination.swig' %}
-{% endblock %}
+  
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">&lt;i class&#x3D;&quot;fa fa-angle-right&quot;&gt;&lt;&#x2F;i&gt;</a>
+  </nav>
 
-{% block sidebar %}
-  {{ sidebar_template.render(false) }}
-{% endblock %}
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/%5Bobject%20Object%5D"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20fa%20fa-archive">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-[object Object]"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v="></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v="></script>
+
+
+
+  
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v="></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

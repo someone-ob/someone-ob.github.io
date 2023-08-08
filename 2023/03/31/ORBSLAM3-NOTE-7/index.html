@@ -1,37 +1,818 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ORBSLAM3 NOTE," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="ORBSLAM3学习笔记(7)这篇博客主要是对Frame.cc文件的学习。  源码阅读Frame::Frame() 缺省构造把相关变量赋为空或false，无其他操作。  Frame::Frame(const Frame &amp;frame) 拷贝构造这里就是把参数frame的数据，拷贝到该对象的成员变量中去。  Frame::Frame(…)有参数构造1.帧id自加 mnId&#x3D;nNextId++">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ORB-SLAM3源码阅读:Frame">
+<meta property="og:url" content="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="ORBSLAM3学习笔记(7)这篇博客主要是对Frame.cc文件的学习。  源码阅读Frame::Frame() 缺省构造把相关变量赋为空或false，无其他操作。  Frame::Frame(const Frame &amp;frame) 拷贝构造这里就是把参数frame的数据，拷贝到该对象的成员变量中去。  Frame::Frame(…)有参数构造1.帧id自加 mnId&#x3D;nNextId++">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png">
+<meta property="article:published_time" content="2023-03-31T13:07:04.000Z">
+<meta property="article:modified_time" content="2023-05-18T07:36:06.845Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="ORBSLAM3 NOTE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '',
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    fancybox: false,
+    tabs: ,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: 'undefined',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+
+
+
+  <title>ORB-SLAM3源码阅读:Frame | Hexo</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '[object Object]', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/31/ORBSLAM3-NOTE-7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ORB-SLAM3源码阅读:Frame</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-31T21:07:04+08:00">
+                2023-03-31
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:06+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="ORBSLAM3学习笔记-7"><a href="#ORBSLAM3学习笔记-7" class="headerlink" title="ORBSLAM3学习笔记(7)"></a>ORBSLAM3学习笔记(7)</h1><p>这篇博客主要是对Frame.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
+<hr>
+<h3 id="Frame-Frame-const-Frame-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
+<hr>
+<h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
+<pre><code>mnId=nNextId++;
+</code></pre>
+<p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
+<p><strong>3.提取orb特征点</strong></p>
+<pre><code>ExtractORB(0,imGray,0,1000);
+</code></pre>
+<p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
+<pre><code>void Frame::ExtractORB(int flag, const cv::Mat &amp;im, const int x0, const int x1)
+&#123;
+    vector&lt;int&gt; vLapping = &#123;x0,x1&#125;;
+    // 判断是左图还是右图
+    if(flag==0)
+        // 左图的话就套使用左图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+    else
+        // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
+&#125;
+</code></pre>
+<p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+<p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
+<pre><code>UndistortKeyPoints();
+</code></pre>
+<p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
+<pre><code>mvuRight = vector&lt;float&gt;(N,-1);
+mvDepth = vector&lt;float&gt;(N,-1);
+mnCloseMPs = 0;
+</code></pre>
+<p><strong>5.初始化本帧的地图点</strong></p>
+<pre><code>mvpMapPoints = vector&lt;MapPoint*&gt;(N,static_cast&lt;MapPoint*&gt;(NULL));
+
+mmProjectPoints.clear();// = map&lt;long unsigned int, cv::Point2f&gt;(N, static_cast&lt;cv::Point2f&gt;(NULL));
+mmMatchedInImage.clear();
+</code></pre>
+<p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
+<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br>存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
+<ul>
+<li>若图像是第一帧或者是相机标定参数发生变化，则<ul>
+<li>计算去畸变后图像的边界，这里也是用opencv库里的函数，这步将mnMinX，mnMaxX，mnMinY，mnMaxY初始化。</li>
+<li>计算一个图像像素在网格中占的宽和高mfGridElementWidthInv，mfGridElementHeightInv，这两个变量用来确定特征点在哪个网格。</li>
+<li>特殊的初始化过程完成，标志复位mbInitialComputations&#x3D;false;</li>
+</ul>
+</li>
+<li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure></li>
+<li>将特征点分配到图像网格中 ，调用函数AssignFeaturesToGrid()</li>
+</ul>
+<hr>
+<h3 id="Frame-AssignFeaturesToGrid"><a href="#Frame-AssignFeaturesToGrid" class="headerlink" title="Frame::AssignFeaturesToGrid()"></a>Frame::AssignFeaturesToGrid()</h3><p><strong>1.给存储特征点的网格数组 Frame::mGrid 预分配空间</strong></p>
+<pre><code>const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
+
+int nReserve = 0.5f*N/(nCells);
+
+// 开始对mGrid这个二维数组中的每一个vector元素遍历并预分配空间
+for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
+    for (unsigned int j=0; j&lt;FRAME_GRID_ROWS;j++)&#123;
+        mGrid[i][j].reserve(nReserve);
+        if(Nleft != -1)&#123;
+            mGridRight[i][j].reserve(nReserve);
+        &#125;
+    &#125;
+</code></pre>
+<p>这里nReserve定义为0.5f*N&#x2F;(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
+<p><strong>2.遍历每个特征点，将每个特征点在mvKeysUn中的索引值放到对应的网格mGrid中</strong></p>
+<pre><code>for(int i=0;i&lt;N;i++)
+&#123;
+    const cv::KeyPoint &amp;kp = (Nleft == -1) ? mvKeysUn[i]
+                                             : (i &lt; Nleft) ? mvKeys[i]
+                                                             : mvKeysRight[i - Nleft];
+    // 存储某个特征点所在网格的网格坐标，nGridPosX范围：[0,FRAME_GRID_COLS], nGridPosY范围：[0,FRAME_GRID_ROWS]
+    int nGridPosX, nGridPosY;
+    // 计算某个特征点所在网格的网格坐标，如果找到特征点所在的网格坐标，记录在nGridPosX,nGridPosY里，返回true，没找到返回false
+    if(PosInGrid(kp,nGridPosX,nGridPosY))&#123;
+        if(Nleft == -1 || i &lt; Nleft)
+            // 如果找到特征点所在网格坐标，将这个特征点的索引添加到对应网格的数组mGrid中
+            mGrid[nGridPosX][nGridPosY].push_back(i);
+        else
+            mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
+    &#125;
+&#125;
+</code></pre>
+<p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
+<hr>
+<h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点"></p>
+<hr>
+<h3 id="Frame-isInFrustum"><a href="#Frame-isInFrustum" class="headerlink" title="Frame::isInFrustum()"></a>Frame::isInFrustum()</h3><p>1.获得这个地图点的世界坐标<br>2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br>3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br>4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
+<blockquote>
+<p>这里的尺度是0.8 * mfMinDistance到1.2 * mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
+</blockquote>
+<p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br>6.根据地图点到光心的距离来预测一个尺度</p>
+<blockquote>
+<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}&#x3D;ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
+</blockquote>
+<p>7.记录计算得到的一些参数</p>
+<pre><code>pMP-&gt;mbTrackInView = true;
+// 该地图点投影在当前图像（一般是左图）的像素横坐标
+pMP-&gt;mTrackProjX = uv(0);
+// bf/z其实是视差，相减得到右图（如有）中对应点的横坐标
+pMP-&gt;mTrackProjXR = uv(0) - mbf*invz;
+
+pMP-&gt;mTrackDepth = Pc_dist;
+
+// 该地图点投影在当前图像（一般是左图）的像素纵坐标
+pMP-&gt;mTrackProjY = uv(1);
+// 根据地图点到光心距离，预测的该地图点的尺度层级
+pMP-&gt;mnTrackScaleLevel= nPredictedLevel;
+// 保存当前视角和法线夹角的余弦值
+pMP-&gt;mTrackViewCos = viewCos;
+</code></pre>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ORBSLAM3-NOTE/" rel="tag"># ORBSLAM3 NOTE</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/03/31/ORBSLAM3_NOTE_6/" rel="next" title="ORB-SLAM3源码阅读:LoopClosing">
+                <i class="fa fa-chevron-left"></i> ORB-SLAM3源码阅读:LoopClosing
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/04/10/ORBSLAM3-NOTE-8/" rel="prev" title="ORB-SLAM3源码阅读:ORBmatcher">
+                ORB-SLAM3源码阅读:ORBmatcher <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/%5Bobject%20Object%5D"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20fa%20fa-archive">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-AssignFeaturesToGrid"><span class="nav-number">1.1.4.</span> <span class="nav-text">Frame::AssignFeaturesToGrid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-GetFeaturesInArea"><span class="nav-number">1.1.5.</span> <span class="nav-text">Frame::GetFeaturesInArea()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-isInFrustum"><span class="nav-number">1.1.6.</span> <span class="nav-text">Frame::isInFrustum()</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-[object Object]"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v="></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v="></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v="></script>
+<script type="text/javascript" src="/js/src/post-details.js?v="></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v="></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,37 +1,978 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ORBSLAM3 NOTE," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="ORBSLAM3学习笔记(4)这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。  基本原理1.关键点提取 关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。 2.描述子获取描述子获取方面要用到o">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ORB-SLAM3源码阅读:ORBextractor">
+<meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="ORBSLAM3学习笔记(4)这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。  基本原理1.关键点提取 关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。 2.描述子获取描述子获取方面要用到o">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg">
+<meta property="article:published_time" content="2023-03-30T05:55:07.000Z">
+<meta property="article:modified_time" content="2023-05-18T07:35:45.686Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="ORBSLAM3 NOTE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '',
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    fancybox: false,
+    tabs: ,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: 'undefined',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+
+
+
+  <title>ORB-SLAM3源码阅读:ORBextractor | Hexo</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '[object Object]', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ORB-SLAM3源码阅读:ORBextractor</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T13:55:07+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:35:45+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
+<hr>
+<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><h3 id="1-关键点提取"><a href="#1-关键点提取" class="headerlink" title="1.关键点提取"></a>1.关键点提取</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points"></p>
+<p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。</p>
+<h3 id="2-描述子获取"><a href="#2-描述子获取" class="headerlink" title="2.描述子获取"></a>2.描述子获取</h3><p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
+<p><strong>(1)灰度质心法原理</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B"><br>该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
+<ul>
+<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩$m_{pq}$定义为:</li>
+</ul>
+<p>&ensp;&ensp;&ensp; $\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q&#x3D;{0, 1} $</p>
+<ul>
+<li>图像块<em>B</em>的质心可以通过公式中的矩找到：</li>
+</ul>
+<p>&ensp;&ensp;&ensp;&ensp;$C &#x3D;\left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right)$</p>
+<ul>
+<li>方向向量$\overrightarrow{OC}$可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向$\theta$为：</li>
+</ul>
+<p>&ensp;&ensp;&ensp;&ensp;$\theta &#x3D; arctan(\frac{m_{01}}{m_{10}})$</p>
+<p><strong>(2)方向不变性的使用</strong><br>首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
+<p>点对的选取是程序中默认给出的，若不考虑特征点方向，就可能出现一个问题，两帧图片之间是发生了旋转的，若直接选取点对，比如都选取点对(1,1)和(2,2),它们看似坐标一样，但在两幅图片中相对于特征点的位置是不一样的，那这样得到的描述子，进行匹配的时候，是没有参考意义的。</p>
+<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向$\theta$，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
+<p>旋转前坐标为$(x,y)$, 旋转后坐标$(x’,y’)$推导，$\theta$在求角度时得到，则<br>$x’&#x3D; xcos(θ) - ysin(θ),  y’&#x3D; xsin(θ) + ycos(θ)$</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBextractor-ORBextractor"><a href="#ORBextractor-ORBextractor" class="headerlink" title="ORBextractor::ORBextractor()"></a>ORBextractor::ORBextractor()</h3><p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
+<pre><code>std::vector&lt;cv::Point&gt; pattern;     
+
+int nfeatures;      //指定要提取的特征点数目
+double scaleFactor; //指定图像金字塔的缩放系数
+int nlevels;        //指定图像金字塔的层数
+int iniThFAST;      //指定初始的FAST特征点提取参数，可以提取出最明显的角点
+int minThFAST;      //如果因为图像纹理不丰富提取出的特征点不多，为了达到想要的特征点数目，
+                    //就使用这个参数提取出不是那么明显的角点
+
+std::vector&lt;int&gt; mnFeaturesPerLevel;    //每层需要提取出来的特征点个数
+
+std::vector&lt;int&gt; umax;
+
+std::vector&lt;float&gt; mvScaleFactor;       //存储每层图像缩放系数
+std::vector&lt;float&gt; mvInvScaleFactor;    //存储每层图像缩放系数的倒数
+std::vector&lt;float&gt; mvLevelSigma2;       //存储每层图像相对初始图像缩放因子的平方
+std::vector&lt;float&gt; mvInvLevelSigma2;    //存储每层图像相对初始图像缩放因子的平方的倒数
+</code></pre>
+<p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br>nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
+<p>mvScaleFactor到mvInvLevelSigma2都是根据nlevels确定向量长度，根据scaleFactor确定向量里面的内容，这些向量的第一个变量都是1，因为金字塔最底层是原始图像，不需要缩放。</p>
+<p>mnFeaturesPerLevel是根据nfeatures得到的，nfeatures是我们一共要获得的特征点数量，我们从金字塔的每层（除最高层）选取一部分特征点，然后总数为nfeatures。其中第一层选取的个数如下：</p>
+<pre><code>float nDesiredFeaturesPerScale = nfeatures*(1 - factor)/(1 - (float)pow((double)factor, (double)nlevels));
+</code></pre>
+<p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
+<p>pattern就是把按数组定义的点对坐标，存储到Point类型的向量中。</p>
+<p>umax的作用和初始化我们根据下面的图和代码一起看<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax"></p>
+<pre><code>//下面的内容是和特征点的旋转计算有关的
+//预先计算圆形patch中行的结束位置
+//+1中的1表示那个圆的中间行
+umax.resize(HALF_PATCH_SIZE + 1);
+
+//cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
+int v,		//循环辅助变量
+    v0,		//辅助变量
+    vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);	//计算圆的最大行号，+1应该是把中间行也给考虑进去了
+            //NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
+            //是因为圆周上的对称特性
+            
+//这里的二分之根2就是对应那个45°圆心角
+
+int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
+//半径的平方
+const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
+
+//利用圆的方程计算每行像素的u坐标边界（max）
+for (v = 0; v &lt;= vmax; ++v)
+    umax[v] = cvRound(sqrt(hp2 - v * v));		//结果都是大于0的结果，表示x坐标在这一行的边界
+
+// Make sure we are symmetric
+//这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
+//同时这些随机采样的特征点集也不能够满足旋转之后的采样不变性了）
+for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
+&#123;
+    while (umax[v0] == umax[v0 + 1])
+        ++v0;
+    umax[v] = v0;
+    ++v0;
+&#125;
+</code></pre>
+<p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
+<hr>
+<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
+<pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
+    InputArray _mask,                           //掩膜mask,为空，估计没什么用
+    vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
+    OutputArray _descriptors,                   //存储特征点描述子的矩阵 
+    std::vector&lt;int&gt; &amp;vLappingArea              //界限
+    )
+</code></pre>
+<p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
+<pre><code>ComputePyramid(image);
+</code></pre>
+<p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
+<pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
+vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
+//使用四叉树的方式计算每层图像的特征点并进行分配
+ComputeKeyPointsOctTree(allKeypoints);
+</code></pre>
+<p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br><strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br>这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
+<pre><code>//如果图像金字塔中有特征点，那么就创建这个存储描述子的矩阵，注意这个矩阵是存储整个图像金字塔中特征点的描述子的
+_descriptors.create(nkeypoints,		//矩阵的行数，对应为特征点的总个数
+                    32, 			//矩阵的列数，对应为使用32*8=256位描述子
+                    CV_8U);			//矩阵元素的格式
+//获取这个描述子的矩阵信息
+descriptors = _descriptors.getMat();
+</code></pre>
+<p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br>5-1.对图像进行高斯模糊<br>5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br>5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
+<hr>
+<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
+&#123;
+    //开始遍历所有的图层
+    for (int level = 0; level &lt; nlevels; ++level)
+    &#123;
+        //获取本层图像的缩放系数
+        float scale = mvInvScaleFactor[level];
+        //计算本层图像的像素尺寸大小
+        Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
+        //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+        Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
+        // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+        Mat temp(wholeSize, image.type()), masktemp;
+        // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+        mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+
+        // Compute the resized image
+        //计算第0层以上resize后的图像
+        if( level != 0 )
+        &#123;
+            //将上一层金字塔图像根据设定sz缩放到当前层级
+            resize(mvImagePyramid[level-1],	//输入图像
+                mvImagePyramid[level], 	//输出图像
+                sz, 				    //输出图像的尺寸
+                0, 				        //水平方向上的缩放系数，留0表示自动计算
+                0,  				    //垂直方向上的缩放系数，留0表示自动计算
+                cv::INTER_LINEAR);		//图像缩放的差值算法类型，这里的是线性插值算法
+
+            //这样做是为了能够正确提取边界的FAST角点		
+            copyMakeBorder(mvImagePyramid[level], 	        //源图像
+                        temp, 					            //目标图像（此时其实就已经有大了一圈的尺寸了）
+                        EDGE_THRESHOLD, EDGE_THRESHOLD, 	//top &amp; bottom 需要扩展的border大小
+                        EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
+                        BORDER_REFLECT_101+BORDER_ISOLATED);//扩充方式
+        &#125;
+        else
+        &#123;
+            //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            copyMakeBorder(image,			
+                        temp, 
+                        EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
+                        BORDER_REFLECT_101);            
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD&#x3D;19。</p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
+<hr>
+<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
+<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
+<p>代码运行流程如下:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree"></p>
+<p>下面具体看代码，主要看遍历网格部分，这段计算机视觉life的注释不太对，我改了一下</p>
+<pre><code>//开始遍历图像网格，还是以行开始遍历的
+for(int i=0; i&lt;nRows; i++)
+&#123;
+    //计算当前网格初始行坐标
+    const float iniY =minBorderY+i*hCell;
+    float maxY = iniY+hCell+6;
+
+    //如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
+    if(iniY&gt;=maxBorderY-3)
+        continue;
+    //如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
+    if(maxY&gt;maxBorderY)
+        maxY = maxBorderY;
+
+    //开始列的遍历
+    for(int j=0; j&lt;nCols; j++)
+    &#123;
+        const float iniX =minBorderX+j*wCell;
+        float maxX = iniX+wCell+6;				
+        if(iniX&gt;=maxBorderX-3)
+            continue;
+        if(maxX&gt;maxBorderX)
+            maxX = maxBorderX;
+
+        //这个容器存储提取到的特征点
+        vector&lt;cv::KeyPoint&gt; vKeysCell;
+
+        //FAST提取特征点，调用opencv的库函数来检测FAST角点
+        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像，这里就是当前遍历到的图像块
+            vKeysCell,      //存储角点位置的容器
+            iniThFAST,		//检测阈值
+            true);			//使能非极大值抑制
+
+        //如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
+        if(vKeysCell.empty())
+        &#123;
+            //那么就使用更低的阈值来进行重新检测
+            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像
+                vKeysCell,		//存储角点位置的容器
+                minThFAST,		//更低的检测阈值
+                true);			//使能非极大值抑制
+        &#125;
+
+        //当图像cell中检测到FAST角点的时候执行下面的语句
+        if(!vKeysCell.empty())
+        &#123;
+            //遍历其中的所有FAST角点
+            for(vector&lt;cv::KeyPoint&gt;::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
+            &#123;
+                //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
+                //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
+                //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
+                (*vit).pt.x+=j*wCell;
+                (*vit).pt.y+=i*hCell;
+                //然后将其加入到”等待被分配“的特征点容器中
+                vToDistributeKeys.push_back(*vit);
+            &#125;//遍历图像cell中的所有的提取出来的FAST角点，并且恢复其在整个金字塔当前层图像下的坐标
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
+<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2"></p>
+<p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
+<pre><code>//声明一个对当前图层的特征点的容器的引用
+vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
+//并且调整其大小为欲提取出来的特征点个数
+keypoints.reserve(nfeatures);
+
+// 根据mnFeatuvector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
+//返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
+//得到的特征点的坐标，依旧是在当前图层下来讲的
+keypoints = DistributeOctTree(vToDistributeKeys, 			//当前图层提取出来的特征点
+                            minBorderX, maxBorderX,		    //当前图层图像的边界
+                            minBorderY, maxBorderY,
+                            mnFeaturesPerLevel[level], 	    //希望保留下来的当前层图像的特征点个数
+                            level);						    //当前层图像所在的图层
+
+//PATCH_SIZE是对于底层的初始图像来说的，现在要根据当前图层的尺度缩放倍数进行缩放得到缩放后的PATCH大小 和特征点的方向计算有关
+const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
+
+//获取剔除过程后保留下来的特征点数目
+//然后开始遍历这些特征点，恢复其在当前图层图像坐标系下的坐标
+for(int i=0; i&lt;nkps ; i++)
+&#123;
+    keypoints[i].pt.x+=minBorderX;
+    keypoints[i].pt.y+=minBorderY;
+    //记录特征点来源的图像金字塔图层
+    keypoints[i].octave=level;
+    //记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
+    keypoints[i].size = scaledPatchSize;
+&#125;
+</code></pre>
+<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+<p>最后计算特征点方向</p>
+<pre><code>for (int level = 0; level &lt; nlevels; ++level)
+    computeOrientation(mvImagePyramid[level],	//对应的图层的图像
+                       allKeypoints[level], 	//这个图层中提取并保留下来的特征点容器
+                       umax);					//以及PATCH的横坐标边界
+</code></pre>
+<p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
+<hr>
+<h3 id="ORBextractor-DistributeOctTree"><a href="#ORBextractor-DistributeOctTree" class="headerlink" title="ORBextractor::DistributeOctTree()"></a>ORBextractor::DistributeOctTree()</h3><p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br>这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ORBSLAM3-NOTE/" rel="tag"># ORBSLAM3 NOTE</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/03/28/ORBSLAM3_NOTE_3/" rel="next" title="ORB-SLAM3源码阅读:Tracking">
+                <i class="fa fa-chevron-left"></i> ORB-SLAM3源码阅读:Tracking
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/03/30/ORBSLAM3_NOTE_5/" rel="prev" title="ORB-SLAM3源码阅读:LocalMapping">
+                ORB-SLAM3源码阅读:LocalMapping <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/%5Bobject%20Object%5D"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20fa%20fa-archive">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-4"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(4)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">基本原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%B3%E9%94%AE%E7%82%B9%E6%8F%90%E5%8F%96"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.关键点提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8F%8F%E8%BF%B0%E5%AD%90%E8%8E%B7%E5%8F%96"><span class="nav-number">1.1.2.</span> <span class="nav-text">2.描述子获取</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-ORBextractor"><span class="nav-number">1.2.1.</span> <span class="nav-text">ORBextractor::ORBextractor()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-operator"><span class="nav-number">1.2.2.</span> <span class="nav-text">ORBextractor::operator()()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ComputePyramid"><span class="nav-number">1.2.3.</span> <span class="nav-text">ComputePyramid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ComputeKeyPointsOctTree"><span class="nav-number">1.2.4.</span> <span class="nav-text">ComputeKeyPointsOctTree()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBextractor-DistributeOctTree"><span class="nav-number">1.2.5.</span> <span class="nav-text">ORBextractor::DistributeOctTree()</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-[object Object]"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v="></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v="></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v="></script>
+<script type="text/javascript" src="/js/src/post-details.js?v="></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v="></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

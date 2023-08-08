@@ -1,37 +1,741 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ORBSLAM3 NOTE," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="ORBSLAM3学习笔记(11)这篇博客主要是对MapPoint.cc文件的学习。  源码阅读MapPoint::AddObservation()这个函数引用的参数为(KeyFrame* pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。首先，它的类型为std::map&lt;KeyFrame*,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ORB-SLAM3源码阅读:MapPoint">
+<meta property="og:url" content="http://example.com/2023/04/13/ORBSLAM3-NOTE-11/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="ORBSLAM3学习笔记(11)这篇博客主要是对MapPoint.cc文件的学习。  源码阅读MapPoint::AddObservation()这个函数引用的参数为(KeyFrame* pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。首先，它的类型为std::map&lt;KeyFrame*,">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E8%A7%82%E6%B5%8B%E5%B0%BA%E5%BA%A61.png">
+<meta property="article:published_time" content="2023-04-13T11:29:38.000Z">
+<meta property="article:modified_time" content="2023-05-18T07:36:31.375Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="ORBSLAM3 NOTE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E8%A7%82%E6%B5%8B%E5%B0%BA%E5%BA%A61.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '',
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    fancybox: false,
+    tabs: ,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: 'undefined',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+
+
+
+
+  <title>ORB-SLAM3源码阅读:MapPoint | Hexo</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '[object Object]', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/13/ORBSLAM3-NOTE-11/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/%5Bobject%20Object%5D">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ORB-SLAM3源码阅读:MapPoint</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-04-13T19:29:38+08:00">
+                2023-04-13
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Post modified&#58;</span>
+              
+              <time title="Post modified" itemprop="dateModified" datetime="2023-05-18T15:36:31+08:00">
+                2023-05-18
+              </time>
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="ORBSLAM3学习笔记-11"><a href="#ORBSLAM3学习笔记-11" class="headerlink" title="ORBSLAM3学习笔记(11)"></a>ORBSLAM3学习笔记(11)</h1><p>这篇博客主要是对MapPoint.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="MapPoint-AddObservation"><a href="#MapPoint-AddObservation" class="headerlink" title="MapPoint::AddObservation()"></a>MapPoint::AddObservation()</h3><p>这个函数引用的参数为(KeyFrame* pKF, int idx),及关键帧与特征点索引值，功能是为MapPoint的成员变量mObservations赋值，所以我们先详细看一下这个变量就行。<br>首先，它的类型为std::map&lt;KeyFrame*,std::tuple&lt;int,int&gt;&gt; 这是一个map容器，键值为我们传过来的KeyFrame，value是一个元组类型std::tuple&lt; int,int&gt;，由于我们看的是单目，其实我们只用得到元组的第一个位置，存储的是该MapPoint在该关键帧的投影特征点的索引值。<br>最后还要更新成员int nObs，该成员记录了当前地图点被多少个关键帧相机观测到了(单目关键帧每次观测算1个相机,双目&#x2F;RGBD帧每次观测算2个相机)。</p>
+<hr>
+<h3 id="MapPoint-UpdateNormalAndDepth"><a href="#MapPoint-UpdateNormalAndDepth" class="headerlink" title="MapPoint::UpdateNormalAndDepth()"></a>MapPoint::UpdateNormalAndDepth()</h3><p>该函数的功能是更新地图点平均观测方向和观测距离范围。首先看一下观测距离范围是什么意思，这部分就参考博客<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116784652?spm=1001.2014.3001.5502">ORB-SLAM2代码详解03: 地图点MapPoint</a>，然后在看具体代码。</p>
+<p><strong>基本概念</strong><br>MapPoint类中观测距离范围的由成员变量mfMaxDistance和mfMinDistance表示。</p>
+<ul>
+<li><code>mfMaxDistance</code>表示若地图点匹配在某特征提取器图像金字塔第7层上的某特征点,观测距离值</li>
+<li><code>mfMinDistance</code>表示若地图点匹配在某特征提取器图像金字塔第0层上的某特征点,观测距离值<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E8%A7%82%E6%B5%8B%E5%B0%BA%E5%BA%A61.png" alt="观测尺度"><br>这里的dist是由参考关键帧得到的，参考关键帧就是创建MapPoint对象时传递过去的KeyFrame参数。dist与mfMaxDistance，mfMinDistance之间的换算关系为\[\frac{mfMaxDistance}{dist}\text&#x3D;{1.2^{level}},\frac{dist}{mfMinDistance}\text&#x3D;{1.2^{(n-1-\text{level})}}\]$$level$$是MapPoint在参考关键帧中对应关键点的金字塔层数，$n$是金字塔的总层数。</li>
+</ul>
+<p><strong>平均观测方向</strong><br>遍历每个观测到该地图点的关键帧，求他们光心到该地图点的向量，即观测方向，光心就是该关键帧的位姿变换的平移部分。然后将该向量归一化，将所有向量加起来除以向量个数。</p>
+<p><strong>观测距离范围</strong><br>得到参考关键帧(即地图点第一次创建时的关键帧)与地图点之间的距离</p>
+<pre><code>Eigen::Vector3f PC = Pos - pRefKF-&gt;GetCameraCenter(); 
+const float dist = PC.norm(); 
+</code></pre>
+<p>然后根据上面的公式求得最大距离和最小距离。</p>
+<p>最后，该函数就是把平均观测方向存入mNormalVector中，把最大和最小距离存入mfMaxDistance和mfMinDistance中。</p>
+<p><strong>函数MapPoint::UpdateNormalAndDepth()的调用时机:</strong></p>
+<ul>
+<li>创建地图点时调用该函数初始化其观测信息。</li>
+<li>地图点对关键帧的观测<code>mObservations</code>更新时(<strong>跟踪局部地图添加或删除对关键帧的观测</strong>时、<strong>LocalMapping线程删除冗余关键帧</strong>时或<strong>LoopClosing线程闭环矫正</strong>时),调用该函数初始化其观测信息。</li>
+<li>地图点世界坐标mWorldPos发生变化时(BA优化之后),调用该函数初始化其观测信息.</li>
+</ul>
+<p>总结成一句话: 只要地图点本身或关键帧对该地图点的观测发生变化,就应该调用该函数更新其观测尺度和方向信息。</p>
+<hr>
+<h3 id="MapPoint-Replace"><a href="#MapPoint-Replace" class="headerlink" title="MapPoint::Replace()"></a>MapPoint::Replace()</h3><p>函数的调用形式为pMPinKF-&gt;Replace(pMP)。将pMPinKF地图点替换成pMP。下面看具体步骤：</p>
+<ol>
+<li>先将mMutexFeatures，mMutexPos上锁(这里是避免track线程里获取mpReplaced时冲突)，将pMP赋值给mpReplaced;</li>
+<li>我们先把pMPinKF的<code>mObservations</code>拷贝到obs，再将<code>mObservations</code>清空。</li>
+<li>遍历obs，每次拿出一组关键帧pKF和对应索引值indexes，判断传过来的pMP是否在pKF中：</li>
+</ol>
+<ul>
+<li>若不在，把pMP存到pKF的<code>mvpMapPoints</code>的indexes的位置，这里本来存储的是pMPinKF，这一步就是用pMP把pMPinKF覆盖了。再把pKF添加到pMP的<code>mObservations</code>中。</li>
+<li>若存在，我们直接把pKF中的pMPinKF删掉就行。</li>
+</ul>
+<ol>
+<li>将当前地图点的观测数据等其他数据都”叠加”到新的地图点上，包括nfound，nvisible，更新地图点描述子，删掉地图中的pMPinKF。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ORBSLAM3-NOTE/" rel="tag"># ORBSLAM3 NOTE</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/04/13/ORBSLAM3-NOTE-10/" rel="next" title="ORB-SLAM3源码阅读:KeyFrame">
+                <i class="fa fa-chevron-left"></i> ORB-SLAM3源码阅读:KeyFrame
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/04/27/ORBSLAM3-NOTE-12/" rel="prev" title="ORB-SLAM3源码阅读:KeyFrameDatabase">
+                ORB-SLAM3源码阅读:KeyFrameDatabase <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/%5Bobject%20Object%5D"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20fa%20fa-archive">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-11"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(11)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#MapPoint-AddObservation"><span class="nav-number">1.1.1.</span> <span class="nav-text">MapPoint::AddObservation()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MapPoint-UpdateNormalAndDepth"><span class="nav-number">1.1.2.</span> <span class="nav-text">MapPoint::UpdateNormalAndDepth()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MapPoint-Replace"><span class="nav-number">1.1.3.</span> <span class="nav-text">MapPoint::Replace()</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-[object Object]"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v="></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v="></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v="></script>
+<script type="text/javascript" src="/js/src/post-details.js?v="></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v="></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
