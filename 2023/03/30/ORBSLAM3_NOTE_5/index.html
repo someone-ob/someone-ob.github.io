@@ -355,13 +355,12 @@ if(mbMonocular)
 else
     nThObs = 3;
 const int cnThObs = nThObs;
-</code></pre>
-<p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+</code></pre><p><strong>2.遍历检查的新添加的MapPoints</strong></p>
 <blockquote>
 <p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
 <ul>
 <li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
-<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound&#x2F;mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound&#x2F;mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound/mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound/mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
 <li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
 <li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
 </ul>
@@ -369,7 +368,7 @@ const int cnThObs = nThObs;
 <hr>
 <h3 id="LocalMapping-CreateNewMapPoints"><a href="#LocalMapping-CreateNewMapPoints" class="headerlink" title="LocalMapping::CreateNewMapPoints()"></a>LocalMapping::CreateNewMapPoints()</h3><p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
 <blockquote>
-<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector&lt;KeyFrame*&gt;类变量vpNeighKFs中。</p>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector<KeyFrame*>类变量vpNeighKFs中。</p>
 </blockquote>
 <p>2.遍历相邻关键帧vpNeighKFs<br>2.1 判断相机运动的基线是不是足够长</p>
 <blockquote>
@@ -381,11 +380,11 @@ const int cnThObs = nThObs;
 </blockquote>
 <p>3.遍历匹配点，每对匹配通过三角化生成3D点<br>3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br>3.2 利用匹配点反投影得到视差角</p>
 <blockquote>
-<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{&#x3D;}\frac{\text{u}-c_x}{f_x},Y&#x3D;\frac{v-c_y}{f_y},Z&#x3D;1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
+<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{=}\frac{\text{u}-c_x}{f_x},Y=\frac{v-c_y}{f_y},Z=1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
 </blockquote>
 <p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br>3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br>3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br>3.6 检查尺度连续性</p>
 <blockquote>
-<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist &#x3D; d2&#x2F;d1，ratioOctave&#x3D;s1&#x2F;s2,ratioFactor &#x3D; 1.5f*1.2(1.2就是基础缩放比例);若ratioDist*ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist = d2/d1，ratioOctave=s1/s2,ratioFactor = 1.5f<em>1.2(1.2就是基础缩放比例);若ratioDist\</em>ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
 </blockquote>
 <p>3.7 构造地图点，为地图点添加属性，分别是</p>
 <ul>
@@ -399,11 +398,11 @@ const int cnThObs = nThObs;
 <blockquote>
 <p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
 </blockquote>
-<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 – 正向</p>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 — 正向</p>
 <blockquote>
 <p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
 </blockquote>
-<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 – 反向</p>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 — 反向</p>
 <ul>
 <li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
 <li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
@@ -782,6 +781,28 @@ const int cnThObs = nThObs;
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
 
   
 

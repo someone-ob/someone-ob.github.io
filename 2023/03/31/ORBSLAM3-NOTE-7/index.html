@@ -316,16 +316,14 @@
 <hr>
 <h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
 <hr>
-<h3 id="Frame-Frame-const-Frame-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
+<h3 id="Frame-Frame-const-Frame-amp-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-amp-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
 <hr>
 <h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
 <pre><code>mnId=nNextId++;
-</code></pre>
-<p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
+</code></pre><p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
 <p><strong>3.提取orb特征点</strong></p>
 <pre><code>ExtractORB(0,imGray,0,1000);
-</code></pre>
-<p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
+</code></pre><p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
 <pre><code>void Frame::ExtractORB(int flag, const cv::Mat &amp;im, const int x0, const int x1)
 &#123;
     vector&lt;int&gt; vLapping = &#123;x0,x1&#125;;
@@ -337,29 +335,25 @@
         // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
         monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 &#125;
-</code></pre>
-<p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+</code></pre><p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
 <p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
 <pre><code>UndistortKeyPoints();
-</code></pre>
-<p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
+</code></pre><p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
 <pre><code>mvuRight = vector&lt;float&gt;(N,-1);
 mvDepth = vector&lt;float&gt;(N,-1);
 mnCloseMPs = 0;
-</code></pre>
-<p><strong>5.初始化本帧的地图点</strong></p>
+</code></pre><p><strong>5.初始化本帧的地图点</strong></p>
 <pre><code>mvpMapPoints = vector&lt;MapPoint*&gt;(N,static_cast&lt;MapPoint*&gt;(NULL));
 
 mmProjectPoints.clear();// = map&lt;long unsigned int, cv::Point2f&gt;(N, static_cast&lt;cv::Point2f&gt;(NULL));
 mmMatchedInImage.clear();
-</code></pre>
-<p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
+</code></pre><p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
 <p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br>存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
 <ul>
 <li>若图像是第一帧或者是相机标定参数发生变化，则<ul>
 <li>计算去畸变后图像的边界，这里也是用opencv库里的函数，这步将mnMinX，mnMaxX，mnMinY，mnMaxY初始化。</li>
 <li>计算一个图像像素在网格中占的宽和高mfGridElementWidthInv，mfGridElementHeightInv，这两个变量用来确定特征点在哪个网格。</li>
-<li>特殊的初始化过程完成，标志复位mbInitialComputations&#x3D;false;</li>
+<li>特殊的初始化过程完成，标志复位mbInitialComputations=false;</li>
 </ul>
 </li>
 <li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure></li>
@@ -379,8 +373,7 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
             mGridRight[i][j].reserve(nReserve);
         &#125;
     &#125;
-</code></pre>
-<p>这里nReserve定义为0.5f*N&#x2F;(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
+</code></pre><p>这里nReserve定义为0.5f*N/(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
 <p><strong>2.遍历每个特征点，将每个特征点在mvKeysUn中的索引值放到对应的网格mGrid中</strong></p>
 <pre><code>for(int i=0;i&lt;N;i++)
 &#123;
@@ -398,18 +391,17 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
             mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
     &#125;
 &#125;
-</code></pre>
-<p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
+</code></pre><p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
 <hr>
 <h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点"></p>
 <hr>
 <h3 id="Frame-isInFrustum"><a href="#Frame-isInFrustum" class="headerlink" title="Frame::isInFrustum()"></a>Frame::isInFrustum()</h3><p>1.获得这个地图点的世界坐标<br>2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br>3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br>4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
 <blockquote>
-<p>这里的尺度是0.8 * mfMinDistance到1.2 * mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
+<p>这里的尺度是0.8 <em> mfMinDistance到1.2 </em> mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
 </blockquote>
 <p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br>6.根据地图点到光心的距离来预测一个尺度</p>
 <blockquote>
-<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}&#x3D;ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
+<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}=ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
 </blockquote>
 <p>7.记录计算得到的一些参数</p>
 <pre><code>pMP-&gt;mbTrackInView = true;
@@ -427,7 +419,6 @@ pMP-&gt;mnTrackScaleLevel= nPredictedLevel;
 // 保存当前视角和法线夹角的余弦值
 pMP-&gt;mTrackViewCos = viewCos;
 </code></pre>
-
       
     </div>
     
@@ -592,7 +583,7 @@ pMP-&gt;mTrackViewCos = viewCos;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-AssignFeaturesToGrid"><span class="nav-number">1.1.4.</span> <span class="nav-text">Frame::AssignFeaturesToGrid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-GetFeaturesInArea"><span class="nav-number">1.1.5.</span> <span class="nav-text">Frame::GetFeaturesInArea()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-isInFrustum"><span class="nav-number">1.1.6.</span> <span class="nav-text">Frame::isInFrustum()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-7"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(7)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E7%BC%BA%E7%9C%81%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.1.</span> <span class="nav-text">Frame::Frame() 缺省构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-const-Frame-amp-frame-%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.2.</span> <span class="nav-text">Frame::Frame(const Frame &amp;frame) 拷贝构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-Frame-%E2%80%A6-%E6%9C%89%E5%8F%82%E6%95%B0%E6%9E%84%E9%80%A0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Frame::Frame(…)有参数构造</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-AssignFeaturesToGrid"><span class="nav-number">1.1.4.</span> <span class="nav-text">Frame::AssignFeaturesToGrid()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-GetFeaturesInArea"><span class="nav-number">1.1.5.</span> <span class="nav-text">Frame::GetFeaturesInArea()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Frame-isInFrustum"><span class="nav-number">1.1.6.</span> <span class="nav-text">Frame::isInFrustum()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -792,6 +783,28 @@ pMP-&gt;mTrackViewCos = viewCos;
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
 
   
 

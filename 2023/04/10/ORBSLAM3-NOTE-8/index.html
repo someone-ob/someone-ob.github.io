@@ -320,8 +320,7 @@
 for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre>
-<p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+</code></pre><p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
 <p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
 <ul>
 <li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
@@ -379,14 +378,12 @@ for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre>
-<p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
+</code></pre><p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
 <pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
 DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
 DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
 DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
-</code></pre>
-<p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+</code></pre><p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
 <p>2.1 遍历pKF1和pKF2中的node节点</p>
 <blockquote>
 <p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
@@ -403,7 +400,7 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
 <li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
 <li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
-<p>作者根据kp2金字塔尺度因子(scale^n，scale&#x3D;1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
 </blockquote>
 </li>
 <li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
@@ -807,6 +804,28 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
 
   
 

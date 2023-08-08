@@ -313,9 +313,9 @@
         <h1 id="ORBSLAM3学习笔记-1"><a href="#ORBSLAM3学习笔记-1" class="headerlink" title="ORBSLAM3学习笔记(1)"></a>ORBSLAM3学习笔记(1)</h1><p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。ps:源码用的是计算机视觉life的注释版本</p>
 <hr>
 <h2 id="一、框架结构"><a href="#一、框架结构" class="headerlink" title="一、框架结构"></a>一、框架结构</h2><p>orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。</p>
-<p><strong>Examples目录</strong><br>examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br>除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS&#x2F;src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
+<p><strong>Examples目录</strong><br>examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br>除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS/src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
 <hr>
-<h2 id="二、源码阅读笔记"><a href="#二、源码阅读笔记" class="headerlink" title="二、源码阅读笔记"></a>二、源码阅读笔记</h2><h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>main函数在ROS&#x2F;src目录下的ros_mono.cc文件，整体代码量不多，我就先放在下面了。</p>
+<h2 id="二、源码阅读笔记"><a href="#二、源码阅读笔记" class="headerlink" title="二、源码阅读笔记"></a>二、源码阅读笔记</h2><h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>main函数在ROS/src目录下的ros_mono.cc文件，整体代码量不多，我就先放在下面了。</p>
 <pre><code>int main(int argc, char **argv)
 &#123;
     ros::init(argc, argv, &quot;Mono&quot;);
@@ -348,15 +348,12 @@
 
     return 0;
 &#125;
-</code></pre>
-<p><strong>先解释一下main函数的运行流程</strong></p>
+</code></pre><p><strong>先解释一下main函数的运行流程</strong></p>
 <pre><code>ros::init(argc, argv, &quot;Mono&quot;);
 ros::start();
-</code></pre>
-<p>这两句用来启动ros结点，之后的if判断是否输入两个参数，这两个参数分别是词袋文件和标定文件的路径。</p>
+</code></pre><p>这两句用来启动ros结点，之后的if判断是否输入两个参数，这两个参数分别是词袋文件和标定文件的路径。</p>
 <pre><code>ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR,true);
-</code></pre>
-<p>这句是初始化一个slam系统，初始化包括定位、回环、查看线程。 首先会根据输入选择rgbd、mono等容器，然后初始化启动定位、关闭定位、换地图、reset地图等。ORB_SLAM3::System类在System.h中,具体实现在System.cc中，故具体初始化流程在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中会详细说明。</p>
+</code></pre><p>这句是初始化一个slam系统，初始化包括定位、回环、查看线程。 首先会根据输入选择rgbd、mono等容器，然后初始化启动定位、关闭定位、换地图、reset地图等。ORB_SLAM3::System类在System.h中,具体实现在System.cc中，故具体初始化流程在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中会详细说明。</p>
 <p>初始化完成，创建ImageGrabber对象，在回调函数中调用ImageGrabber类的函数GrabImage</p>
 <pre><code>void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr&amp; msg)
 &#123;
@@ -374,8 +371,7 @@ ros::start();
 
     mpSLAM-&gt;TrackMonocular(cv_ptr-&gt;image,cv_ptr-&gt;header.stamp.toSec());
 &#125;
-</code></pre>
-<p>ros结点接收发布方传来的图像，转换为一个 CvImage 对象，并将其赋值给 cv_ptr。调用mpSLAM的TrackMonocular函数时，作为参数传入，第一个是图像信息，第二个是时间戳。TrackMonocular()就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中讲了。</p>
+</code></pre><p>ros结点接收发布方传来的图像，转换为一个 CvImage 对象，并将其赋值给 cv_ptr。调用mpSLAM的TrackMonocular函数时，作为参数传入，第一个是图像信息，第二个是时间戳。TrackMonocular()就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中讲了。</p>
 
       
     </div>
@@ -737,6 +733,28 @@ ros::start();
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
 
   
 

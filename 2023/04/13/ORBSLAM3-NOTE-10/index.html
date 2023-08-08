@@ -314,7 +314,7 @@
 <hr>
 <h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="KeyFrame-KeyFrame"><a href="#KeyFrame-KeyFrame" class="headerlink" title="KeyFrame::KeyFrame()"></a>KeyFrame::KeyFrame()</h3><p>就是通过传来的参数给相应的成员变量赋值。传来的pMap对象是指针型的，故KeyFrame类对象的成员变量mpMap指向的是Atlas类对象的成员变量mpCurrentMap。</p>
 <hr>
-<h3 id="KeyFrame-ComputeBoW"><a href="#KeyFrame-ComputeBoW" class="headerlink" title="KeyFrame::ComputeBoW()"></a>KeyFrame::ComputeBoW()</h3><p>这里就是给mBowVec和mFeatVec两个成员变量赋值。这里可以直接看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41694024/article/details/126328833">ORB-SLAM2 —- Frame::ComputeBoW函数</a>,这篇博客讲得细致清晰，我就不多做赘述了，就直接放下源码注释。</p>
+<h3 id="KeyFrame-ComputeBoW"><a href="#KeyFrame-ComputeBoW" class="headerlink" title="KeyFrame::ComputeBoW()"></a>KeyFrame::ComputeBoW()</h3><p>这里就是给mBowVec和mFeatVec两个成员变量赋值。这里可以直接看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41694024/article/details/126328833">ORB-SLAM2 —— Frame::ComputeBoW函数</a>,这篇博客讲得细致清晰，我就不多做赘述了，就直接放下源码注释。</p>
 <pre><code>void KeyFrame::ComputeBoW()
 &#123;
     // 只有当词袋向量或者节点和特征序号的特征向量为空的时候执行
@@ -330,8 +330,7 @@
                                4);              //4表示从叶节点向前数的层数
     &#125;
 &#125;
-</code></pre>
-<p>关于mBowVec和mFeatVec的具体类型，看以下注释。</p>
+</code></pre><p>关于mBowVec和mFeatVec的具体类型，看以下注释。</p>
 <pre><code>// Bag of Words Vector structures.
 // 内部实际存储的是std::map&lt;WordId, WordValue&gt;
 // WordId 和 WordValue 表示Word在叶子中的id 和权重
@@ -339,15 +338,14 @@ DBoW2::BowVector mBowVec;
 // 内部实际存储 std::map&lt;NodeId, std::vector&lt;unsigned int&gt; &gt;
 // NodeId 表示节点id，std::vector&lt;unsigned int&gt; 中实际存的是该节点id下所有特征点在图像中的索引
 DBoW2::FeatureVector mFeatVec;
-</code></pre>
-<hr>
-<h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map&lt;KeyFrame *, int&gt;类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
+</code></pre><hr>
+<h3 id="KeyFrame-UpdateConnections"><a href="#KeyFrame-UpdateConnections" class="headerlink" title="KeyFrame::UpdateConnections()"></a>KeyFrame::UpdateConnections()</h3><p>1.创建map<KeyFrame *, int>类变量KFcounter，键是该关键帧的共视关键帧，值是该这两个关键帧的共视点数目。</p>
 <blockquote>
 <p>具体做法是先获得该关键帧的所有地图点。遍历地图点，根据地图点的成员变量mObservations，往KFcounter中添加键值对。</p>
 </blockquote>
-<p>2.创建vector&lt;pair&lt;int, KeyFrame *&gt;&gt;类变量vPairs，这里面存储与该关键帧共视点超过15的关键帧。</p>
+<p>2.创建vector<pair<int, KeyFrame *>&gt;类变量vPairs，这里面存储与该关键帧共视点超过15的关键帧。</p>
 <blockquote>
-<p>这步就是遍历KFcounter，把达到要求的共视关键帧以及共视点数目放入vPairs中。同时调用AddConnection(),给这个共视关键帧更新连接及权重。<br>AddConnection()就是为std::map&lt;KeyFrame*,int&gt;类成员变量<code>mConnectedKeyFrameWeights</code>赋值，之后调用UpdateBestCovisibles()，对连接关系按照权重(即共视点数目)从大到小排序，把排完序的关键帧和权重存入<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
+<p>这步就是遍历KFcounter，把达到要求的共视关键帧以及共视点数目放入vPairs中。同时调用AddConnection(),给这个共视关键帧更新连接及权重。<br>AddConnection()就是为std::map<KeyFrame*,int>类成员变量<code>mConnectedKeyFrameWeights</code>赋值，之后调用UpdateBestCovisibles()，对连接关系按照权重(即共视点数目)从大到小排序，把排完序的关键帧和权重存入<code>mvpOrderedConnectedKeyFrames</code>和<code>mvOrderedWeights</code>中。</p>
 </blockquote>
 <p>3 如果没有连接到关键帧（超过阈值的权重），则对权重最大的关键帧建立连接，同时调用AddConnection(),给这个权重最大的关键帧更新连接及权重。<br>4.对共视程度比较高的关键帧对更新连接关系及权重</p>
 <blockquote>
@@ -723,6 +721,28 @@ DBoW2::FeatureVector mFeatVec;
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
 
   
 
