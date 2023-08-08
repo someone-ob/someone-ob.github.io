@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>ORB-SLAM3源码阅读:LocalMapping | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。  调用函数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ORB-SLAM3源码阅读:LocalMapping">
+<meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。  调用函数">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-03-30T12:34:51.000Z">
+<meta property="article:modified_time" content="2023-05-18T07:35:51.702Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="ORBSLAM3 NOTE">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-ORBSLAM3_NOTE_5" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2023/03/30/ORBSLAM3_NOTE_5/" class="article-date">
+  <time class="dt-published" datetime="2023-03-30T12:34:51.000Z" itemprop="datePublished">2023-03-30</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      ORB-SLAM3源码阅读:LocalMapping
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br><strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
+<blockquote>
+<p>调用函数ProcessNewKeyFrame()</p>
+</blockquote>
+<p><strong>2.根据地图点的观测情况剔除质量不好的地图点</strong></p>
+<blockquote>
+<p>调用函数MapPointCulling()</p>
+</blockquote>
+<p><strong>3.当前关键帧与相邻关键帧通过三角化产生新的地图点，使得跟踪更稳</strong></p>
+<blockquote>
+<p>调用函数CreateNewMapPoints()</p>
+</blockquote>
+<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧（两级相邻）帧中重复的地图点</strong></p>
+<blockquote>
+<p>调用函数SearchInNeighbors()</p>
+</blockquote>
+<p><strong>5.如果已经处理完队列中的最后的一个关键帧，并且闭环检测没有请求停止LocalMapping，进行局部BA优化</strong></p>
+<ul>
+<li>当前关键帧的一级共视关键帧位姿会被优化;二极共视关键帧会加入优化图,但其位姿不会被优化。</li>
+<li>所有局部地图点位姿都会被优化</li>
+</ul>
+<p><strong>6.检测并剔除当前帧相邻的关键帧中冗余的关键帧</strong></p>
+<blockquote>
+<p>调用函数KeyFrameCulling()</p>
+</blockquote>
+<p><strong>7.将当前帧加入到闭环检测队列中</strong></p>
+<hr>
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br><strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br><strong>2.计算该关键帧特征点的Bow信息</strong><br><strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
+<ul>
+<li><p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
+</li>
+<li><p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
+</li>
+</ul>
+<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br><strong>5.将该关键帧插入到地图中</strong></p>
+<hr>
+<h3 id="LocalMapping-MapPointCulling"><a href="#LocalMapping-MapPointCulling" class="headerlink" title="LocalMapping::MapPointCulling()"></a>LocalMapping::MapPointCulling()</h3><p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
+<pre><code>int nThObs;
+if(mbMonocular)
+    nThObs = 2;
+else
+    nThObs = 3;
+const int cnThObs = nThObs;
+</code></pre>
+<p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+<blockquote>
+<p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
+<ul>
+<li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound&#x2F;mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound&#x2F;mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
+<li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
+</ul>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-CreateNewMapPoints"><a href="#LocalMapping-CreateNewMapPoints" class="headerlink" title="LocalMapping::CreateNewMapPoints()"></a>LocalMapping::CreateNewMapPoints()</h3><p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
+<blockquote>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector&lt;KeyFrame*&gt;类变量vpNeighKFs中。</p>
+</blockquote>
+<p>2.遍历相邻关键帧vpNeighKFs<br>2.1 判断相机运动的基线是不是足够长</p>
+<blockquote>
+<p>单目相机情况,计算邻接关键帧的场景深度中值，然后得到基线(即两个光心的距离)与景深的比例，若比例特别小，基线太短恢复3D点不准，那么跳过当前邻接的关键帧，不生成3D点。</p>
+</blockquote>
+<p>2.2 通过BoW对两关键帧的未匹配的特征点快速匹配，用极线约束抑制离群点，生成新的匹配点对。</p>
+<blockquote>
+<p>调用函数SearchForTriangulation(),具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a>。</p>
+</blockquote>
+<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br>3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br>3.2 利用匹配点反投影得到视差角</p>
+<blockquote>
+<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{&#x3D;}\frac{\text{u}-c_x}{f_x},Y&#x3D;\frac{v-c_y}{f_y},Z&#x3D;1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
+</blockquote>
+<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br>3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br>3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br>3.6 检查尺度连续性</p>
+<blockquote>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist &#x3D; d2&#x2F;d1，ratioOctave&#x3D;s1&#x2F;s2,ratioFactor &#x3D; 1.5f*1.2(1.2就是基础缩放比例);若ratioDist*ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+</blockquote>
+<p>3.7 构造地图点，为地图点添加属性，分别是</p>
+<ul>
+<li>观测到该MapPoint的关键帧</li>
+<li>该MapPoint的描述子</li>
+<li>该MapPoint的平均观测方向和深度范围</li>
+</ul>
+<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br>3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
+<hr>
+<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3><p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br>2.存储一级相邻关键帧及其二级相邻关键帧</p>
+<blockquote>
+<p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
+</blockquote>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 – 正向</p>
+<blockquote>
+<p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
+</blockquote>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 – 反向</p>
+<ul>
+<li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
+<li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
+</ul>
+<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br>6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
+<blockquote>
+<p>即更新共视关系，调用函数KeyFrame::UpdateConnections()</p>
+</blockquote>
+<hr>
+<h3 id="LocalMapping-KeyFrameCulling"><a href="#LocalMapping-KeyFrameCulling" class="headerlink" title="LocalMapping::KeyFrameCulling()"></a>LocalMapping::KeyFrameCulling()</h3><p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br>对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
+<p>遍历到的关键帧为pKF，规定第一个关键帧不能删除（初始化的第一帧），提取每个共视关键帧的地图点vpMapPoints（vpLocalKeyFrames的地图点），遍历每一个地图点：</p>
+<p>如果该地图点的被观测次数超过阈值thObs，获取能看见该地图点的关键帧的集合observations，遍历观测到该地图点的关键帧，获得该地图点在关键帧中对应的特征点在图像金字塔的层数，若层数不超过其在pKF中的层数，则nObs++，最后若nObs&gt;3,则该地图点为冗余地图点。</p>
+<p>如果该关键帧90%以上的有效地图点被判断为冗余的，则认为该关键帧是冗余的，需要删除该关键帧。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/" data-id="cll2ehamx000gks9f65sgdpda" data-title="ORB-SLAM3源码阅读:LocalMapping" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ORBSLAM3-NOTE/" rel="tag">ORBSLAM3 NOTE</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2023/03/31/ORBSLAM3_NOTE_6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          ORB-SLAM3源码阅读:LoopClosing
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2023/03/30/ORBSLAM3_NOTE_4/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">ORB-SLAM3源码阅读:ORBextractor</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/ORBSLAM3-NOTE/" rel="tag">ORBSLAM3 NOTE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/VIO-NOTE/" rel="tag">VIO NOTE</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/ORBSLAM3-NOTE/" style="font-size: 20px;">ORBSLAM3 NOTE</a> <a href="/tags/VIO-NOTE/" style="font-size: 10px;">VIO NOTE</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/05/">May 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">April 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">March 2023</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2023/05/18/VIO_NOTE_01/">VIO_NOTE_01</a>
+          </li>
+        
+          <li>
+            <a href="/2023/04/27/ORBSLAM3-NOTE-12/">ORB-SLAM3源码阅读:KeyFrameDatabase</a>
+          </li>
+        
+          <li>
+            <a href="/2023/04/13/ORBSLAM3-NOTE-11/">ORB-SLAM3源码阅读:MapPoint</a>
+          </li>
+        
+          <li>
+            <a href="/2023/04/13/ORBSLAM3-NOTE-10/">ORB-SLAM3源码阅读:KeyFrame</a>
+          </li>
+        
+          <li>
+            <a href="/2023/04/11/ORBSLAM3-NOTE-9/">ORB-SLAM3源码阅读:TwoViewReconstruction</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2023 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
