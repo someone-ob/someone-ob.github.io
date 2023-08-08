@@ -1,279 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  
-  <title>ORB-SLAM3源码阅读:TwoViewReconstruction | Hexo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="ORBSLAM3学习笔记(9)这篇博客主要是对TwoViewReconstruction.cc文件的学习。  一、基本原理这个文件用来完成单目初始化，里面涉及特征点坐标的归一化，对极约束求基础矩阵，求单应矩阵，RANSAC方法，双向重投影误差  1.特征点归一化矩阵A是利用8点法求基础矩阵的关键,所以Hartey就认为,利用8点法求基础矩阵不稳定的一个主要原因就是原始的图像像点坐标组成的系数矩阵A">
-<meta property="og:type" content="article">
-<meta property="og:title" content="ORB-SLAM3源码阅读:TwoViewReconstruction">
-<meta property="og:url" content="http://example.com/2023/04/11/ORBSLAM3-NOTE-9/index.html">
-<meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="ORBSLAM3学习笔记(9)这篇博客主要是对TwoViewReconstruction.cc文件的学习。  一、基本原理这个文件用来完成单目初始化，里面涉及特征点坐标的归一化，对极约束求基础矩阵，求单应矩阵，RANSAC方法，双向重投影误差  1.特征点归一化矩阵A是利用8点法求基础矩阵的关键,所以Hartey就认为,利用8点法求基础矩阵不稳定的一个主要原因就是原始的图像像点坐标组成的系数矩阵A">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E5%8D%95%E5%BA%94%E7%9F%A9%E9%98%B5.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/6.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC1.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC2.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC3.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E4%B8%89%E8%A7%92%E5%8C%96.png">
-<meta property="article:published_time" content="2023-04-11T05:53:20.000Z">
-<meta property="article:modified_time" content="2023-05-18T07:36:20.327Z">
-<meta property="article:author" content="John Doe">
-<meta property="article:tag" content="ORBSLAM3 NOTE">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E5%8D%95%E5%BA%94%E7%9F%A9%E9%98%B5.png">
-  
-    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/favicon.png">
-  
-  
-    
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
-
-  
-  
-<link rel="stylesheet" href="/css/style.css">
-
-  
-    
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
-
-  
-  
-<meta name="generator" content="Hexo 6.3.0"></head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Hexo</a>
-      </h1>
-      
-    </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
-        
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-        
-          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
-        
-        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
-      </div>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-ORBSLAM3-NOTE-9" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2023/04/11/ORBSLAM3-NOTE-9/" class="article-date">
-  <time class="dt-published" datetime="2023-04-11T05:53:20.000Z" itemprop="datePublished">2023-04-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="p-name article-title" itemprop="headline name">
-      ORB-SLAM3源码阅读:TwoViewReconstruction
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="ORBSLAM3学习笔记-9"><a href="#ORBSLAM3学习笔记-9" class="headerlink" title="ORBSLAM3学习笔记(9)"></a>ORBSLAM3学习笔记(9)</h1><p>这篇博客主要是对TwoViewReconstruction.cc文件的学习。</p>
-<hr>
-<h2 id="一、基本原理"><a href="#一、基本原理" class="headerlink" title="一、基本原理"></a>一、基本原理</h2><p>这个文件用来完成单目初始化，里面涉及特征点坐标的归一化，对极约束求基础矩阵，求单应矩阵，RANSAC方法，双向重投影误差</p>
-<hr>
-<h3 id="1-特征点归一化"><a href="#1-特征点归一化" class="headerlink" title="1.特征点归一化"></a>1.特征点归一化</h3><p>矩阵A是利用8点法求基础矩阵的关键,所以Hartey就认为,利用8点法求基础矩阵不稳定的一个主要原因就是原始的图像像点坐标组成的系数矩阵A不好造成的,而造成A不好的原因是像点的齐次坐标各个分量的数量级相差太大。基于这个原因,Hartey提出一种改进的8点法,在应用8点法求基础矩阵之前,先对像点坐标进行归一化处理,即对原始的图像坐标做同向性变换,这样就可以减少噪声的干扰,大大的提高8点法的精度。</p>
-<p>预先对图像坐标进行归一化有以下好处：<br>1.能够提高运算结果的精度。<br>2.利用归一化处理后的图像坐标,对任何尺度缩放和原点的选择是不变的。归一化步骤预先为图像坐标选择了一个标准的坐标系中,消除了坐标变换对结果的影响。</p>
-<p>坐标归一化主要分为平移和缩放，具体步骤如下：<br><strong>平移</strong><br>首先求均值<br>$\begin{cases} x_{mean}&#x3D;\frac{1}{N}\sum_{i}^{N}{p_x^i}\ y_{mean}&#x3D;\frac{1}{N}\sum_{i}^{N}{p_y^i} \end{cases}$<br>得到均值后，用原坐标减去均值，这里的均值相当于新的坐标原点<br>$p_x^i&#x3D;p_x^i-x_{mean},p_y^i&#x3D;p_y^i-y_{mean}$<br><strong>缩放</strong><br>首先求系数$s_x$和$s_y$，系数的几何意义就是单位距离。求法就是所有坐标到新原点$(x_{mean},y_{mean})$的距离之和的均值。<br>$\begin{cases} s_x &#x3D; \frac{\sum\limits_{i &#x3D; 0}^N {|p_x^i - x_{mean}|}}N\s_y &#x3D; \frac{\sum\limits_{i &#x3D; 0}^N {|p_y^i - y_{mean}|} }N\end{cases}$<br>得到系数后，将平移后的坐标乘以单位距离，就得到归一化的坐标了。<br>$p_x^i&#x3D;s_xp_x^i,p_y^i&#x3D;s_yp_y^i$</p>
-<p>这两个过程可以用一个变换T来描述<br>$p’ &#x3D; Tp$<br>$T&#x3D;\left[ \begin{matrix}<br>   s_x &amp; 0 &amp; -{x_{mean}}s_x  \<br>   0 &amp; s_y &amp; -{y_{mean}}s_y  \<br>   0 &amp; 0 &amp; 1  \<br>\end{matrix} \right]$<br>这个T要保存一下，等会计算出来H、F，是归一化后的，以H为例，要用$T^{-1}HT$还原回来。</p>
-<hr>
-<h3 id="2-基础矩阵求解"><a href="#2-基础矩阵求解" class="headerlink" title="2.基础矩阵求解"></a>2.基础矩阵求解</h3><p>这一部分十四讲讲得还是比较细致的，图我就不放了，就直接进行一下运算推导吧<br>已知$p_1,p_2$是路标点$P$的像素坐标，得到\[s_1p_1&#x3D;KP,s_2p_2&#x3D;K(RP+t)\]这里的$s_1,s_2$就是路标点的深度信息。现在取\[x_1&#x3D;K^{-1}p_1,x_2&#x3D;K^{-1}p_2\]显然，$x_1,x_2$是两个像素点的归一化平面上的坐标。这里我们不用尺度意义相等，直接代入上式，得\[s_2x_2&#x3D;s_1R{x_1}+t\]然后两边同时与t做外积\[s_2t\hat{\ }x_2&#x3D;s_1t\hat{\ }R{x_1}\]然后，两侧同时左乘$x_2^T$,由于左边的向量垂直于$x_2$，两个垂直向量的内积为0，故得到\[\frac{s_1}{s_2}x_2^Tt\hat{\ }Rx_1&#x3D;0\]由这个式子可以看出，$s_1,s_2$无论取什么值都是没有意义的，取什么式子都成立，故路标点的深度信息缺失了，上式有尺度不确定性。<br>我们把$s_1,s_2$约掉，重新代入$p_1,p_2$得\[p_2^TK^{-1}t\hat{\ }RK^{-1}p_1&#x3D;0 \]令$E&#x3D;t\hat{\ }R,F&#x3D;K^{-T}EK^{-1}$,E就是本质矩阵，F就是基础矩阵，下面求解基础矩阵。<br>展开成矩阵形式\[\left( u_2,v_2,1 \right)\left( \begin{matrix}<br>   f_1 &amp; f_2 &amp; f_3  \<br>   f_4 &amp; f_5 &amp; f_6  \<br>   f_7 &amp; f_8 &amp; f_9  \<br>\end{matrix} \right)\left( \begin{matrix}<br>   u_1  \<br>   v_1  \<br>   1  \<br>\end{matrix} \right)&#x3D;0\]整理成$Ax&#x3D;0$的形式:\[\left[ u_2u_1,u_2v_1,u_2v_2,u_1,v_2v_1,v_2,u_1,v_1,1 \right]f&#x3D;0\]这里一个点对形成一个约束，$f$有9个变量，但$t\hat{\ }R$实际上只有6个自由度，再加上缺少深度信息，有尺度不确定性，其实只有5自由度。我们选择8个点对，求解出$f$的参数。<br>基础矩阵F可以做奇异值分解得\[F&#x3D;UΣV^T\]我们需要根据$U,Σ,V$来求$R,t$,且$Σ&#x3D;diag(σ,σ,0)$,这是本质矩阵的基本性质，但我们根据线性方程解出来的$F$很可能不满足该性质，因此一般都是$F$矩阵进行奇异值分解，强制令最小奇异值为0，然后重构回来得到$F$。<br>最后，关于我们求得的$R,t$尺度不确定性的问题，由于旋转矩阵$R$有其自身的约束，我们就认为这份不确定性在t上，为了解决这个问题，我们把t归一化，让它长度为一。这样，我们就把尺度定好了，接下来，我们就能用这个单位长度为1的t来求路标点深度，接下来的t也都以此为参考，这样我们初始化的目标就达到了。</p>
-<hr>
-<h3 id="3-单应矩阵求解"><a href="#3-单应矩阵求解" class="headerlink" title="3.单应矩阵求解"></a>3.单应矩阵求解</h3><p>单应矩阵的推导十四讲里写得很简略，我们这里先看图<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E5%8D%95%E5%BA%94%E7%9F%A9%E9%98%B5.png" alt="示例图"><br>上图表示场景中的平面$π$在两相机的成像，P是平面上的路标点(图片中是X)，设平面$π$在第一个相机坐标系下的单位法向量为$n$，平面到第一个相机中心（坐标原点）的距离为d，则平面$π$满足方程：\[n^TP&#x3D;d\]这个式子还是好理解的，就是光心到P点的向量点乘法向量，就是$P$在法向量的投影长度乘以法向量单位长度1，很明显就是对于d。将上式变换为\[\frac1dn^TP&#x3D;1\]把上式代入$p_2≃K(RP+t)$中，得到\[p_2≃K\left( RP+t\left( \frac{n^TP}d \right) \right)≃K\left( R-\frac{tn^T}d \right)P≃K\left( R-\frac{tn^T}d \right)K^{-1}p_1\]中间部分记为H，则\[p_2≃Hp_1\]将该式矩阵展开\[\left[ \begin{matrix}<br>   u_2  \<br>   v_2  \<br>   1  \<br>\end{matrix} \right]≃\left[ \begin{matrix}<br>   h_1 &amp; h_2 &amp; h_3  \<br>   h_4 &amp; h_5 &amp; h_6  \<br>   h_7 &amp; h_8 &amp; h_9  \<br>\end{matrix} \right]\left[ \begin{matrix}<br>   u_1  \<br>   v_1  \<br>   1  \<br>\end{matrix} \right]\]分开写\[u_2&#x3D;\frac{h_1u_1+h_2v_1+h_3}{h_7u_1+h_8v_1+h_9}\]\[v_2&#x3D;\frac{h_4u_1+h_5v_1+h_6}{h_7u_1+h_8v_1+h_9}\]<br>整理成$Ax&#x3D;0$的形式<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/6.png" alt="公式"><br>根据上面的式子可以看出一对匹配点可以构造两个约束，其实我们用四对点就能解了，但还是和上面保持一致，用8组点。对于最小二乘法问题$Ax&#x3D;0$，有很多解法，orbslam3直接进行SVD分解，最小奇异值对应的奇异向量就是x的解。</p>
-<hr>
-<h3 id="4-RANSAC方法"><a href="#4-RANSAC方法" class="headerlink" title="4.RANSAC方法"></a>4.RANSAC方法</h3><p>RANSAC就是随机采样一致，简单理解为随机取一小部分样本计算模型，然后统计在该模型下的内点数（inliers），重复很多次，取内点数最多的那次的模型为最优结果。随机抽取一部分样本计算模型，而不是用整个样本计算，是因为样本中存在outliers，一起计算会影响结果。ransac寄希望于取的那小部分样本全都是优秀的inliers，这样算出来的模型就会是很好的，所以要重复很多次。<br>orbslam3用的是简化过的RANSAC方法，它就是每次去8个不同的点，计算H或F，然后用这个H或F对所有匹配点计算双向重投影误差，利用卡方检验，评判H或F好坏。重复若干次，取其中最好的H或F。<br>下面讲一下通常的RANSAC方法<br>1.随机的从S中选择s个数据点组成一个样本做为模型的一个示例。其中s是构建模型需要最少的点，如拟合直线s&#x3D;2。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC1.png" alt="RANSAC1"><br>2.计算S中所有点与模型的距离，确定在模型距离阈值t内的数据点集Si，Si称为采样的一致集并定义为S的内点。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC2.png" alt="RANSAC2"><br>3.如果Si的大小（内点的数目）大于某个阈值T，用Si的所有点重新估计模型并结束。<br>4.如果Si的大小小于T，选择一个新的子集并重复1，2，3的过程。<br>5.经过N次试验选择最大一致集Si，并用Si所有点重新估计模型。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RANSAC3.png" alt="RANSAC2"></p>
-<hr>
-<h3 id="5-卡方检验"><a href="#5-卡方检验" class="headerlink" title="5.卡方检验"></a>5.卡方检验</h3><p>RANSAC迭代过程中，由于可能使用的点是外点，结果会有很大误差，我们要剔除这些结果，只留下最好的H或F。因此我们要去评估求得的结果的误差大小，而卡方检验正好满足我们的需求。<br>卡方检验我们需要了解三个东西卡方值，自由度，卡方检验表。首先是卡方值，我们先计算重投影误差，这也就是残差，而残差的平方除以随机项方差服从卡方分布，这是因为残差平方和中每一项都服从N（0,1）也就是标准正态分布，故他们之和服从卡方分布，这是卡方分布的基本定义。由此我们可以得出该问题的卡方值就是残差的平方除以随机项方差。然后根据自由度，查卡方检验表，得到阈值。比较卡方值和阈值，超出的我们就舍弃，在范围内的，我们就代入公式计算得分。<br>对于H\[p_2&#x3D;H_{21}p_1,p_1&#x3D;H_{12}p_2\]将$p_1$通过$H_{21}$投影得到$p_2’$，同理将 $p_2$通过$H_{12}$投影得到$p_1’$，卡方值就是$\frac{||p_1-p_1’||^2_2}{\sigma ^2}$和$\frac{||p_2-p_2’||^2_2}{\sigma ^2}$，其中$\sigma&#x3D;1$,该模型下的自由度为2，因为计算的是坐标(u,v)的残差。取95%置信度下的自由度为2的卡方检验统计量阈值等于5.991。然后比较卡方值和阈值，若超过，则内点标志位置为false，反之，则用阈值减去卡方值，算入得分中。<br>对于F，残差其实是投影点到极线的距离。$Fp_1$得到的三个值a,b,c,很明显，$p_2$就在直线ax+by+c&#x3D;0上，但由于误差存在，$p_2$位置肯定会有所偏移，由此计算点到线的距离为残差。这里的自由度为1(z这里没太搞懂)，取95%置信度下的自由度为1的卡方检验统计量阈值,然后和上面步骤差不多。</p>
-<hr>
-<h3 id="6-由F恢复R-t"><a href="#6-由F恢复R-t" class="headerlink" title="6.由F恢复R,t"></a>6.由F恢复R,t</h3><hr>
-<h3 id="7-由H恢复R-t"><a href="#7-由H恢复R-t" class="headerlink" title="7.由H恢复R,t"></a>7.由H恢复R,t</h3><hr>
-<h3 id="8-三角化恢复3D坐标"><a href="#8-三角化恢复3D坐标" class="headerlink" title="8.三角化恢复3D坐标"></a>8.三角化恢复3D坐标</h3><p>一个3D点的齐次坐标为${\left[ x,y,z,1 \right]}^{T}$，它到图像上的投影为\[\lambda \left[ \begin{matrix}<br>   u  \<br>   v  \<br>   1  \<br>\end{matrix} \right]&#x3D;\underbrace{K\left[ R|t \right]}_{P}\left[ \begin{matrix}<br>   x  \<br>   y  \<br>   z  \<br>   1  \<br>\end{matrix} \right]\]\[\Downarrow \]\[\lambda \textbf{u}&#x3D;\textbf{PX}\]两边同时左叉乘$\textbf{u}$,有\[\textbf{u}\hat{\ }\textbf{PX}&#x3D;0\]展开后可得\[\left[ \begin{matrix}<br>   0 &amp; -1 &amp; v  \<br>   1 &amp; 0 &amp; -u  \<br>   -v &amp; u &amp; 0  \<br>\end{matrix} \right]\left[ \begin{matrix}<br>   P_1  \<br>   P_2  \<br>   P_3  \<br>\end{matrix} \right]X&#x3D;0\]\[\Downarrow \]\[\left{ \begin{matrix}<br>   (v{P_3}-{P_2})X&#x3D;0  \<br>   ({P_1}-u{P_3})X&#x3D;0  \<br>   (u{P_2}-v{P_1})X&#x3D;0  \<br>\end{matrix} \right.\]上面的方程很明显是线性相关的，实际上只有两个约束，但我们这里有两帧上的匹配点，由此可以得到两组方程即四个约束：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/%E4%B8%89%E8%A7%92%E5%8C%96.png" alt="三角化"><br>这里可以使用SVD求解，齐次坐标$\textbf{X}$即为$\textbf{H}$的最小奇异值的奇异向量。<br>这部分的代码实现在GeometricTools::Triangulate()函数中。</p>
-<hr>
-<h2 id="二、源码阅读"><a href="#二、源码阅读" class="headerlink" title="二、源码阅读"></a>二、源码阅读</h2><h3 id="TwoViewReconstruction-Reconstruct"><a href="#TwoViewReconstruction-Reconstruct" class="headerlink" title="TwoViewReconstruction::Reconstruct()"></a>TwoViewReconstruction::Reconstruct()</h3><p>首先，将该类的成员变量初始化，其中vector容器<code>mvKeys1</code>存储参考帧的特征点，容器<code>mvKeys2</code>存储当前帧的特征点。容器mvMatches12是std::vector<Match>类数据，Match是自定义类型，包含两个int型数据。所以<code>mvMatches12</code>存储的是参考帧的特征点索引值和对应的匹配特征点的索引值。容器<code>mvbMatched1</code>存储参考帧中的特征点是否有匹配点。<code>mvSets</code>是个二维向量，每行是8个特征点的索引值，且互不相同，一共200组。<br>接下来，双线程调用FindHomography()和FindFundamental()函数。通过这两个函数得到F和H矩阵后，比较得分，选择得分高的矩阵来还原R和t。</p>
-<hr>
-<h3 id="TwoViewReconstruction-FindHomography"><a href="#TwoViewReconstruction-FindHomography" class="headerlink" title="TwoViewReconstruction::FindHomography()"></a>TwoViewReconstruction::FindHomography()</h3><p>首先调用函数Normalize()，将坐标归一化，并得到归一化坐标使用的变换矩阵。然后用归一化后的200组点，对每组点用ComputeH21()函数计算出归一化后H矩阵，再用变换矩阵还原H，使用函数CheckHomography()函数对H打分，最后选择得分最高的H。上面调用的函数，具体原理写在最前面了。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2023/04/11/ORBSLAM3-NOTE-9/" data-id="cll2ehamv0009ks9f4mk47f7b" data-title="ORB-SLAM3源码阅读:TwoViewReconstruction" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ORBSLAM3-NOTE/" rel="tag">ORBSLAM3 NOTE</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2023/04/13/ORBSLAM3-NOTE-10/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          ORB-SLAM3源码阅读:KeyFrame
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2023/04/10/ORBSLAM3-NOTE-8/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">ORB-SLAM3源码阅读:ORBmatcher</div>
-    </a>
-  
-</nav>
-
-  
-</article>
+{% extends '_layout.swig' %}
+{% import '_macro/post.swig' as post_template %}
+{% import '_macro/sidebar.swig' as sidebar_template %}
 
 
-</section>
-        
-          <aside id="sidebar">
-  
-    
+{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tags</h3>
-    <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/ORBSLAM3-NOTE/" rel="tag">ORBSLAM3 NOTE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/VIO-NOTE/" rel="tag">VIO NOTE</a></li></ul>
+{% block page_class %}page-post-detail{% endblock %}
+
+
+{% block content %}
+
+  <div id="posts" class="posts-expand">
+    {{ post_template.render(page) }}
+
+    <div class="post-spread">
+      {% if theme.jiathis %}
+        {% include '_partials/share/jiathis.swig' %}
+      {% elseif theme.baidushare %}
+        {% include '_partials/share/baidushare.swig' %}
+      {% elseif theme.add_this_id %}
+        {% include '_partials/share/add-this.swig' %}
+      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
+        {% include '_partials/share/duoshuo_share.swig' %}
+      {% endif %}
     </div>
   </div>
 
+{% endblock %}
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tag Cloud</h3>
-    <div class="widget tagcloud">
-      <a href="/tags/ORBSLAM3-NOTE/" style="font-size: 20px;">ORBSLAM3 NOTE</a> <a href="/tags/VIO-NOTE/" style="font-size: 10px;">VIO NOTE</a>
-    </div>
-  </div>
+{% block sidebar %}
+  {{ sidebar_template.render(true) }}
+{% endblock %}
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/05/">May 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">April 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">March 2023</a></li></ul>
-    </div>
-  </div>
-
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
-    <div class="widget">
-      <ul>
-        
-          <li>
-            <a href="/2023/05/18/VIO_NOTE_01/">VIO_NOTE_01</a>
-          </li>
-        
-          <li>
-            <a href="/2023/04/27/ORBSLAM3-NOTE-12/">ORB-SLAM3源码阅读:KeyFrameDatabase</a>
-          </li>
-        
-          <li>
-            <a href="/2023/04/13/ORBSLAM3-NOTE-11/">ORB-SLAM3源码阅读:MapPoint</a>
-          </li>
-        
-          <li>
-            <a href="/2023/04/13/ORBSLAM3-NOTE-10/">ORB-SLAM3源码阅读:KeyFrame</a>
-          </li>
-        
-          <li>
-            <a href="/2023/04/11/ORBSLAM3-NOTE-9/">ORB-SLAM3源码阅读:TwoViewReconstruction</a>
-          </li>
-        
-      </ul>
-    </div>
-  </div>
-
-  
-</aside>
-        
-      </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      
-      &copy; 2023 John Doe<br>
-      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
-    </div>
-  </div>
-</footer>
-
-    </div>
-    <nav id="mobile-nav">
-  
-    <a href="/" class="mobile-nav-link">Home</a>
-  
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
-
-
-<script src="/js/jquery-3.6.4.min.js"></script>
-
-
-
-  
-<script src="/fancybox/jquery.fancybox.min.js"></script>
-
-
-
-
-<script src="/js/script.js"></script>
-
-
-
-
-
-  </div>
-</body>
-</html>
+{% block script_extra %}
+  {% include '_scripts/pages/post-details.swig' %}
+{% endblock %}
