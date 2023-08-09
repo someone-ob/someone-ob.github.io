@@ -79,12 +79,12 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(5) 这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。   源码阅读  LocalMapping::Run() 这里都是已经接收到关键帧后的步骤。 1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等">
+<meta name="description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。  调用函数">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ORB-SLAM3源码阅读:LocalMapping">
 <meta property="og:url" content="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="ORBSLAM3学习笔记(5) 这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。   源码阅读  LocalMapping::Run() 这里都是已经接收到关键帧后的步骤。 1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等">
+<meta property="og:description" content="ORBSLAM3学习笔记(5)这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。  源码阅读LocalMapping::Run()这里都是已经接收到关键帧后的步骤。1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。  调用函数">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-30T12:34:51.000Z">
 <meta property="article:modified_time" content="2023-05-18T07:35:51.702Z">
@@ -310,13 +310,9 @@
       
 
       
-        <h1 id="orbslam3学习笔记5"><a class="markdownIt-Anchor" href="#orbslam3学习笔记5"></a> ORBSLAM3学习笔记(5)</h1>
-<p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="localmappingrun"><a class="markdownIt-Anchor" href="#localmappingrun"></a> LocalMapping::Run()</h3>
-<p>这里都是已经接收到关键帧后的步骤。<br />
-<strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
+        <h1 id="ORBSLAM3学习笔记-5"><a href="#ORBSLAM3学习笔记-5" class="headerlink" title="ORBSLAM3学习笔记(5)"></a>ORBSLAM3学习笔记(5)</h1><p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="LocalMapping-Run"><a href="#LocalMapping-Run" class="headerlink" title="LocalMapping::Run()"></a>LocalMapping::Run()</h3><p>这里都是已经接收到关键帧后的步骤。<br><strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
 <blockquote>
 <p>调用函数ProcessNewKeyFrame()</p>
 </blockquote>
@@ -342,54 +338,39 @@
 <p>调用函数KeyFrameCulling()</p>
 </blockquote>
 <p><strong>7.将当前帧加入到闭环检测队列中</strong></p>
-<hr />
-<h3 id="localmappingprocessnewkeyframe"><a class="markdownIt-Anchor" href="#localmappingprocessnewkeyframe"></a> LocalMapping::ProcessNewKeyFrame()</h3>
-<p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br />
-<strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br />
-<strong>2.计算该关键帧特征点的Bow信息</strong><br />
-<strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
+<hr>
+<h3 id="LocalMapping-ProcessNewKeyFrame"><a href="#LocalMapping-ProcessNewKeyFrame" class="headerlink" title="LocalMapping::ProcessNewKeyFrame()"></a>LocalMapping::ProcessNewKeyFrame()</h3><p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br><strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br><strong>2.计算该关键帧特征点的Bow信息</strong><br><strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
 <ul>
-<li>
-<p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
+<li><p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
 </li>
-<li>
-<p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
+<li><p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
 </li>
 </ul>
-<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br />
-<strong>5.将该关键帧插入到地图中</strong></p>
-<hr />
-<h3 id="localmappingmappointculling"><a class="markdownIt-Anchor" href="#localmappingmappointculling"></a> LocalMapping::MapPointCulling()</h3>
-<p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
+<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br><strong>5.将该关键帧插入到地图中</strong></p>
+<hr>
+<h3 id="LocalMapping-MapPointCulling"><a href="#LocalMapping-MapPointCulling" class="headerlink" title="LocalMapping::MapPointCulling()"></a>LocalMapping::MapPointCulling()</h3><p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
 <pre><code>int nThObs;
 if(mbMonocular)
     nThObs = 2;
 else
     nThObs = 3;
 const int cnThObs = nThObs;
-</code></pre>
-<p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+</code></pre><p><strong>2.遍历检查的新添加的MapPoints</strong></p>
 <blockquote>
 <p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
 <ul>
 <li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
-<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br />
-代码中的表述为(mnFound/mnVisible） &lt; 0.25<br />
-<code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br />
-<code>mnVisible</code>：地图点应该被看到的次数<br />
-(mnFound/mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br>代码中的表述为(mnFound/mnVisible） &lt; 0.25<br><code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br><code>mnVisible</code>：地图点应该被看到的次数<br>(mnFound/mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
 <li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
 <li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
 </ul>
 </blockquote>
-<hr />
-<h3 id="localmappingcreatenewmappoints"><a class="markdownIt-Anchor" href="#localmappingcreatenewmappoints"></a> LocalMapping::CreateNewMapPoints()</h3>
-<p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
+<hr>
+<h3 id="LocalMapping-CreateNewMapPoints"><a href="#LocalMapping-CreateNewMapPoints" class="headerlink" title="LocalMapping::CreateNewMapPoints()"></a>LocalMapping::CreateNewMapPoints()</h3><p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
 <blockquote>
-<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector&lt;KeyFrame*&gt;类变量vpNeighKFs中。</p>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector<KeyFrame*>类变量vpNeighKFs中。</p>
 </blockquote>
-<p>2.遍历相邻关键帧vpNeighKFs<br />
-2.1 判断相机运动的基线是不是足够长</p>
+<p>2.遍历相邻关键帧vpNeighKFs<br>2.1 判断相机运动的基线是不是足够长</p>
 <blockquote>
 <p>单目相机情况,计算邻接关键帧的场景深度中值，然后得到基线(即两个光心的距离)与景深的比例，若比例特别小，基线太短恢复3D点不准，那么跳过当前邻接的关键帧，不生成3D点。</p>
 </blockquote>
@@ -397,18 +378,13 @@ const int cnThObs = nThObs;
 <blockquote>
 <p>调用函数SearchForTriangulation(),具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a>。</p>
 </blockquote>
-<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br />
-3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br />
-3.2 利用匹配点反投影得到视差角</p>
+<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br>3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br>3.2 利用匹配点反投影得到视差角</p>
 <blockquote>
 <p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{=}\frac{\text{u}-c_x}{f_x},Y=\frac{v-c_y}{f_y},Z=1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
 </blockquote>
-<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br />
-3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br />
-3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br />
-3.6 检查尺度连续性</p>
+<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br>3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br>3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br>3.6 检查尺度连续性</p>
 <blockquote>
-<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist = d2/d1，ratioOctave=s1/s2,ratioFactor = 1.5f*1.2(1.2就是基础缩放比例);若ratioDist*ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist = d2/d1，ratioOctave=s1/s2,ratioFactor = 1.5f<em>1.2(1.2就是基础缩放比例);若ratioDist\</em>ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
 </blockquote>
 <p>3.7 构造地图点，为地图点添加属性，分别是</p>
 <ul>
@@ -416,33 +392,27 @@ const int cnThObs = nThObs;
 <li>该MapPoint的描述子</li>
 <li>该MapPoint的平均观测方向和深度范围</li>
 </ul>
-<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br />
-3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
-<hr />
-<h3 id="localmappingsearchinneighbors"><a class="markdownIt-Anchor" href="#localmappingsearchinneighbors"></a> LocalMapping::SearchInNeighbors()</h3>
-<p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br />
-2.存储一级相邻关键帧及其二级相邻关键帧</p>
+<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br>3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
+<hr>
+<h3 id="LocalMapping-SearchInNeighbors"><a href="#LocalMapping-SearchInNeighbors" class="headerlink" title="LocalMapping::SearchInNeighbors()"></a>LocalMapping::SearchInNeighbors()</h3><p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br>2.存储一级相邻关键帧及其二级相邻关键帧</p>
 <blockquote>
 <p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
 </blockquote>
-<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 – 正向</p>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 — 正向</p>
 <blockquote>
 <p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
 </blockquote>
-<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 – 反向</p>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 — 反向</p>
 <ul>
 <li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
 <li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
 </ul>
-<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br />
-6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
+<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br>6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
 <blockquote>
 <p>即更新共视关系，调用函数KeyFrame::UpdateConnections()</p>
 </blockquote>
-<hr />
-<h3 id="localmappingkeyframeculling"><a class="markdownIt-Anchor" href="#localmappingkeyframeculling"></a> LocalMapping::KeyFrameCulling()</h3>
-<p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br />
-对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
+<hr>
+<h3 id="LocalMapping-KeyFrameCulling"><a href="#LocalMapping-KeyFrameCulling" class="headerlink" title="LocalMapping::KeyFrameCulling()"></a>LocalMapping::KeyFrameCulling()</h3><p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br>对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
 <p>遍历到的关键帧为pKF，规定第一个关键帧不能删除（初始化的第一帧），提取每个共视关键帧的地图点vpMapPoints（vpLocalKeyFrames的地图点），遍历每一个地图点：</p>
 <p>如果该地图点的被观测次数超过阈值thObs，获取能看见该地图点的关键帧的集合observations，遍历观测到该地图点的关键帧，获得该地图点在关键帧中对应的特征点在图像金字塔的层数，若层数不超过其在pKF中的层数，则nObs++，最后若nObs&gt;3,则该地图点为冗余地图点。</p>
 <p>如果该关键帧90%以上的有效地图点被判断为冗余的，则认为该关键帧是冗余的，需要删除该关键帧。</p>
@@ -611,7 +581,7 @@ const int cnThObs = nThObs;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#orbslam3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B05"><span class="nav-number">1.</span> <span class="nav-text"> ORBSLAM3学习笔记(5)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text"> 源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingrun"><span class="nav-number">1.1.1.</span> <span class="nav-text"> LocalMapping::Run()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingprocessnewkeyframe"><span class="nav-number">1.1.2.</span> <span class="nav-text"> LocalMapping::ProcessNewKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingmappointculling"><span class="nav-number">1.1.3.</span> <span class="nav-text"> LocalMapping::MapPointCulling()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingcreatenewmappoints"><span class="nav-number">1.1.4.</span> <span class="nav-text"> LocalMapping::CreateNewMapPoints()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingsearchinneighbors"><span class="nav-number">1.1.5.</span> <span class="nav-text"> LocalMapping::SearchInNeighbors()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localmappingkeyframeculling"><span class="nav-number">1.1.6.</span> <span class="nav-text"> LocalMapping::KeyFrameCulling()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-5"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(5)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-Run"><span class="nav-number">1.1.1.</span> <span class="nav-text">LocalMapping::Run()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-ProcessNewKeyFrame"><span class="nav-number">1.1.2.</span> <span class="nav-text">LocalMapping::ProcessNewKeyFrame()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-MapPointCulling"><span class="nav-number">1.1.3.</span> <span class="nav-text">LocalMapping::MapPointCulling()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-CreateNewMapPoints"><span class="nav-number">1.1.4.</span> <span class="nav-text">LocalMapping::CreateNewMapPoints()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-SearchInNeighbors"><span class="nav-number">1.1.5.</span> <span class="nav-text">LocalMapping::SearchInNeighbors()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LocalMapping-KeyFrameCulling"><span class="nav-number">1.1.6.</span> <span class="nav-text">LocalMapping::KeyFrameCulling()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
