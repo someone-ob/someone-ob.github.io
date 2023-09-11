@@ -239,6 +239,276 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/09/09/VINSMONO-NOTE-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/09/09/VINSMONO-NOTE-2/" itemprop="url">VINS-MONO源码阅读:预积分</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-09-09T17:21:24+08:00">
+                2023-09-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="VINSMONO学习笔记-2"><a href="#VINSMONO学习笔记-2" class="headerlink" title="VINSMONO学习笔记(2)"></a>VINSMONO学习笔记(2)</h1><p>这篇博客开始就是对功能包<code>estimator_node</code>的学习了，这篇会简单理一下这个功能包的脉络，然后重点把预积分部分的代码梳理清楚。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="main-函数"><a href="#main-函数" class="headerlink" title="main()函数"></a>main()函数</h3><p>main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParameter()读取了每一个相机到IMU坐标系的旋转/平移外参数和非线性优化的重投影误差部分的信息矩阵。<strong><code>estimator</code>这个变量相当重要，之后基本都是对其进行操作，这里建议把他的缺省构造函数好好看一下。</strong><br>接下来，registerPub(n)发布用于RVIZ显示的Topic。然后就是定义了四个订阅方，接收对应的信息，并启动一个子线程调用函数<code>process()</code>。下面会着重讲回调函数<code>imu_callback()</code>和<code>process()</code>中涉及预积分的部分。</p>
+<hr>
+<h3 id="void-imu-callback"><a href="#void-imu-callback" class="headerlink" title="void imu_callback()"></a>void imu_callback()</h3><p>这个函数是只要接收到imu数据就会执行。首先，先更新最新的imu数据时间<code>last_imu_t</code>,往<code>imu_buf</code>里放IMU数据，缓存起来。con.notify_one()这句代码用处是每次执行后就会唤醒函数<code>process()</code>中的con.wait(…),执行该语句。这里的代码是要用到线程锁的，避免imu_buf存取数据冲突。</p>
+<pre><code>last_imu_t = imu_msg-&gt;header.stamp.toSec();
+m_buf.lock();
+imu_buf.push(imu_msg);
+m_buf.unlock();
+con.notify_one();
+last_imu_t = imu_msg-&gt;header.stamp.toSec();
+
+&#123;
+    std::lock_guard&lt;std::mutex&gt; lg(m_state);
+    predict(imu_msg);
+    std_msgs::Header header = imu_msg-&gt;header;
+    header.frame_id = &quot;world&quot;;
+    if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR)
+        pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
+&#125;
+</code></pre><p>然后，执行函数predict(imu_msg)，该函数就是读取传来的imu数据，使用中值法求解PVQ，更新tmp_Q，tmp_P，tmp_V的值，然后更新acc_0和gyr_0，作为下一次中执法的初始值，具体公式如下图所示：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/中值法.png" alt="中值法"><br>这里的数据都是世界坐标系下的。其实未初始化时，这个函数虽然在跑，但得到的结果都是无效的，因为此时该函数里的<code>estimator.g</code>，<code>tmp_Ba</code>,<code>tmp_Bg</code>一直是(0,0,0)。<br>最后，如果当前处于非线性优化阶段的话，需要把predict函数计算得到的PVQ发布到rviz里去，见utility/visualization.cpp的pubLatestOdometry()函数。</p>
+<hr>
+<h3 id="void-process"><a href="#void-process" class="headerlink" title="void process()"></a>void process()</h3><p>1.获得measurements数据，首先先要看一下measurements的数据类型，还是挺复杂的。</p>
+<pre><code>std::vector&lt;std::pair&lt;std::vector&lt;sensor_msgs::ImuConstPtr&gt;, sensor_msgs::PointCloudConstPtr&gt;&gt; measurements;
+</code></pre><p><code>measurements</code>最外层看是一个向量容器，这个容器中存储一些数据对（std::pair），然后再看单个数据对，它的第一位也是一个容器，里面存放着一段时间下的imu数据，第二位存放的是一帧图像中的特征点数据，就是<code>feature_tracker_node</code>传过来的，至于具体怎么把数据放进measurements，这些数据又是怎么选取配对的，要看函数getMeasurements()，这个函数里主要就是有几个判断：</p>
+<ul>
+<li><strong>if (imu_buf.empty() || feature_buf.empty())</strong>，这个说明数据取完了，说明配对完成，直接返回；</li>
+<li><strong>if (!(imu_buf.back()-&gt;header.stamp.toSec() &gt; feature_buf.front()-&gt;header.stamp.toSec() + estimator.td))</strong>，这里imu_buf里面所有数据的时间戳都比img buf第一个帧时间戳要早，说明缺乏IMU数据，需要等待IMU数据；</li>
+<li><strong>if (!(imu_buf.front()-&gt;header.stamp.toSec() &lt; feature_buf.front()-&gt;header.stamp.toSec() + estimator.td))</strong>，IMU第一个数据的时间要大于第一个图像特征数据的时间，说明有图像帧太老了，讲<code>feature_buf</code>中的数据pop出一个，然后直接从头判断；</li>
+</ul>
+<p>上面的判断结束后，从<code>feature_buf</code>中pop出一个存到img_msg中，然后遍历imu_buf，讲时间戳小于img_msg的imu数据存到容器IMUs中，然后将IMUs和img_msg作为一个数据对存到measurements中。</p>
+<p>2.遍历measurements，对于每个measurement，先遍历所有imu数据，读取imu数据的加速度和角速度，然后调用estimator.processIMU()，将他们作为参数传进processIMU()函数进行操作。<br>这里有一点要注意，往processIMU()传数据时，imu时间戳大于或等于图像时间戳的那个数据要进行一下简单的线性分配。</p>
+<pre><code>//对于大多数情况，IMU的时间戳都会比img的早，此时直接选取IMU的数据就行
+if (t &lt;= img_t)  //http://wiki.ros.org/sensor_msgs
+&#123;   
+    if (current_time &lt; 0)
+        current_time = t;
+    double dt = t - current_time;
+    ROS_ASSERT(dt &gt;= 0);
+    current_time = t;
+    dx = imu_msg-&gt;linear_acceleration.x;
+    dy = imu_msg-&gt;linear_acceleration.y;
+    dz = imu_msg-&gt;linear_acceleration.z;
+    rx = imu_msg-&gt;angular_velocity.x;
+    ry = imu_msg-&gt;angular_velocity.y;
+    rz = imu_msg-&gt;angular_velocity.z;
+    //这里干了2件事，IMU粗略地预积分，然后把值传给一个新建的IntegrationBase对象
+    estimator.processIMU(dt, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));//进行IMU预积分
+&#125; 
+//对于处于边界位置的IMU数据，是被相邻两帧共享的，而且对前一帧的影响会大一些，在这里，对数据线性分配
+else//每个大于图像帧时间戳的第一个imu_msg是被两个图像帧共用的(出现次数少)
+&#123;
+    double dt_1 = img_t - current_time; //current_time &lt; img_time &lt; t
+    double dt_2 = t - img_t;
+    current_time = img_t;
+    ROS_ASSERT(dt_1 &gt;= 0);
+    ROS_ASSERT(dt_2 &gt;= 0);
+    ROS_ASSERT(dt_1 + dt_2 &gt; 0);
+    //以下操作其实就是简单的线性分配
+    double w1 = dt_2 / (dt_1 + dt_2);
+    double w2 = dt_1 / (dt_1 + dt_2);
+    dx = w1 * dx + w2 * imu_msg-&gt;linear_acceleration.x;
+    dy = w1 * dy + w2 * imu_msg-&gt;linear_acceleration.y;
+    dz = w1 * dz + w2 * imu_msg-&gt;linear_acceleration.z;
+    rx = w1 * rx + w2 * imu_msg-&gt;angular_velocity.x;
+    ry = w1 * ry + w2 * imu_msg-&gt;angular_velocity.y;
+    rz = w1 * rz + w2 * imu_msg-&gt;angular_velocity.z;
+    estimator.processIMU(dt_1, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
+&#125;
+</code></pre><hr>
+<h3 id="void-Estimator-processIMU"><a href="#void-Estimator-processIMU" class="headerlink" title="void Estimator::processIMU()"></a>void Estimator::processIMU()</h3><p>首先判断传来的imu是不是整个系统下的第一个imu数据，如果是，则要先给acc_0和gyr_0赋值。然后，判断pre_integrations[frame_count]是否为空，若为空，则new一个,主要操作就是给pre_integrations[frame_count]的成员参数acc_0, gyr_0，linearized_ba, linearized_bg赋值,未初始化时，linearized_ba, linearized_bg的赋值其实都为零。<br>这里的<code>pre_integrations[]</code>就是estimator的成员变量，数组大小为10，就是滑动窗口大小，在estimator的构造函数中，<code>pre_integrations[]</code>中的所有数据都先置为空。<code>pre_integrations[]</code>中的每个数据都是IntegrationBase类型的，这个类型的数据用来存储两帧之间的所有imu数据，预积分值，预积分累计误差的协方差以及残差的jacobian。<br>然后判断frame_count是否为0，若为0则不用进行预积分，直接更新acc_0和gyr_0就结束了，frame_count增加的操作在estimator.processImage()中。<br>若frame_count不为0，则进行预积分，关于预积分的操作从下面这句展开：</p>
+<pre><code>pre_integrations[frame_count]-&gt;push_back(dt, linear_acceleration, angular_velocity);
+</code></pre><p>这个push_back()是pre_integrations[frame_count]的函数，即IntegrationBase类的成员函数，该函数先把时差，加速度，角速度存到pre_integrations[frame_count]的成员变量dt_buf，acc_buf，gyr_buf中，然后调用函数propagate(dt, acc, gyr)，这个函数也是IntegrationBase类的成员函数，这个函数就放在下面讲了。<br>接下来，把预积分数据也存到tmp_pre_integration中，执行完processIMU()后，下面processImage()函数里，要用tmp_pre_integration给imageframe.pre_integration赋值。</p>
+<pre><code>tmp_pre_integration-&gt;push_back(dt, linear_acceleration, angular_velocity);
+</code></pre><p>然后就是一些参数存储和更新的工作了：</p>
+<pre><code>dt_buf[frame_count].push_back(dt);
+linear_acceleration_buf[frame_count].push_back(linear_acceleration);
+angular_velocity_buf[frame_count].push_back(angular_velocity);
+
+int j = frame_count;         
+Vector3d un_acc_0 = Rs[j] * (acc_0 - Bas[j]) - g;
+Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - Bgs[j];
+Rs[j] *= Utility::deltaQ(un_gyr * dt).toRotationMatrix();
+Vector3d un_acc_1 = Rs[j] * (linear_acceleration - Bas[j]) - g;
+Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
+Ps[j] += dt * Vs[j] + 0.5 * dt * dt * un_acc;
+Vs[j] += dt * un_acc;
+
+acc_0 = linear_acceleration;
+gyr_0 = angular_velocity;
+</code></pre><hr>
+<h3 id="void-propagate"><a href="#void-propagate" class="headerlink" title="void propagate()"></a>void propagate()</h3><p>首先，通过传来的参数，给pre_integrations[frame_count]的成员变量dt, acc_1, gyr_1赋值，再创建一系列变量：</p>
+<pre><code>Vector3d result_delta_p;
+Quaterniond result_delta_q;
+Vector3d result_delta_v;
+Vector3d result_linearized_ba;
+Vector3d result_linearized_bg;
+</code></pre><p>再调用函数</p>
+<pre><code>midPointIntegration(_dt, acc_0, gyr_0, _acc_1, _gyr_1, delta_p, delta_q, delta_v,
+                        linearized_ba, linearized_bg,
+                        result_delta_p, result_delta_q, result_delta_v,
+                        result_linearized_ba, result_linearized_bg, 1);
+</code></pre><p>这个函数的结果就是保存在上面创建的变量里，下面细看这个函数，midPointIntegration()总体分为两部分，一部分是预积分：</p>
+<pre><code>Vector3d un_acc_0 = delta_q * (_acc_0 - linearized_ba);
+Vector3d un_gyr = 0.5 * (_gyr_0 + _gyr_1) - linearized_bg;
+result_delta_q = delta_q * Quaterniond(1, un_gyr(0) * _dt / 2, un_gyr(1) * _dt / 2, un_gyr(2) * _dt / 2);
+Vector3d un_acc_1 = result_delta_q * (_acc_1 - linearized_ba);
+Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
+result_delta_p = delta_p + delta_v * _dt + 0.5 * un_acc * _dt * _dt;
+result_delta_v = delta_v + un_acc * _dt;
+result_linearized_ba = linearized_ba;
+result_linearized_bg = linearized_bg;
+</code></pre><p>这里对应的就是预积分的离散形式，具体公式如下图所示：<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/预积分.png" alt="预积分"><br><code>result_delta_q</code>，<code>result_delta_p</code>,<code>result_delta_v</code>,<code>result_linearized_ba</code>,<code>result_linearized_bg</code>就是对应着图中蓝色部分和最后两个，其中<code>result_linearized_ba</code>,<code>result_linearized_bg</code>在未初始化时，都是0。</p>
+<p>第二部分是计算累计误差的协方差和残差关于ba、bg的Jacobian。</p>
+<pre><code>MatrixXd F = MatrixXd::Zero(15, 15);
+F.block&lt;3, 3&gt;(0, 0) = Matrix3d::Identity();
+F.block&lt;3, 3&gt;(0, 3) = -0.25 * delta_q.toRotationMatrix() * R_a_0_x * _dt * _dt + 
+                        -0.25 * result_delta_q.toRotationMatrix() * R_a_1_x * (Matrix3d::Identity() - R_w_x * _dt) * _dt * _dt;
+F.block&lt;3, 3&gt;(0, 6) = MatrixXd::Identity(3,3) * _dt;
+F.block&lt;3, 3&gt;(0, 9) = -0.25 * (delta_q.toRotationMatrix() + result_delta_q.toRotationMatrix()) * _dt * _dt;
+F.block&lt;3, 3&gt;(0, 12) = -0.25 * result_delta_q.toRotationMatrix() * R_a_1_x * _dt * _dt * -_dt;
+F.block&lt;3, 3&gt;(3, 3) = Matrix3d::Identity() - R_w_x * _dt;
+F.block&lt;3, 3&gt;(3, 12) = -1.0 * MatrixXd::Identity(3,3) * _dt;
+F.block&lt;3, 3&gt;(6, 3) = -0.5 * delta_q.toRotationMatrix() * R_a_0_x * _dt + 
+                        -0.5 * result_delta_q.toRotationMatrix() * R_a_1_x * (Matrix3d::Identity() - R_w_x * _dt) * _dt;
+F.block&lt;3, 3&gt;(6, 6) = Matrix3d::Identity();
+F.block&lt;3, 3&gt;(6, 9) = -0.5 * (delta_q.toRotationMatrix() + result_delta_q.toRotationMatrix()) * _dt;
+F.block&lt;3, 3&gt;(6, 12) = -0.5 * result_delta_q.toRotationMatrix() * R_a_1_x * _dt * -_dt;
+F.block&lt;3, 3&gt;(9, 9) = Matrix3d::Identity();
+F.block&lt;3, 3&gt;(12, 12) = Matrix3d::Identity();
+//cout&lt;&lt;&quot;A&quot;&lt;&lt;endl&lt;&lt;A&lt;&lt;endl;
+
+MatrixXd V = MatrixXd::Zero(15,18);
+V.block&lt;3, 3&gt;(0, 0) =  0.25 * delta_q.toRotationMatrix() * _dt * _dt;
+V.block&lt;3, 3&gt;(0, 3) =  0.25 * -result_delta_q.toRotationMatrix() * R_a_1_x  * _dt * _dt * 0.5 * _dt;
+V.block&lt;3, 3&gt;(0, 6) =  0.25 * result_delta_q.toRotationMatrix() * _dt * _dt;
+V.block&lt;3, 3&gt;(0, 9) =  V.block&lt;3, 3&gt;(0, 3);
+V.block&lt;3, 3&gt;(3, 3) =  0.5 * MatrixXd::Identity(3,3) * _dt;
+V.block&lt;3, 3&gt;(3, 9) =  0.5 * MatrixXd::Identity(3,3) * _dt;
+V.block&lt;3, 3&gt;(6, 0) =  0.5 * delta_q.toRotationMatrix() * _dt;
+V.block&lt;3, 3&gt;(6, 3) =  0.5 * -result_delta_q.toRotationMatrix() * R_a_1_x  * _dt * 0.5 * _dt;
+V.block&lt;3, 3&gt;(6, 6) =  0.5 * result_delta_q.toRotationMatrix() * _dt;
+V.block&lt;3, 3&gt;(6, 9) =  V.block&lt;3, 3&gt;(6, 3);
+V.block&lt;3, 3&gt;(9, 12) = MatrixXd::Identity(3,3) * _dt;
+V.block&lt;3, 3&gt;(12, 15) = MatrixXd::Identity(3,3) * _dt;
+
+//step_jacobian = F;
+//step_V = V;
+jacobian = F * jacobian;
+covariance = F * covariance * F.transpose() + V * noise * V.transpose();
+</code></pre><p>先简单介绍一下其原理：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差1.png" alt="协方差1"><br>把上述公式套到imu的误差传递中，可得到下面这个式子：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差5.png" alt="协方差5"><br>这里我们得到了当前imu数据与上一个imu数据误差的线性关系，两帧的协方差可以根据这种线性关系递推得到：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差2.png" alt="协方差2"><br>这里的${\sum _i}_{k - 1}$就是上一个imu数据协方差，${\sum _n}$是噪声矩阵，在构造函数中通过从yaml文件中读取的噪声标准差数据赋了值。<br>由上所述，我们现在要求的就是矩阵F,G，结果如下：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差3.png" alt="协方差3"><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差4.png" alt="协方差4"><br>具体的运算过程太长了，可以去看深蓝学院的ppt，这里的求解内容就存在了代码中的矩阵F和V中，然后用这两个矩阵完成对协方差和雅可比的更新，关于这里的雅可比，目前还不是特别懂，看懂了再回来更新。。。。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/09/04/VINSMONO-NOTE-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -310,78 +580,33 @@
       
         
           
-            <h1 id="vinsmono学习笔记1"><a class="markdownIt-Anchor" href="#vinsmono学习笔记1"></a> VINSMONO学习笔记(1)</h1>
-<p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
+            <h1 id="VINSMONO学习笔记-1"><a href="#VINSMONO学习笔记-1" class="headerlink" title="VINSMONO学习笔记(1)"></a>VINSMONO学习笔记(1)</h1><p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
 <p>参考博客：<a target="_blank" rel="noopener" href="https://blog.csdn.net/mcw1234/article/details/83039506">VINS-Mono详解（一）</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/wbzhang233/article/details/88885485">港科大VINS-MONO入门（一）：框架入门及源码解析</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_51547017/article/details/123306540">VINS_mono 代码详细理解（一）</a></p>
-<hr />
-<h2 id="系统架构"><a class="markdownIt-Anchor" href="#系统架构"></a> 系统架构</h2>
-<p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。</p>
+<hr>
+<h2 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h2><p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。 </p>
 <p>前端节点的feature_tracker_node的程序入口是文件feature_tracker_node.cpp中的main()函数，接收图像信息,调用img_callback()函数进行处理。</p>
 <p>estimator_node节点中开了3个子线程, 分别是:process,loop_detection和pose_graph. 其中 process()线程处理VIO后端, 包括(IMU preintegration, initialization, LocalBA)loop_detection()线程处理闭环检测pose_graph()线程分别处理全局优化。如果不需要做loop closure, 可以把LOOP_CLOUSRE置0, 则后面两个线程不会创建。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="int-main"><a class="markdownIt-Anchor" href="#int-main"></a> int main()</h3>
-<p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="int-main"><a href="#int-main" class="headerlink" title="int main()"></a>int main()</h3><p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
 <p>特别的，如果相机是鱼眼相机，需要读取FISHEYE_MASK，存到相机FeatureTracker的实例的成员变量fisheye_mask中，它会在后续操作中被用来去除边缘噪点。</p>
-<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th style="text-align:center">name</th>
-<th style="text-align:center">topic</th>
-<th style="text-align:center">type</th>
-<th style="text-align:center">消息内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>subscriber</td>
-<td style="text-align:center">sub_img</td>
-<td style="text-align:center">IMAGE_TOPIC</td>
-<td style="text-align:center">sensor_msgs::Image</td>
-<td style="text-align:center">相机图像数据</td>
-</tr>
-<tr>
-<td>publisher</td>
-<td style="text-align:center">pub_img</td>
-<td style="text-align:center">feature</td>
-<td style="text-align:center">sensor_msgs::PointCloud</td>
-<td style="text-align:center">跟踪的特征点</td>
-</tr>
-<tr>
-<td>publisher</td>
-<td style="text-align:center">pub_match</td>
-<td style="text-align:center">feature_img</td>
-<td style="text-align:center">sensor_msgs::Image</td>
-<td style="text-align:center">标记出了特征点的图像</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3 id="void-img_callback"><a class="markdownIt-Anchor" href="#void-img_callback"></a> void img_callback()</h3>
-<p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
+<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。<br>| |name|topic|type|消息内容|<br>|-|:———-:|:———:|:———:|:———:|<br>|subscriber|sub_img|IMAGE_TOPIC|sensor_msgs::Image|相机图像数据|<br>|publisher|pub_img|feature|sensor_msgs::PointCloud|跟踪的特征点|<br>|publisher|pub_match|feature_img|sensor_msgs::Image|标记出了特征点的图像|</p>
+<hr>
+<h3 id="void-img-callback"><a href="#void-img-callback" class="headerlink" title="void img_callback()"></a>void img_callback()</h3><p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
 <p>然后遍历成员变量<code>trackerData</code>数组，调用该对象的函数readImage()，将数据读取存储到<code>trackerData</code>里(这部分下面会详细讲)。然后更新<code>trackerData</code>里特征点的id。</p>
 <p>接下来，创建了一个名为 <code>feature_points</code> 的指针，该指针指向一个 sensor_msgs::PointCloud 类型的消息对象,将<strong>当前帧的所有特征点在归一化平面上的坐标</strong>存到<code>feature_points</code>的成员变量<code>points</code>中，将<strong>当前帧的所有特征点的像素坐标，id，xy轴方向的速度</strong>存到<code>feature_points</code>的成员变量<code>channels</code>中，通过<code>pub_img</code>发布出去（第一帧不发送）。</p>
 <p>最后，如果要进行特征点轨迹的可视化，即SHOW_TRACK为true，则将原来转为灰度图的图像重新恢复成彩色图，存到变量stereo_img里，然后按图像大小截取到tmp_img里，在tmp_img中特征点坐标处画圆圈，颜色深度由追踪到的次数决定，通过<code>pub_match</code>将处理过的图像发布出去。</p>
-<hr />
-<h3 id="void-featuretrackerreadimage"><a class="markdownIt-Anchor" href="#void-featuretrackerreadimage"></a> void FeatureTracker::readImage()</h3>
-<p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
+<hr>
+<h3 id="void-FeatureTracker-readImage"><a href="#void-FeatureTracker-readImage" class="headerlink" title="void FeatureTracker::readImage()"></a>void FeatureTracker::readImage()</h3><p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
 <p>图像数据变量：</p>
-<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br />
-<code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br />
-<code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
-<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br />
-<code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br />
-<code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
-<p>函数的具体流程为：<br />
-1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
+<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br><code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br><code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
+<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br><code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br><code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
+<p>函数的具体流程为：<br>1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
 <p>2.调用cv::calcOpticalFlowPyrLK()对前一帧的特征点cur_pts进行金字塔光流跟踪，得到forw_pts。status标记了cur_pts中各个特征点的跟踪状态，根据status将跟踪失败的特征点从prev_pts、cur_pts和forw_pts中剔除，而且在记录特征点id的ids，和记录特征点被跟踪次数的track_cnt中，也要把这些跟踪失败的特征点对应位置的记录删除。被status标记为跟踪正常的特征点，在当前帧图像中的位置可能已经处于图像边界外了，这些特征点也应该被删除，删除操作同上。最后将未被删除的点的跟踪次数加1。</p>
 <p>3.如果不需要发布当前帧的数据，则直接将当前帧forw的相关数据赋给上一帧cur，然后在这一步整个readImage的流程就结束了。</p>
-<p>4.如果需要发布当前帧的数据，先调用FeatureTracker::rejectWithF()函数，剔除outliers。具体方法为：调用cv::findFundamentalMat()对prev_pts和forw_pts计算F矩阵，通过F矩阵去除outliers。剩下的特征点track_cnt都加1。</p>
+<p>4.如果需要发布当前帧的数据，先调用FeatureTracker::rejectWithF()函数，剔除outliers。具体方法为：调用cv::findFundamentalMat()对prev_pts和forw_pts计算F矩阵，通过F矩阵去除outliers。剩下的特征点track_cnt都加一。</p>
 <p>5.调用FeatureTracker::setMask()，通过设置一个mask，使跟踪的特征点在整幅图像中能够均匀分布，防止特征点扎堆。FeatureTracker::setMask()的具体操作为：对光流跟踪到的特征点forw_pts，按照被跟踪到的次数降序排列，然后按照降序遍历这些特征点。每选中一个特征点，在mask中将该点周围半径为MIN_DIST的区域设置为30，后面不再选取该区域内的特征点。这样会删去一些特征点，使得特征点分布得更加均匀，同时尽可能地保留被跟踪次数更多的特征点。</p>
 <p>6.由于光流跟踪到的特征点会减少，而且setMask()的处理过程中也会删除一些特征点，所以需要新检测一些特征点（只有需要发布数据时，才会检测新的特征点，否则只跟踪，不检测新的特征点）。具体操作为：调用cv::goodFeaturesToTrack()在mask中不为0的区域检测新的特征点，将特征点数量补充至指定数量。然后调用FeatureTracker::addPoints()，将新检测到的特征点到forw_pts中去，id初始化为-1，track_cnt初始化为1。</p>
-<p>7.将cur的相关变量赋给prev的相关变量，forw的相关变量赋给cur的相关变量，调用函数undistortedPoints()，对当前帧的特征点去畸变，得到<code>cur_un_pts</code> 、<code>cur_un_pts_map</code> 、<code>prev_un_pts_map</code> ,并且求出每个特征点xy方向的速度。</p>
+<p>7.将cur的相关变量赋给prev的相关变量，forw的相关变量赋给cur的相关变量，调用函数undistortedPoints()，对当前帧的特征点去畸变，得到<code>cur_un_pts</code> 、<code>cur_un_pts_map</code> 、<code>prev_un_pts_map</code> ,并且求出每个特征点xy方向的速度。undistortedPoints()中调用了liftProjective()函数实现了去畸变，它用的方法和slam14讲里面的不太一样，它使用迭代畸变模型，循环迭代八次，这样效果比函数近视好，而速度也比opencv的API快。</p>
 
           
         
@@ -1853,379 +2078,6 @@ const int cnThObs = nThObs;
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_4/" itemprop="url">ORB-SLAM3源码阅读:ORBextractor</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T13:55:07+08:00">
-                2023-03-30
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
-<hr>
-<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><h3 id="1-关键点提取"><a href="#1-关键点提取" class="headerlink" title="1.关键点提取"></a>1.关键点提取</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points"></p>
-<p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。</p>
-<h3 id="2-描述子获取"><a href="#2-描述子获取" class="headerlink" title="2.描述子获取"></a>2.描述子获取</h3><p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
-<p><strong>(1)灰度质心法原理</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B"><br>该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
-<ul>
-<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩$m_{pq}$定义为:</li>
-</ul>
-<script type="math/tex; mode=display">\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q=\{0, 1\}</script><ul>
-<li>图像块<em>B</em>的质心可以通过公式中的矩找到：</li>
-</ul>
-<script type="math/tex; mode=display">C = \left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right)</script><ul>
-<li>方向向量$\overrightarrow{OC}$可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向$\theta$为：</li>
-</ul>
-<script type="math/tex; mode=display">\theta = \arctan(\frac{m_{01}}{m_{10}})</script><p><strong>(2)方向不变性的使用</strong><br>首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
-<p>点对的选取是程序中默认给出的，若不考虑特征点方向，就可能出现一个问题，两帧图片之间是发生了旋转的，若直接选取点对，比如都选取点对(1,1)和(2,2),它们看似坐标一样，但在两幅图片中相对于特征点的位置是不一样的，那这样得到的描述子，进行匹配的时候，是没有参考意义的。</p>
-<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向$\theta$，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
-<p>旋转前坐标为$(x,y)$, 旋转后坐标$(x’,y’)$推导，$\theta$在求角度时得到，则<br>$x’= xcos(θ) - ysin(θ),  y’= xsin(θ) + ycos(θ)$</p>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBextractor-ORBextractor"><a href="#ORBextractor-ORBextractor" class="headerlink" title="ORBextractor::ORBextractor()"></a>ORBextractor::ORBextractor()</h3><p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
-<pre><code>std::vector&lt;cv::Point&gt; pattern;     
-
-int nfeatures;      //指定要提取的特征点数目
-double scaleFactor; //指定图像金字塔的缩放系数
-int nlevels;        //指定图像金字塔的层数
-int iniThFAST;      //指定初始的FAST特征点提取参数，可以提取出最明显的角点
-int minThFAST;      //如果因为图像纹理不丰富提取出的特征点不多，为了达到想要的特征点数目，
-                    //就使用这个参数提取出不是那么明显的角点
-
-std::vector&lt;int&gt; mnFeaturesPerLevel;    //每层需要提取出来的特征点个数
-
-std::vector&lt;int&gt; umax;
-
-std::vector&lt;float&gt; mvScaleFactor;       //存储每层图像缩放系数
-std::vector&lt;float&gt; mvInvScaleFactor;    //存储每层图像缩放系数的倒数
-std::vector&lt;float&gt; mvLevelSigma2;       //存储每层图像相对初始图像缩放因子的平方
-std::vector&lt;float&gt; mvInvLevelSigma2;    //存储每层图像相对初始图像缩放因子的平方的倒数
-</code></pre><p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br>nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
-<p>mvScaleFactor到mvInvLevelSigma2都是根据nlevels确定向量长度，根据scaleFactor确定向量里面的内容，这些向量的第一个变量都是1，因为金字塔最底层是原始图像，不需要缩放。</p>
-<p>mnFeaturesPerLevel是根据nfeatures得到的，nfeatures是我们一共要获得的特征点数量，我们从金字塔的每层（除最高层）选取一部分特征点，然后总数为nfeatures。其中第一层选取的个数如下：</p>
-<pre><code>float nDesiredFeaturesPerScale = nfeatures*(1 - factor)/(1 - (float)pow((double)factor, (double)nlevels));
-</code></pre><p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
-<p>pattern就是把按数组定义的点对坐标，存储到Point类型的向量中。</p>
-<p>umax的作用和初始化我们根据下面的图和代码一起看<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax"></p>
-<pre><code>//下面的内容是和特征点的旋转计算有关的
-//预先计算圆形patch中行的结束位置
-//+1中的1表示那个圆的中间行
-umax.resize(HALF_PATCH_SIZE + 1);
-
-//cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
-int v,        //循环辅助变量
-    v0,        //辅助变量
-    vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);    //计算圆的最大行号，+1应该是把中间行也给考虑进去了
-            //NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
-            //是因为圆周上的对称特性
-
-//这里的二分之根2就是对应那个45°圆心角
-
-int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
-//半径的平方
-const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
-
-//利用圆的方程计算每行像素的u坐标边界（max）
-for (v = 0; v &lt;= vmax; ++v)
-    umax[v] = cvRound(sqrt(hp2 - v * v));        //结果都是大于0的结果，表示x坐标在这一行的边界
-
-// Make sure we are symmetric
-//这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
-//同时这些随机采样的特征点集也不能够满足旋转之后的采样不变性了）
-for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
-&#123;
-    while (umax[v0] == umax[v0 + 1])
-        ++v0;
-    umax[v] = v0;
-    ++v0;
-&#125;
-</code></pre><p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
-<hr>
-<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
-<pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
-    InputArray _mask,                           //掩膜mask,为空，估计没什么用
-    vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
-    OutputArray _descriptors,                   //存储特征点描述子的矩阵 
-    std::vector&lt;int&gt; &amp;vLappingArea              //界限
-    )
-</code></pre><p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
-<pre><code>ComputePyramid(image);
-</code></pre><p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
-<pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
-vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
-//使用四叉树的方式计算每层图像的特征点并进行分配
-ComputeKeyPointsOctTree(allKeypoints);
-</code></pre><p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br><strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br>这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
-<pre><code>//如果图像金字塔中有特征点，那么就创建这个存储描述子的矩阵，注意这个矩阵是存储整个图像金字塔中特征点的描述子的
-_descriptors.create(nkeypoints,        //矩阵的行数，对应为特征点的总个数
-                    32,             //矩阵的列数，对应为使用32*8=256位描述子
-                    CV_8U);            //矩阵元素的格式
-//获取这个描述子的矩阵信息
-descriptors = _descriptors.getMat();
-</code></pre><p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br>5-1.对图像进行高斯模糊<br>5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br>5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
-<hr>
-<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
-&#123;
-    //开始遍历所有的图层
-    for (int level = 0; level &lt; nlevels; ++level)
-    &#123;
-        //获取本层图像的缩放系数
-        float scale = mvInvScaleFactor[level];
-        //计算本层图像的像素尺寸大小
-        Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
-        //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
-        Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-        // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
-        Mat temp(wholeSize, image.type()), masktemp;
-        // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
-        mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
-
-        // Compute the resized image
-        //计算第0层以上resize后的图像
-        if( level != 0 )
-        &#123;
-            //将上一层金字塔图像根据设定sz缩放到当前层级
-            resize(mvImagePyramid[level-1],    //输入图像
-                mvImagePyramid[level],     //输出图像
-                sz,                     //输出图像的尺寸
-                0,                         //水平方向上的缩放系数，留0表示自动计算
-                0,                      //垂直方向上的缩放系数，留0表示自动计算
-                cv::INTER_LINEAR);        //图像缩放的差值算法类型，这里的是线性插值算法
-
-            //这样做是为了能够正确提取边界的FAST角点        
-            copyMakeBorder(mvImagePyramid[level],             //源图像
-                        temp,                                 //目标图像（此时其实就已经有大了一圈的尺寸了）
-                        EDGE_THRESHOLD, EDGE_THRESHOLD,     //top &amp; bottom 需要扩展的border大小
-                        EDGE_THRESHOLD, EDGE_THRESHOLD,        //left &amp; right 需要扩展的border大小
-                        BORDER_REFLECT_101+BORDER_ISOLATED);//扩充方式
-        &#125;
-        else
-        &#123;
-            //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
-            copyMakeBorder(image,            
-                        temp, 
-                        EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                        BORDER_REFLECT_101);            
-        &#125;
-    &#125;
-&#125;
-</code></pre><p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD=19。</p>
-<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
-<hr>
-<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
-<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
-<p>代码运行流程如下:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree"></p>
-<p>下面具体看代码，主要看遍历网格部分，这段计算机视觉life的注释不太对，我改了一下</p>
-<pre><code>//开始遍历图像网格，还是以行开始遍历的
-for(int i=0; i&lt;nRows; i++)
-&#123;
-    //计算当前网格初始行坐标
-    const float iniY =minBorderY+i*hCell;
-    float maxY = iniY+hCell+6;
-
-    //如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
-    if(iniY&gt;=maxBorderY-3)
-        continue;
-    //如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
-    if(maxY&gt;maxBorderY)
-        maxY = maxBorderY;
-
-    //开始列的遍历
-    for(int j=0; j&lt;nCols; j++)
-    &#123;
-        const float iniX =minBorderX+j*wCell;
-        float maxX = iniX+wCell+6;                
-        if(iniX&gt;=maxBorderX-3)
-            continue;
-        if(maxX&gt;maxBorderX)
-            maxX = maxBorderX;
-
-        //这个容器存储提取到的特征点
-        vector&lt;cv::KeyPoint&gt; vKeysCell;
-
-        //FAST提取特征点，调用opencv的库函数来检测FAST角点
-        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像，这里就是当前遍历到的图像块
-            vKeysCell,      //存储角点位置的容器
-            iniThFAST,        //检测阈值
-            true);            //使能非极大值抑制
-
-        //如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
-        if(vKeysCell.empty())
-        &#123;
-            //那么就使用更低的阈值来进行重新检测
-            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像
-                vKeysCell,        //存储角点位置的容器
-                minThFAST,        //更低的检测阈值
-                true);            //使能非极大值抑制
-        &#125;
-
-        //当图像cell中检测到FAST角点的时候执行下面的语句
-        if(!vKeysCell.empty())
-        &#123;
-            //遍历其中的所有FAST角点
-            for(vector&lt;cv::KeyPoint&gt;::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
-            &#123;
-                //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
-                //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
-                //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
-                (*vit).pt.x+=j*wCell;
-                (*vit).pt.y+=i*hCell;
-                //然后将其加入到”等待被分配“的特征点容器中
-                vToDistributeKeys.push_back(*vit);
-            &#125;//遍历图像cell中的所有的提取出来的FAST角点，并且恢复其在整个金字塔当前层图像下的坐标
-        &#125;
-    &#125;
-&#125;
-</code></pre><p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
-<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2"></p>
-<p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
-<pre><code>//声明一个对当前图层的特征点的容器的引用
-vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
-//并且调整其大小为欲提取出来的特征点个数
-keypoints.reserve(nfeatures);
-
-// 根据mnFeatuvector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
-//返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
-//得到的特征点的坐标，依旧是在当前图层下来讲的
-keypoints = DistributeOctTree(vToDistributeKeys,             //当前图层提取出来的特征点
-                            minBorderX, maxBorderX,            //当前图层图像的边界
-                            minBorderY, maxBorderY,
-                            mnFeaturesPerLevel[level],         //希望保留下来的当前层图像的特征点个数
-                            level);                            //当前层图像所在的图层
-
-//PATCH_SIZE是对于底层的初始图像来说的，现在要根据当前图层的尺度缩放倍数进行缩放得到缩放后的PATCH大小 和特征点的方向计算有关
-const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
-
-//获取剔除过程后保留下来的特征点数目
-//然后开始遍历这些特征点，恢复其在当前图层图像坐标系下的坐标
-for(int i=0; i&lt;nkps ; i++)
-&#123;
-    keypoints[i].pt.x+=minBorderX;
-    keypoints[i].pt.y+=minBorderY;
-    //记录特征点来源的图像金字塔图层
-    keypoints[i].octave=level;
-    //记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
-    keypoints[i].size = scaledPatchSize;
-&#125;
-</code></pre><p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
-<p>最后计算特征点方向</p>
-<pre><code>for (int level = 0; level &lt; nlevels; ++level)
-    computeOrientation(mvImagePyramid[level],    //对应的图层的图像
-                       allKeypoints[level],     //这个图层中提取并保留下来的特征点容器
-                       umax);                    //以及PATCH的横坐标边界
-</code></pre><p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
-<hr>
-<h3 id="ORBextractor-DistributeOctTree"><a href="#ORBextractor-DistributeOctTree" class="headerlink" title="ORBextractor::DistributeOctTree()"></a>ORBextractor::DistributeOctTree()</h3><p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br>这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2275,7 +2127,7 @@ for(int i=0; i&lt;nkps ; i++)
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
