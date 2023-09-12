@@ -79,21 +79,18 @@
 
 
 
-<meta name="description" content="VINSMONO学习笔记(3) 这篇博客开始对processImage()函数开始学习，这个函数的内容太多，这篇主要对其中初始化的部分进行学习。   源码阅读  void Estimator::processImage() 1.首先，要进行关键帧判断，这里主要是对成员变量f_manager进行操作，具体讲解就放在下面了。 if (f_manager.addFeatureCheckParallax">
+<meta name="description" content="VINSMONO学习笔记(3) 这篇博客开始对processImage()函数开始学习，这个函数的内容太多，这篇主要对其中初始化的部分进行学习。       ## 源码阅读 ### void Estimator::processImage() 1.首先，要进行关键帧判断，这里主要是对成员变量f_manager进行操作，具体讲解就放在下面了。     ### bool F">
 <meta property="og:type" content="article">
 <meta property="og:title" content="VINS-MONO源码阅读:初始化">
 <meta property="og:url" content="http://example.com/2023/09/11/VINSMONO-NOTE-3/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="VINSMONO学习笔记(3) 这篇博客开始对processImage()函数开始学习，这个函数的内容太多，这篇主要对其中初始化的部分进行学习。   源码阅读  void Estimator::processImage() 1.首先，要进行关键帧判断，这里主要是对成员变量f_manager进行操作，具体讲解就放在下面了。 if (f_manager.addFeatureCheckParallax">
+<meta property="og:description" content="VINSMONO学习笔记(3) 这篇博客开始对processImage()函数开始学习，这个函数的内容太多，这篇主要对其中初始化的部分进行学习。       ## 源码阅读 ### void Estimator::processImage() 1.首先，要进行关键帧判断，这里主要是对成员变量f_manager进行操作，具体讲解就放在下面了。     ### bool F">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc%E6%A0%87%E5%AE%9A1.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc%E6%A0%87%E5%AE%9A2.png">
 <meta property="article:published_time" content="2023-09-11T02:54:17.000Z">
-<meta property="article:modified_time" content="2023-09-12T09:18:42.388Z">
+<meta property="article:modified_time" content="2023-09-12T09:27:23.605Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="VINSMONO NOTE">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc%E6%A0%87%E5%AE%9A1.png">
 
 
 
@@ -313,41 +310,53 @@
       
 
       
-        <h1 id="vinsmono学习笔记3"><a class="markdownIt-Anchor" href="#vinsmono学习笔记3"></a> VINSMONO学习笔记(3)</h1>
+        <h1 id="vinsmono学习笔记3">VINSMONO学习笔记(3)</h1>
 <p>这篇博客开始对processImage()函数开始学习，这个函数的内容太多，这篇主要对其中初始化的部分进行学习。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="void-estimatorprocessimage"><a class="markdownIt-Anchor" href="#void-estimatorprocessimage"></a> void Estimator::processImage()</h3>
-<p>1.首先，要进行关键帧判断，这里主要是对成员变量<code>f_manager</code>进行操作，具体讲解就放在下面了。</p>
-<pre><code>if (f_manager.addFeatureCheckParallax(frame_count, image, td))
-    marginalization_flag = MARGIN_OLD;
-else
-    marginalization_flag = MARGIN_SECOND_NEW;
-</code></pre>
-<p>当滑动窗口中倒数第二图像帧为关键帧，则 marg 最老的帧，以及上面的路标点。<br />
-当滑动窗口中倒数第二图像帧不是关键帧，则丢弃这一帧上的视觉测量信息，IMU 预积分传给下一帧。</p>
-<hr />
-<h3 id="bool-featuremanageraddfeaturecheckparallax"><a class="markdownIt-Anchor" href="#bool-featuremanageraddfeaturecheckparallax"></a> bool FeatureManager::addFeatureCheckParallax()</h3>
-<p>由于addFeatureCheckParallax()是FeatureManager的成员函数，且FeatureManager类的<code>f_manager</code>是<code>estimator</code>的成员变量，是经常要使用到的，由此要先介绍一下FeatureManager类。</p>
-<p>这边其实只需了解成员变量<code>list&lt;FeaturePerId&gt; feature</code>该成员变量是一个list容器，容器里面的每个元素都是一个特征点id对应的所有特征点，存储在FeaturePerId类型的数据中。FeaturePerId类中有个成员变量<code>vector&lt;FeaturePerFrame&gt; feature_per_frame</code>，该id对应的所有特征点都存储在这个vector容器中，每个特征点都是FeaturePerFrame类数据，该类数据的成员变量包括特征点的归一化平面坐标，像素坐标，速度，时间戳。</p>
-<p>回到addFeatureCheckParallax()函数，首先遍历传来的图像帧的所有特征点，把当前特征点封装成一个FeaturePerFrame对象并获取当前帧的feature_id，在滑窗的所有特征点中，看看能不能找到当前这个特征点：</p>
-<pre><code> auto it = find_if(feature.begin(), feature.end(), [feature_id](const FeaturePerId &amp;it)&#123;
-                    //是find的一个谓词判断版本，它利用返回布尔值的谓词判断pred，检查迭代器区间[first, last)上的每一个元素，
-                    如果迭代器iter满足pred(*iter) == true，表示找到元素并返回迭代器值iter；
-                    未找到元素，则返回last。
-                    return it.feature_id == feature_id;
-                &#125;);
-</code></pre>
-<p>如果这个特征点是一个新的特征(在特征点库里没有找到),那么就把它加入到滑窗的特征点库里；如果这个特征在滑窗中已经被观测到过，那么就补充上这个特征点在当前帧的数据，并且把共视点统计数+1。</p>
-<p>如果窗口内只有一帧或者跟踪到的特征点小于20个，则当前帧为关键帧，返回true。</p>
-<p>若不是，则遍历<code>feature</code>，如果遍历的当前id的特征点在当前帧-2以前出现过而且至少在当前帧-1还在，那么他就是平行特征点，计算该特征点在倒数第二帧和倒数第三帧之间的视差，遍历完后，求得视差总和以及平行特征点数，进行判断：</p>
-<ol>
-<li>平行特征点数为0,返回true。</li>
-<li>平均视差&gt;=MIN_PARALLAX（值为10.0/460.0），则返回true,平均视差&lt; MIN_PARALLAX（值为10.0/460.0），则返回false。</li>
-</ol>
-<hr />
-<h3 id="外参数旋转q_bc标定"><a class="markdownIt-Anchor" href="#外参数旋转q_bc标定"></a> 外参数旋转<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>标定</h3>
-<p>外参数旋转<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>标定步骤是从下面这段代码加入的</p>
+<table style="width:6%;">
+<colgroup>
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>## 源码阅读 ### void Estimator::processImage()
+1.首先，要进行关键帧判断，这里主要是对成员变量<code>f_manager</code>进行操作，具体讲解就放在下面了。</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>### bool FeatureManager::addFeatureCheckParallax()
+由于addFeatureCheckParallax()是FeatureManager的成员函数，且FeatureManager类的<code>f_manager</code>是<code>estimator</code>的成员变量，是经常要使用到的，由此要先介绍一下FeatureManager类。</td>
+</tr>
+<tr class="even">
+<td>这边其实只需了解成员变量<code>list&lt;FeaturePerId&gt; feature</code>该成员变量是一个list容器，容器里面的每个元素都是一个特征点id对应的所有特征点，存储在FeaturePerId类型的数据中。FeaturePerId类中有个成员变量<code>vector&lt;FeaturePerFrame&gt; feature_per_frame</code>，该id对应的所有特征点都存储在这个vector容器中，每个特征点都是FeaturePerFrame类数据，该类数据的成员变量包括特征点的归一化平面坐标，像素坐标，速度，时间戳。</td>
+</tr>
+<tr class="odd">
+<td>回到addFeatureCheckParallax()函数，首先遍历传来的图像帧的所有特征点，把当前特征点封装成一个FeaturePerFrame对象并获取当前帧的feature_id，在滑窗的所有特征点中，看看能不能找到当前这个特征点：</td>
+</tr>
+<tr class="even">
+<td>auto it = find_if(feature.begin(), feature.end(), <a
+href="const%20FeaturePerId%20&amp;it">feature_id</a>{
+//是find的一个谓词判断版本，它利用返回布尔值的谓词判断pred，检查迭代器区间[first,
+last)上的每一个元素， 如果迭代器iter满足pred(*iter) ==
+true，表示找到元素并返回迭代器值iter； 未找到元素，则返回last。 return
+it.feature_id == feature_id; });
+如果这个特征点是一个新的特征(在特征点库里没有找到),那么就把它加入到滑窗的特征点库里；如果这个特征在滑窗中已经被观测到过，那么就补充上这个特征点在当前帧的数据，并且把共视点统计数+1。</td>
+</tr>
+<tr class="odd">
+<td>如果窗口内只有一帧或者跟踪到的特征点小于20个，则当前帧为关键帧，返回true。</td>
+</tr>
+<tr class="even">
+<td>若不是，则遍历<code>feature</code>，如果遍历的当前id的特征点在当前帧-2以前出现过而且至少在当前帧-1还在，那么他就是平行特征点，计算该特征点在倒数第二帧和倒数第三帧之间的视差，遍历完后，求得视差总和以及平行特征点数，进行判断：
+1. 平行特征点数为0,返回true。 2.
+平均视差&gt;=MIN_PARALLAX（值为10.0/460.0），则返回true,平均视差&lt;
+MIN_PARALLAX（值为10.0/460.0），则返回false。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="外参数旋转q_bc标定">外参数旋转<span
+class="math inline">\(q_{bc}\)</span>标定</h3>
+<p>外参数旋转<span
+class="math inline">\(q_{bc}\)</span>标定步骤是从下面这段代码加入的</p>
 <pre><code>if(ESTIMATE_EXTRINSIC == 2)
 &#123;
     ROS_INFO(&quot;calibrating extrinsic param, rotation movement is needed&quot;);
@@ -364,27 +373,43 @@ else
             ESTIMATE_EXTRINSIC = 1;
         &#125;
     &#125;
-&#125;
-</code></pre>
-<p>ESTIMATE_EXTRINSIC == 2没有<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>标定数据，要在程序中自行标定。然后调用了函数getCorresponding(),该函数的作用是遍历f_manager中的feature容器，对于一个id的特征点，若其在最新的两帧都出现了，则将该id的特征点在两帧中的归一化坐标存为一个数据对，将所有数据对push进vector容器中。<br />
-上面这步将最新两帧的特征点匹配好了，然后调用函数CalibrationExRotation()进行标定，下面先放原理图，然后把原理代码结合起来讲。<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc%E6%A0%87%E5%AE%9A1.png" alt="qbc标定1" /></p>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc%E6%A0%87%E5%AE%9A2.png" alt="qbc标定2" /></p>
+&#125;</code></pre>
+<p>ESTIMATE_EXTRINSIC == 2没有<span
+class="math inline">\(q_{bc}\)</span>标定数据，要在程序中自行标定。然后调用了函数getCorresponding(),该函数的作用是遍历f_manager中的feature容器，对于一个id的特征点，若其在最新的两帧都出现了，则将该id的特征点在两帧中的归一化坐标存为一个数据对，将所有数据对push进vector容器中。
+上面这步将最新两帧的特征点匹配好了，然后调用函数CalibrationExRotation()进行标定，下面先放原理图，然后把原理代码结合起来讲。
+<img
+src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc标定1.png"
+alt="qbc标定1" /></p>
+<figure>
+<img
+src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/qbc标定2.png"
+alt="qbc标定2" />
+<figcaption aria-hidden="true">qbc标定2</figcaption>
+</figure>
 <p>接下来,看CalibrationExRotation()的具体过程。</p>
 <pre><code>Rc.push_back(solveRelativeR(corres));
 Rimu.push_back(delta_q_imu.toRotationMatrix());
 Rc_g.push_back(ric.inverse() * delta_q_imu * ric);
 Eigen::MatrixXd A(frame_count * 4, 4);
-A.setZero();
-</code></pre>
-<p>首先，调用函数solveRelativeR(corres)计算两帧之间图像的旋转矩阵存到成员变量<code>Rc</code>中，这里就是用了对极约束，具体可以参考之前写的<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/11/ORBSLAM3-NOTE-9/">TwoViewReconstruction.cc</a>。将两帧之间imu的旋转存到成员变量<code>Rimu</code>中，Rc_g中存储的是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>⊗</mo><msub><mi>q</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub><mo>⊗</mo><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}^{ - 1} \otimes {q_{ {b_k}{b_{k + 1} } } } \otimes {q_{bc} }</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1555469999999999em;vertical-align:-0.3013079999999999em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.854239em;"><span style="top:-2.3986920000000005em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span><span style="top:-3.1031310000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3013079999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.8808549999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span>。创建矩阵，它马上用来存储<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Q</mi><mi>N</mi></msub></mrow><annotation encoding="application/x-tex">Q_N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8777699999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>。</p>
-<p>接下来按帧遍历，得到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>ω</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mi>k</mi></msubsup><mo lspace="0em" rspace="0em">⋅</mo><msubsup><mi>Q</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mi>k</mi></msubsup></mrow><annotation encoding="application/x-tex">\omega _{k + 1}^k{\rm{\cdot}}Q_{k+1}^{k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.190547em;vertical-align:-0.34143899999999994em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.849108em;"><span style="top:-2.4168920000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.34143899999999994em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord"><span class="mord"><span class="mord">⋅</span></span></span></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.849108em;"><span style="top:-2.4168920000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.34143899999999994em;"><span></span></span></span></span></span></span></span></span></span>,存到矩阵A里，具体看代码：</p>
+A.setZero();</code></pre>
+<p>首先，调用函数solveRelativeR(corres)计算两帧之间图像的旋转矩阵存到成员变量<code>Rc</code>中，这里就是用了对极约束，具体可以参考之前写的<a
+target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/11/ORBSLAM3-NOTE-9/">TwoViewReconstruction.cc</a>。将两帧之间imu的旋转存到成员变量<code>Rimu</code>中，Rc_g中存储的是<span
+class="math inline">\(q_{bc}^{ - 1} \otimes {q_{ {b_k}{b_{k + 1} } } }
+\otimes {q_{bc} }\)</span>。创建矩阵，它马上用来存储<span
+class="math inline">\(Q_N\)</span>。</p>
+<p>接下来按帧遍历，得到<span class="math inline">\(\omega _{k +
+1}^k{\rm{\cdot}}Q_{k+1}^{k}\)</span>,存到矩阵A里，具体看代码：</p>
 <pre><code>Quaterniond r1(Rc[i]);
 Quaterniond r2(Rc_g[i]);
 double angular_distance = 180 / M_PI * r1.angularDistance(r2);
-double huber = angular_distance &gt; 5.0 ? 5.0 / angular_distance : 1.0;
-</code></pre>
-<p>这段是求<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>ω</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mi>k</mi></msubsup></mrow><annotation encoding="application/x-tex">\omega _{k + 1}^k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.190547em;vertical-align:-0.34143899999999994em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.849108em;"><span style="top:-2.4168920000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.34143899999999994em;"><span></span></span></span></span></span></span></span></span></span>,其中180 / M_PI * r1.angularDistance(r2)用数学语言表达就是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><msub><mi mathvariant="normal">c</mi><mi>k</mi></msub><msub><mi>c</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub><mo>⊗</mo><msubsup><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>⊗</mo><msub><mi>q</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub><mo>⊗</mo><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">{q_{ { { \rm{c}}_k}{c_{k + 1} } } } \otimes q_{bc}^{ - 1} \otimes {q_{ {b_k}{b_{k + 1} } } } \otimes {q_{bc}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8808549999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139199999999997em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">c</span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.1555469999999999em;vertical-align:-0.3013079999999999em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.854239em;"><span style="top:-2.3986920000000005em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span><span style="top:-3.1031310000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3013079999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.8808549999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span>,这个就是角度误差<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span>，因为这个<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></p>
+double huber = angular_distance &gt; 5.0 ? 5.0 / angular_distance : 1.0;</code></pre>
+<p>这段是求<span class="math inline">\(\omega _{k +
+1}^k\)</span>,其中180 / M_PI *
+r1.angularDistance(r2)用数学语言表达就是<span class="math inline">\({q_{
+{ { \rm{c}}_k}{c_{k + 1} } } } \otimes q_{bc}^{ - 1} \otimes {q_{
+{b_k}{b_{k + 1} } } } \otimes {q_{bc}}\)</span>,这个就是角度误差<span
+class="math inline">\(r\)</span>，因为这个<span
+class="math inline">\(q_{bc}\)</span></p>
 
       
     </div>
@@ -546,7 +571,7 @@ double huber = angular_distance &gt; 5.0 ? 5.0 / angular_distance : 1.0;
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vinsmono%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B03"><span class="nav-number">1.</span> <span class="nav-text"> VINSMONO学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text"> 源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#void-estimatorprocessimage"><span class="nav-number">1.1.1.</span> <span class="nav-text"> void Estimator::processImage()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bool-featuremanageraddfeaturecheckparallax"><span class="nav-number">1.1.2.</span> <span class="nav-text"> bool FeatureManager::addFeatureCheckParallax()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E5%8F%82%E6%95%B0%E6%97%8B%E8%BD%ACq_bc%E6%A0%87%E5%AE%9A"><span class="nav-number">1.1.3.</span> <span class="nav-text"> 外参数旋转qbcq_{bc}qbc​标定</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vinsmono%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B03"><span class="nav-number">1.</span> <span class="nav-text">VINSMONO学习笔记(3)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E5%8F%82%E6%95%B0%E6%97%8B%E8%BD%ACq_bc%E6%A0%87%E5%AE%9A"><span class="nav-number">1.0.1.</span> <span class="nav-text">外参数旋转\(q_{bc}\)标定</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
