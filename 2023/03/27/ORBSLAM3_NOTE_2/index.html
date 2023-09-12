@@ -79,12 +79,12 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(2) 这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。  System.cc  System::System() 构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。 先整体介绍一下构造函数的具体">
+<meta name="description" content="ORBSLAM3学习笔记(2)这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。 System.&lt;&#x2F;span&gt;ccSystem::System()构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。先整体介绍一下构">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ORB-SLAM3源码阅读:System">
 <meta property="og:url" content="http://example.com/2023/03/27/ORBSLAM3_NOTE_2/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="ORBSLAM3学习笔记(2) 这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。  System.cc  System::System() 构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。 先整体介绍一下构造函数的具体">
+<meta property="og:description" content="ORBSLAM3学习笔记(2)这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。 System.&lt;&#x2F;span&gt;ccSystem::System()构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。先整体介绍一下构">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-03-27T12:09:53.000Z">
 <meta property="article:modified_time" content="2023-09-12T08:48:57.012Z">
@@ -310,18 +310,8 @@
       
 
       
-        <h1 id="orbslam3学习笔记2"><a class="markdownIt-Anchor" href="#orbslam3学习笔记2"></a> ORBSLAM3学习笔记(2)</h1>
-<p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
-<h2 id="systemspancc"><a class="markdownIt-Anchor" href="#systemspancc"></a> System.</span>cc</h2>
-<h3 id="systemsystem"><a class="markdownIt-Anchor" href="#systemsystem"></a> System::System()</h3>
-<p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br />
-先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br />
-1.读取当前传感器类型<br />
-2.读取配置文件<br />
-3.加载Vocabulary<br />
-4.创建关键帧库<br />
-5.创建多地图<br />
-6.创建线程 跟踪、局部建图、回环、显示路径。</p>
+        <h1 id="ORBSLAM3学习笔记-2"><a href="#ORBSLAM3学习笔记-2" class="headerlink" title="ORBSLAM3学习笔记(2)"></a>ORBSLAM3学习笔记(2)</h1><p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
+<h2 id="System-lt-span-gt-cc"><a href="#System-lt-span-gt-cc" class="headerlink" title="System.&lt;/span&gt;cc"></a>System.&lt;/span&gt;cc</h2><h3 id="System-System"><a href="#System-System" class="headerlink" title="System::System()"></a>System::System()</h3><p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br>先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br>1.读取当前传感器类型<br>2.读取配置文件<br>3.加载Vocabulary<br>4.创建关键帧库<br>5.创建多地图<br>6.创建线程 跟踪、局部建图、回环、显示路径。</p>
 <p>首先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>System::System(const string &amp;strVocFile,    //词袋文件所在路径
     const string &amp;strSettingsFile,          //配置文件所在路径
@@ -336,9 +326,7 @@
     mbActivateLocalizationMode(false),      //是否开启局部地图定位开关 
     mbDeactivateLocalizationMode(false), 
     mbShutDown(false)
-</code></pre>
-<p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br />
-其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
+</code></pre><p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br>其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
 <pre><code>enum eSensor&#123;
     MONOCULAR=0,
     STEREO=1,
@@ -347,13 +335,10 @@
     IMU_STEREO=4,
     IMU_RGBD=5,
 &#125;;
-</code></pre>
-<hr />
-<h4 id="settings类对象的初始化"><a class="markdownIt-Anchor" href="#settings类对象的初始化"></a> Settings类对象的初始化</h4>
-<p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
+</code></pre><hr>
+<h4 id="Settings类对象的初始化"><a href="#Settings类对象的初始化" class="headerlink" title="Settings类对象的初始化"></a>Settings类对象的初始化</h4><p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
 <pre><code>settings_ = new Settings(strSettingsFile,mSensor);
-</code></pre>
-<p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
+</code></pre><p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
 <p>先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>Settings::Settings(
     const std::string &amp;configFile,  //配置文件
@@ -363,43 +348,27 @@
     bNeedToRectify_(false), 
     bNeedToResize1_(false),
     bNeedToResize2_(false)
-</code></pre>
-<p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
+</code></pre><p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
 <pre><code>readCamera1(fSettings);
-</code></pre>
-<p>该函数主要实现了将三个setting类的成员变量初始化:<br />
-<strong>1.GeometricCamera* calibration1_</strong><br />
-calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
+</code></pre><p>该函数主要实现了将三个setting类的成员变量初始化:<br><strong>1.GeometricCamera* calibration1_</strong><br>calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
 <pre><code>Pinhole(const std::vector&lt;float&gt; _vParameters) : GeometricCamera(_vParameters), tvr(nullptr) &#123;
     assert(mvParameters.size() == 4);
     mnId=nNextId++;
     mnType = CAM_PINHOLE;
 &#125;
-</code></pre>
-<p>GeometricCamera类有三个成员变量，分别是</p>
+</code></pre><p>GeometricCamera类有三个成员变量，分别是               </p>
 <pre><code>std::vector&lt;float&gt; mvParameters;
 unsigned int mnId;
 unsigned int mnType;
-</code></pre>
-<p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br />
-故calibration1_对象中保存了相机的内参，id和类型。</p>
-<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br />
-即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
-<p><strong>3.bool bNeedToUndistort_</strong><br />
-判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
+</code></pre><p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br>故calibration1_对象中保存了相机的内参，id和类型。</p>
+<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br>即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
+<p><strong>3.bool bNeedToUndistort_</strong><br>判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
 <p>读取完Camera1再根据sensor_类型判断是否需要调用readCamera2(fSettings)函数，由于我现在看的是单目相机，就不需要执行这个函数了。然后调用函数</p>
 <pre><code>readImageInfo(fSettings);
-</code></pre>
-<p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
+</code></pre><p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
 <p>接着根据sensor_类型判断是否需要调用readIMU(fSettings)和readRGBD(fSettings)。然后调用函数</p>
 <pre><code>readORB(fSettings);
-</code></pre>
-<p>该函数初始化成员变量<br />
-<strong>int nFeatures_</strong> 指定要提取的特征点数目<br />
-<strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br />
-<strong>int nLevels_</strong> 指定图像金字塔的层数<br />
-<strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br />
-<strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
+</code></pre><p>该函数初始化成员变量<br><strong>int nFeatures_</strong> 指定要提取的特征点数目<br><strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br><strong>int nLevels_</strong> 指定图像金字塔的层数<br><strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br><strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
 <p>接下来仍然是调用函数初始化成员变量，分别调用了readViewer(fSettings)，readLoadAndSave(fSettings)，readOtherParameters(fSettings)，以下变量被初始化</p>
 <pre><code>/*
 * Viewer stuff
@@ -422,24 +391,19 @@ std::string sLoadFrom_, sSaveto_;
 * Other stuff
 */
 float thFarPoints_;
-</code></pre>
-<p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
+</code></pre><p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
 <p>总结，Settings类主要就是将配置文件里的数据读取到Settings类的对象中，总体比较简单。</p>
-<hr />
+<hr>
 <p>settings_初始化完成后，保存及加载地图的名字，目前这两个参数都是空的。</p>
 <pre><code>mStrLoadAtlasFromFile = settings_-&gt;atlasLoadFile();
 mStrSaveAtlasToFile = settings_-&gt;atlasSaveFile();
-</code></pre>
-<p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
+</code></pre><p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
 <pre><code>mpVocabulary = new ORBVocabulary();
-</code></pre>
-<p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary&lt;DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
-<hr />
-<h4 id="keyframedatabase类对象的初始化"><a class="markdownIt-Anchor" href="#keyframedatabase类对象的初始化"></a> KeyFrameDatabase类对象的初始化</h4>
-<p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
+</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
+<hr>
+<h4 id="KeyFrameDatabase类对象的初始化"><a href="#KeyFrameDatabase类对象的初始化" class="headerlink" title="KeyFrameDatabase类对象的初始化"></a>KeyFrameDatabase类对象的初始化</h4><p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
 <pre><code>mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-</code></pre>
-<p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
+</code></pre><p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
 <pre><code>protected:
 // Associated vocabulary
 const ORBVocabulary* mpVoc;
@@ -452,29 +416,23 @@ std::vector&lt;list&lt;long unsigned int&gt; &gt; mvBackupInvertedFileId;
 
 // Mutex
 std::mutex mMutex;
-</code></pre>
-<p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br />
-接下来看KeyFrameDatabase类的构造函数</p>
+</code></pre><p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br>接下来看KeyFrameDatabase类的构造函数</p>
 <pre><code>// 构造函数
 KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;voc)
 &#123;
     mvInvertedFile.resize(voc.size());
 &#125;
-</code></pre>
-<p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
-<hr />
-<h4 id="atlas类对象的初始化"><a class="markdownIt-Anchor" href="#atlas类对象的初始化"></a> Atlas类对象的初始化</h4>
-<p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
+</code></pre><p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
+<hr>
+<h4 id="Atlas类对象的初始化"><a href="#Atlas类对象的初始化" class="headerlink" title="Atlas类对象的初始化"></a>Atlas类对象的初始化</h4><p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
 <pre><code>mpAtlas = new Atlas(0);
-</code></pre>
-<p>直接来看Atlas类的构造函数</p>
+</code></pre><p>直接来看Atlas类的构造函数</p>
 <pre><code>Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid), mHasViewer(false)
 &#123;
     mpCurrentMap = static_cast&lt;Map *&gt;(NULL);
     CreateNewMap();
 &#125;
-</code></pre>
-<p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
+</code></pre><p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
 <pre><code>void Atlas::CreateNewMap()
 &#123;
     // 锁住地图集
@@ -500,22 +458,19 @@ KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;vo
     mpCurrentMap-&gt;SetCurrentMap();              //设置为活跃地图
     mspMaps.insert(mpCurrentMap);               //插入地图集
 &#125;
-</code></pre>
-<p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
-<hr />
+</code></pre><p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
+<hr>
 <p>接下来将用于显示帧和地图的成员变量初始化，由Viewer调用。</p>
 <pre><code>mpFrameDrawer = new FrameDrawer(mpAtlas);
 mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-</code></pre>
-<p>先看FrameDrawer类的构造函数</p>
+</code></pre><p>先看FrameDrawer类的构造函数</p>
 <pre><code>FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 &#123;
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
     mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 &#125;
-</code></pre>
-<p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
+</code></pre><p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
 <p>再看MapDrawer类的构造函数</p>
 <pre><code>MapDrawer::MapDrawer(Atlas* pAtlas, const string &amp;strSettingPath, Settings* settings):mpAtlas(pAtlas)
 &#123;
@@ -540,8 +495,7 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
         &#125;
     &#125;
 &#125;
-</code></pre>
-<p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
+</code></pre><p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
 <pre><code>void MapDrawer::newParameterLoader(Settings *settings) &#123;
     mKeyFrameSize = settings-&gt;keyFrameSize();
     mKeyFrameLineWidth = settings-&gt;keyFrameLineWidth();
@@ -550,24 +504,18 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     mCameraSize = settings-&gt;cameraSize();
     mCameraLineWidth  = settings-&gt;cameraLineWidth();
 &#125;
-</code></pre>
-<hr />
-<h4 id="tracking类对象的初始化"><a class="markdownIt-Anchor" href="#tracking类对象的初始化"></a> Tracking类对象的初始化</h4>
-<p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
+</code></pre><hr>
+<h4 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h4><p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
 <pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
                          mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-</code></pre>
-<p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
-<hr />
-<h4 id="创建并开启local-mapping线程"><a class="markdownIt-Anchor" href="#创建并开启local-mapping线程"></a> 创建并开启local mapping线程</h4>
-<p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
+</code></pre><p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
+<hr>
+<h4 id="创建并开启local-mapping线程"><a href="#创建并开启local-mapping线程" class="headerlink" title="创建并开启local mapping线程"></a>创建并开启local mapping线程</h4><p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
 <pre><code>mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                  mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-</code></pre>
-<p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
+</code></pre><p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
 <pre><code>mptLocalMapping = new thread(&amp;ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
-</code></pre>
-<p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
+</code></pre><p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
 <p>上面执行完后(LocalMapping::Run 函数还在子线程中继续跑)，执行下面的内容，对mpLocalMapper对象剩下的一些成员变量初始化。</p>
 <pre><code>// 设置最远3D地图点的深度值，如果超过阈值，说明可能三角化不太准确，丢弃
 if(settings_)
@@ -582,16 +530,12 @@ if(mpLocalMapper-&gt;mThFarPoints!=0)
 &#125;
 else
     mpLocalMapper-&gt;mbFarPoints = false;
-</code></pre>
-<hr />
-<h4 id="创建并开启闭环线程"><a class="markdownIt-Anchor" href="#创建并开启闭环线程"></a> 创建并开启闭环线程</h4>
-<pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
+</code></pre><hr>
+<h4 id="创建并开启闭环线程"><a href="#创建并开启闭环线程" class="headerlink" title="创建并开启闭环线程"></a>创建并开启闭环线程</h4><pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
 mptLoopClosing = new thread(&amp;ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-</code></pre>
-<p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
-<hr />
-<h4 id="设置线程间的指针"><a class="markdownIt-Anchor" href="#设置线程间的指针"></a> 设置线程间的指针</h4>
-<pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
+</code></pre><p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
+<hr>
+<h4 id="设置线程间的指针"><a href="#设置线程间的指针" class="headerlink" title="设置线程间的指针"></a>设置线程间的指针</h4><pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
 mpTracker-&gt;SetLoopClosing(mpLoopCloser);
 
 mpLocalMapper-&gt;SetTracker(mpTracker);
@@ -599,11 +543,9 @@ mpLocalMapper-&gt;SetLoopCloser(mpLoopCloser);
 
 mpLoopCloser-&gt;SetTracker(mpTracker);
 mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
-</code></pre>
-<p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
-<hr />
-<h4 id="创建并开启显示线程"><a class="markdownIt-Anchor" href="#创建并开启显示线程"></a> 创建并开启显示线程</h4>
-<pre><code>if(bUseViewer)
+</code></pre><p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
+<hr>
+<h4 id="创建并开启显示线程"><a href="#创建并开启显示线程" class="headerlink" title="创建并开启显示线程"></a>创建并开启显示线程</h4><pre><code>if(bUseViewer)
 //if(false) // TODO
 &#123;
     mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile,settings_);
@@ -612,15 +554,12 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
     mpLoopCloser-&gt;mpViewer = mpViewer;
     mpViewer-&gt;both = mpFrameDrawer-&gt;both;
 &#125;
-</code></pre>
-<p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
+</code></pre><p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
 <p>System类对象的初始化基本就完成了。</p>
-<hr />
-<h3 id="systemtrackmonocular"><a class="markdownIt-Anchor" href="#systemtrackmonocular"></a> System::TrackMonocular()</h3>
-<p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
+<hr>
+<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
 <pre><code>Sophus::SE3f Tcw = mpTracker-&gt;GrabImageMonocular(imToFeed,timestamp,filename);
-</code></pre>
-<p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
+</code></pre><p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
 <p>待更新。</p>
 
       
@@ -787,7 +726,7 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#orbslam3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B02"><span class="nav-number">1.</span> <span class="nav-text"> ORBSLAM3学习笔记(2)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#systemspancc"><span class="nav-number">1.1.</span> <span class="nav-text"> System.cc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#systemsystem"><span class="nav-number">1.1.1.</span> <span class="nav-text"> System::System()</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#settings%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.1.</span> <span class="nav-text"> Settings类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#keyframedatabase%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.2.</span> <span class="nav-text"> KeyFrameDatabase类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#atlas%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.3.</span> <span class="nav-text"> Atlas类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#tracking%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.4.</span> <span class="nav-text"> Tracking类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AFlocal-mapping%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.5.</span> <span class="nav-text"> 创建并开启local mapping线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AF%E9%97%AD%E7%8E%AF%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.6.</span> <span class="nav-text"> 创建并开启闭环线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E7%BA%BF%E7%A8%8B%E9%97%B4%E7%9A%84%E6%8C%87%E9%92%88"><span class="nav-number">1.1.1.7.</span> <span class="nav-text"> 设置线程间的指针</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AF%E6%98%BE%E7%A4%BA%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.8.</span> <span class="nav-text"> 创建并开启显示线程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#systemtrackmonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text"> System::TrackMonocular()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-2"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(2)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#System-lt-span-gt-cc"><span class="nav-number">1.1.</span> <span class="nav-text">System.&lt;&#x2F;span&gt;cc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#System-System"><span class="nav-number">1.1.1.</span> <span class="nav-text">System::System()</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Settings%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">Settings类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#KeyFrameDatabase%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">KeyFrameDatabase类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Atlas%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">Atlas类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Tracking%E7%B1%BB%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">Tracking类对象的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AFlocal-mapping%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.5.</span> <span class="nav-text">创建并开启local mapping线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AF%E9%97%AD%E7%8E%AF%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.6.</span> <span class="nav-text">创建并开启闭环线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E7%BA%BF%E7%A8%8B%E9%97%B4%E7%9A%84%E6%8C%87%E9%92%88"><span class="nav-number">1.1.1.7.</span> <span class="nav-text">设置线程间的指针</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E5%BC%80%E5%90%AF%E6%98%BE%E7%A4%BA%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.1.8.</span> <span class="nav-text">创建并开启显示线程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#System-TrackMonocular"><span class="nav-number">1.1.2.</span> <span class="nav-text">System::TrackMonocular()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
