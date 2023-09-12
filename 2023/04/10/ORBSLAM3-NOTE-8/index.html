@@ -79,16 +79,16 @@
 
 
 
-<meta name="description" content="ORBSLAM3学习笔记(8)这篇博客主要是对ORBmatcher.cc文件的学习。  源码阅读ORBmatcher::SearchForInitialization()1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&lt;HIS">
+<meta name="description" content="ORBSLAM3学习笔记(8) 这篇博客主要是对ORBmatcher.cc文件的学习。   源码阅读  ORBmatcher::SearchForInitialization() 1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&amp;">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ORB-SLAM3源码阅读:ORBmatcher">
 <meta property="og:url" content="http://example.com/2023/04/10/ORBSLAM3-NOTE-8/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="ORBSLAM3学习笔记(8)这篇博客主要是对ORBmatcher.cc文件的学习。  源码阅读ORBmatcher::SearchForInitialization()1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&lt;HIS">
+<meta property="og:description" content="ORBSLAM3学习笔记(8) 这篇博客主要是对ORBmatcher.cc文件的学习。   源码阅读  ORBmatcher::SearchForInitialization() 1.创建一个旋转直方图 vector&lt;int&gt; rotHist[HISTO_LENGTH]; &#x2F;&#x2F; 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量 for(int i&#x3D;0;i&amp;">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png">
 <meta property="article:published_time" content="2023-04-10T03:34:02.000Z">
-<meta property="article:modified_time" content="2023-05-18T07:36:13.442Z">
+<meta property="article:modified_time" content="2023-09-12T08:49:14.002Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="ORBSLAM3 NOTE">
 <meta name="twitter:card" content="summary">
@@ -312,25 +312,35 @@
       
 
       
-        <h1 id="ORBSLAM3学习笔记-8"><a href="#ORBSLAM3学习笔记-8" class="headerlink" title="ORBSLAM3学习笔记(8)"></a>ORBSLAM3学习笔记(8)</h1><p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
-<hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBmatcher-SearchForInitialization"><a href="#ORBmatcher-SearchForInitialization" class="headerlink" title="ORBmatcher::SearchForInitialization()"></a>ORBmatcher::SearchForInitialization()</h3><p><strong>1.创建一个旋转直方图</strong></p>
+        <h1 id="orbslam3学习笔记8"><a class="markdownIt-Anchor" href="#orbslam3学习笔记8"></a> ORBSLAM3学习笔记(8)</h1>
+<p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="orbmatchersearchforinitialization"><a class="markdownIt-Anchor" href="#orbmatchersearchforinitialization"></a> ORBmatcher::SearchForInitialization()</h3>
+<p><strong>1.创建一个旋转直方图</strong></p>
 <pre><code>vector&lt;int&gt; rotHist[HISTO_LENGTH];
 // 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量
 for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre><p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
-<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
+</code></pre>
+<p>旋转直方图如下图所示<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图" /><br />
+这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br />
+factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br />
+遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
 <ul>
-<li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
+<li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
 <li>遍历搜索搜索窗口中的所有潜在的匹配候选点，找到最优的和次优的。匹配的优劣根据描述子的距离判断，两个二进制串之间的汉明距离，指的是其不同位数的个数。</li>
 <li>判断最优结果是否满足阈值，判断最佳距离比次佳距离是否小于设定的比例。判断找到的候选特征点对应F1中特征点是否已经匹配过了，如果已经匹配过了，我觉得应该是将这个和原来的匹配都删掉，但源码中是删掉原来的匹配，存入这个新的匹配。如果上面的条件都满足，计算匹配点之间的距离，存入直方图对应的bin中。</li>
 </ul>
 <p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
-<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
-<hr>
-<h3 id="ORBmatcher-SearchForTriangulation"><a href="#ORBmatcher-SearchForTriangulation" class="headerlink" title="ORBmatcher::SearchForTriangulation()"></a>ORBmatcher::SearchForTriangulation()</h3><p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
+<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br />
+vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+<hr />
+<h3 id="orbmatchersearchfortriangulation"><a class="markdownIt-Anchor" href="#orbmatchersearchfortriangulation"></a> ORBmatcher::SearchForTriangulation()</h3>
+<p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
 <blockquote>
 <p>直接看我下面的注释就行</p>
 </blockquote>
@@ -378,12 +388,15 @@ for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre><p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
+</code></pre>
+<p><strong>2.利用BoW加速匹配</strong><br />
+首先看一下定义的辅助变量</p>
 <pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
 DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
 DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
 DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
-</code></pre><p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+</code></pre>
+<p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
 <p>2.1 遍历pKF1和pKF2中的node节点</p>
 <blockquote>
 <p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
@@ -391,7 +404,8 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <p>下面讲f1it和f2it属于同一个node节点时该怎么操作</p>
 <ol>
 <li>遍历该node节点下<strong>f1it</strong>下的所有特征点</li>
-<li>通过特征点索引idx1在pKF1中取出对应的MapPoint<blockquote>
+<li>通过特征点索引idx1在pKF1中取出对应的MapPoint
+<blockquote>
 <p>若MapPoint存在，则直接进入下一次循环，遍历下一个特征点。若MapPoint不存在，说明该特征点是从未匹配过的。通过这一步骤，我们就能避免重复匹配，导致获得已存在的地图点了。</p>
 </blockquote>
 </li>
@@ -399,24 +413,32 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <li>遍历该node节点下<strong>f2it</strong>对应KF2中的所有特征点</li>
 <li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
 <li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
-<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
-<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong>
+<blockquote>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br />
+金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
 </blockquote>
 </li>
-<li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
+<li>计算特征点kp2到kp1对应极线的距离是否小于阈值
+<blockquote>
 <p>这个就不细嗦了，这里其实和TwoViewReconstruction.cc那篇博客里的关于F矩阵的卡方检验是一样的。</p>
 </blockquote>
 </li>
 <li>记录匹配结果，记录旋转差直方图信息</li>
 </ol>
-<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
-<hr>
-<h3 id="ORBmatcher-Fuse"><a href="#ORBmatcher-Fuse" class="headerlink" title="ORBmatcher::Fuse()"></a>ORBmatcher::Fuse()</h3><p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br>在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
+<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br />
+<strong>4.存储匹配关系</strong></p>
+<hr />
+<h3 id="orbmatcherfuse"><a class="markdownIt-Anchor" href="#orbmatcherfuse"></a> ORBmatcher::Fuse()</h3>
+<p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br />
+在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
 <ul>
 <li>若地图点反投影对应位置上的特征点不存在地图点,说明该特征点之前可能漏掉了，则直接添加观测。</li>
 <li>若地图点反投影位置上存在对应地图点,说明两帧中的特征点对应的可能是同一个地图点，但之前出现了误差，则将两个地图点合并到其中观测较多的那个。</li>
 </ul>
-<p>下面看具体代码：<br>1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br>2.遍历所有的待投影地图点，进行如下判断：</p>
+<p>下面看具体代码：<br />
+1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br />
+2.遍历所有的待投影地图点，进行如下判断：</p>
 <ul>
 <li>若该地图点地图点无效 或 已经是该帧的地图点（无需融合），跳过。</li>
 <li>将地图点变换到关键帧pKF的相机坐标系下，深度值为负，跳过。</li>
@@ -426,19 +448,22 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 </ul>
 <p>3.在投影点附近搜索窗口内找到候选匹配点的索引</p>
 <blockquote>
-<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br>首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
+<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br />
+首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
 </blockquote>
-<p>4.遍历候选匹配点，寻找最佳匹配点<br>对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
+<p>4.遍历候选匹配点，寻找最佳匹配点<br />
+对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
 <ul>
 <li>金字塔层级要接近（同一层或小一层），否则跳过</li>
 <li>计算投影点与候选匹配特征点的距离，进行卡方检验，若超过阈值，直接跳过。</li>
 </ul>
-<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br>5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
+<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br />
+5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
 <ul>
 <li>地图点反投影位置上存在对应地图点,则将两个地图点合并到其中观测较多的那个则直接添加观测</li>
 <li>如果最佳匹配点没有对应地图点，该地图点观测中添加该帧，该帧添加该地图点。</li>
 </ul>
-<hr>
+<hr />
 
       
     </div>
@@ -558,7 +583,7 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -604,7 +629,7 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ORBSLAM3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-8"><span class="nav-number">1.</span> <span class="nav-text">ORBSLAM3学习笔记(8)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-SearchForInitialization"><span class="nav-number">1.1.1.</span> <span class="nav-text">ORBmatcher::SearchForInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-SearchForTriangulation"><span class="nav-number">1.1.2.</span> <span class="nav-text">ORBmatcher::SearchForTriangulation()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORBmatcher-Fuse"><span class="nav-number">1.1.3.</span> <span class="nav-text">ORBmatcher::Fuse()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#orbslam3%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B08"><span class="nav-number">1.</span> <span class="nav-text"> ORBSLAM3学习笔记(8)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text"> 源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#orbmatchersearchforinitialization"><span class="nav-number">1.1.1.</span> <span class="nav-text"> ORBmatcher::SearchForInitialization()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#orbmatchersearchfortriangulation"><span class="nav-number">1.1.2.</span> <span class="nav-text"> ORBmatcher::SearchForTriangulation()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#orbmatcherfuse"><span class="nav-number">1.1.3.</span> <span class="nav-text"> ORBmatcher::Fuse()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

@@ -239,6 +239,261 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/ORBSLAM3_NOTE_5/" itemprop="url">ORB-SLAM3源码阅读:LocalMapping</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-03-30T20:34:51+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="orbslam3学习笔记5"><a class="markdownIt-Anchor" href="#orbslam3学习笔记5"></a> ORBSLAM3学习笔记(5)</h1>
+<p>这篇博客主要是对LocalMapping.cc文件的学习。现在才看完Tracking线程的初始化部分，由于初始化完之后就有两个关键帧传过来了，所以Tracking线程先放一放，先看一下这个线程。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="localmappingrun"><a class="markdownIt-Anchor" href="#localmappingrun"></a> LocalMapping::Run()</h3>
+<p>这里都是已经接收到关键帧后的步骤。<br />
+<strong>1.处理列表中的关键帧，包括计算BoW、更新观测、描述子、共视图，插入到地图等。</strong></p>
+<blockquote>
+<p>调用函数ProcessNewKeyFrame()</p>
+</blockquote>
+<p><strong>2.根据地图点的观测情况剔除质量不好的地图点</strong></p>
+<blockquote>
+<p>调用函数MapPointCulling()</p>
+</blockquote>
+<p><strong>3.当前关键帧与相邻关键帧通过三角化产生新的地图点，使得跟踪更稳</strong></p>
+<blockquote>
+<p>调用函数CreateNewMapPoints()</p>
+</blockquote>
+<p><strong>4.若此时缓冲队列中的关键帧都检测完了，检查并融合当前关键帧与相邻关键帧（两级相邻）帧中重复的地图点</strong></p>
+<blockquote>
+<p>调用函数SearchInNeighbors()</p>
+</blockquote>
+<p><strong>5.如果已经处理完队列中的最后的一个关键帧，并且闭环检测没有请求停止LocalMapping，进行局部BA优化</strong></p>
+<ul>
+<li>当前关键帧的一级共视关键帧位姿会被优化;二极共视关键帧会加入优化图,但其位姿不会被优化。</li>
+<li>所有局部地图点位姿都会被优化</li>
+</ul>
+<p><strong>6.检测并剔除当前帧相邻的关键帧中冗余的关键帧</strong></p>
+<blockquote>
+<p>调用函数KeyFrameCulling()</p>
+</blockquote>
+<p><strong>7.将当前帧加入到闭环检测队列中</strong></p>
+<hr />
+<h3 id="localmappingprocessnewkeyframe"><a class="markdownIt-Anchor" href="#localmappingprocessnewkeyframe"></a> LocalMapping::ProcessNewKeyFrame()</h3>
+<p>这里参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/ncepu_Chen/article/details/116785093?spm=1001.2014.3001.5502">ORB-SLAM2代码详解08: 局部建图线程LocalMapping</a><br />
+<strong>1.从缓冲队列<code>mlNewKeyFrames</code>中取出一帧关键帧</strong><br />
+<strong>2.计算该关键帧特征点的Bow信息</strong><br />
+<strong>3.通过判断该地图点是否观测到当前关键帧来判断该地图点是否是当前关键帧中新生成的。</strong></p>
+<ul>
+<li>
+<p>若地图点是本关键帧跟踪过程中匹配得到的(Tracking::TrackWithMotionModel()、Tracking::TrackReferenceKeyFrame()、Tracking::Relocalization()和Tracking::SearchLocalPoints()中调用了ORBmatcher::SearchByProjection()和ORBmatcher::SearchByBoW()方法),则是之前关键帧中创建的地图点,只需添加其对当前帧的观测即可。</p>
+</li>
+<li>
+<p>若地图点是本关键帧跟踪过程中新生成的(包括:1.单目或双目初始化Tracking::MonocularInitialization()、Tracking::StereoInitialization();2.创建新关键帧Tracking::CreateNewKeyFrame()),则该地图点中有对当前关键帧的观测,是新生成的地图点,放入列表<code>mlpRecentAddedMapPoints</code>中供LocalMapping::MapPointCulling()函数筛选。</p>
+</li>
+</ul>
+<p><strong>4.更新关键帧间的连接关系（共视图）</strong><br />
+<strong>5.将该关键帧插入到地图中</strong></p>
+<hr />
+<h3 id="localmappingmappointculling"><a class="markdownIt-Anchor" href="#localmappingmappointculling"></a> LocalMapping::MapPointCulling()</h3>
+<p><strong>1.根据相机类型设置不同的观测阈值</strong></p>
+<pre><code>int nThObs;
+if(mbMonocular)
+    nThObs = 2;
+else
+    nThObs = 3;
+const int cnThObs = nThObs;
+</code></pre>
+<p><strong>2.遍历检查的新添加的MapPoints</strong></p>
+<blockquote>
+<p>从<code>mlpRecentAddedMapPoints</code>获得新添加的点，判断是否需要删掉，总共有四层判断。</p>
+<ul>
+<li>1.已经是坏点的MapPoints直接从检查链表中删除</li>
+<li>2.跟踪到该MapPoint的Frame数相比预计可观测到该MapPoint的Frame数的比例小于25%，删除,<strong>标志位<code>mbToBeErased</code>置为true，这样的话，下次别的帧的该关键点检查时，就可以直接通过第一个判断删掉。</strong><br />
+代码中的表述为(mnFound/mnVisible） &lt; 0.25<br />
+<code>mnFound</code> ：地图点被多少帧（包括普通帧）看到，次数越多越好<br />
+<code>mnVisible</code>：地图点应该被看到的次数<br />
+(mnFound/mnVisible）：对于大FOV镜头这个比例会高，对于窄FOV镜头这个比例会低</li>
+<li>3.从该点建立开始，到现在已经过了不小于2个关键帧,但是观测到该点的关键帧数却不超过cnThObs帧，那么删除该点，标志位<code>mbToBeErased</code>置为true。</li>
+<li>4.从建立该点开始，已经过了3个关键帧而没有被剔除，则认为是质量高的点,因此<strong>没有SetBadFlag()，仅从队列中删除</strong>，放弃继续对该MapPoint的检测。</li>
+</ul>
+</blockquote>
+<hr />
+<h3 id="localmappingcreatenewmappoints"><a class="markdownIt-Anchor" href="#localmappingcreatenewmappoints"></a> LocalMapping::CreateNewMapPoints()</h3>
+<p>1.在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧。</p>
+<blockquote>
+<p>这里调用了函数GetBestCovisibilityKeyFrames()把相邻关键帧存到了vector&lt;KeyFrame*&gt;类变量vpNeighKFs中。</p>
+</blockquote>
+<p>2.遍历相邻关键帧vpNeighKFs<br />
+2.1 判断相机运动的基线是不是足够长</p>
+<blockquote>
+<p>单目相机情况,计算邻接关键帧的场景深度中值，然后得到基线(即两个光心的距离)与景深的比例，若比例特别小，基线太短恢复3D点不准，那么跳过当前邻接的关键帧，不生成3D点。</p>
+</blockquote>
+<p>2.2 通过BoW对两关键帧的未匹配的特征点快速匹配，用极线约束抑制离群点，生成新的匹配点对。</p>
+<blockquote>
+<p>调用函数SearchForTriangulation(),具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a>。</p>
+</blockquote>
+<p>3.遍历匹配点，每对匹配通过三角化生成3D点<br />
+3.1 获得当前关键帧和邻接关键帧中的匹配特征点。<br />
+3.2 利用匹配点反投影得到视差角</p>
+<blockquote>
+<p>这里先通过像素坐标得到相机坐标系下的路标点坐标\[X\text{=}\frac{\text{u}-c_x}{f_x},Y=\frac{v-c_y}{f_y},Z=1\]再把它们都转化成世界坐标下的(这里只用旋转坐标就行了，毕竟深度还未确定，平移没什么意义)，计算两个向量的cos值，即视角差。</p>
+</blockquote>
+<p>3.3 用三角法恢复3D点(这里和单目初始化时一样)<br />
+3.4 检测生成的3D点是否在相机前方,不在的话就放弃这个点<br />
+3.5 计算3D点在当前关键帧和邻接关键帧下的重投影误差，用卡方检验，超出阈值则放弃。<br />
+3.6 检查尺度连续性</p>
+<blockquote>
+<p>计算路标点到两帧光心的距离d1,d2。得到特征点在两帧中的图像金字塔中的层数的对应缩放比例s1,s2。ratioDist = d2/d1，ratioOctave=s1/s2,ratioFactor = 1.5f*1.2(1.2就是基础缩放比例);若ratioDist*ratioFactor&lt; ratioOctave或ratioDist&gt;ratioOctave*ratioFactor,说明距离的比例和图像金字塔的比例相差太多，跳过。</p>
+</blockquote>
+<p>3.7 构造地图点，为地图点添加属性，分别是</p>
+<ul>
+<li>观测到该MapPoint的关键帧</li>
+<li>该MapPoint的描述子</li>
+<li>该MapPoint的平均观测方向和深度范围</li>
+</ul>
+<p>这些前面都讲过了，看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>就行。<br />
+3.8 把该新生成的地图点放入<code>mlpRecentAddedMapPoints</code>中。</p>
+<hr />
+<h3 id="localmappingsearchinneighbors"><a class="markdownIt-Anchor" href="#localmappingsearchinneighbors"></a> LocalMapping::SearchInNeighbors()</h3>
+<p>1.获得当前关键帧在共视图中权重排名前20的邻接关键帧<br />
+2.存储一级相邻关键帧及其二级相邻关键帧</p>
+<blockquote>
+<p>一级关键帧就是第一步中的那20个邻接关键帧，二级关键帧就是遍历一级关键帧，取他们在共视图中权重排名前5的邻接关键帧。一二级邻接关键帧都存储在vpTargetKFs中，且所有相邻关键帧的成员变量<code>mnFuseTargetForKF</code>都要改为mpCurrentKeyFrame-&gt;mnId以作标记，避免重复选取。</p>
+</blockquote>
+<p>3.将当前帧的地图点分别与一级二级相邻关键帧地图点进行融合 – 正向</p>
+<blockquote>
+<p>调用函数ORBmatcher::Fuse()，详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher.cc</a></p>
+</blockquote>
+<p>4.将一级二级相邻关键帧地图点分别与当前关键帧地图点进行融合 – 反向</p>
+<ul>
+<li>4.1 遍历每一个一级邻接和二级邻接关键帧，收集他们的地图点存储到 vpFuseCandidates</li>
+<li>4.2 进行地图点投影融合,和正向融合操作是完全相同的</li>
+</ul>
+<p>5.更新当前帧地图点的描述子、深度、观测主方向等属性<br />
+6.更新当前帧的MapPoints后更新与其它帧的连接关系</p>
+<blockquote>
+<p>即更新共视关系，调用函数KeyFrame::UpdateConnections()</p>
+</blockquote>
+<hr />
+<h3 id="localmappingkeyframeculling"><a class="markdownIt-Anchor" href="#localmappingkeyframeculling"></a> LocalMapping::KeyFrameCulling()</h3>
+<p>先获取当前关键帧mpCurrentKeyFrame的一级共视关键帧vpLocalKeyFrames。<br />
+对所有的共视关键帧vpLocalKeyFrames进行遍历：</p>
+<p>遍历到的关键帧为pKF，规定第一个关键帧不能删除（初始化的第一帧），提取每个共视关键帧的地图点vpMapPoints（vpLocalKeyFrames的地图点），遍历每一个地图点：</p>
+<p>如果该地图点的被观测次数超过阈值thObs，获取能看见该地图点的关键帧的集合observations，遍历观测到该地图点的关键帧，获得该地图点在关键帧中对应的特征点在图像金字塔的层数，若层数不超过其在pKF中的层数，则nObs++，最后若nObs&gt;3,则该地图点为冗余地图点。</p>
+<p>如果该关键帧90%以上的有效地图点被判断为冗余的，则认为该关键帧是冗余的，需要删除该关键帧。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/30/ORBSLAM3_NOTE_4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -310,26 +565,48 @@
       
         
           
-            <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
-<hr>
-<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><h3 id="1-关键点提取"><a href="#1-关键点提取" class="headerlink" title="1.关键点提取"></a>1.关键点提取</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points"></p>
+            <h1 id="orbslam3学习笔记4"><a class="markdownIt-Anchor" href="#orbslam3学习笔记4"></a> ORBSLAM3学习笔记(4)</h1>
+<p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
+<hr />
+<h2 id="基本原理"><a class="markdownIt-Anchor" href="#基本原理"></a> 基本原理</h2>
+<h3 id="1关键点提取"><a class="markdownIt-Anchor" href="#1关键点提取"></a> 1.关键点提取</h3>
+<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points" /></p>
 <p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。</p>
-<h3 id="2-描述子获取"><a href="#2-描述子获取" class="headerlink" title="2.描述子获取"></a>2.描述子获取</h3><p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
-<p><strong>(1)灰度质心法原理</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B"><br>该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
+<h3 id="2描述子获取"><a class="markdownIt-Anchor" href="#2描述子获取"></a> 2.描述子获取</h3>
+<p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
+<p><strong>(1)灰度质心法原理</strong><br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B" /><br />
+该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
 <ul>
-<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩$m_{pq}$定义为:</li>
+<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi>p</mi><mi>q</mi></mrow></msub></mrow><annotation encoding="application/x-tex">m_{pq}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.716668em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">p</span><span class="mord mathnormal mtight" style="margin-right:0.03588em;">q</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>定义为:</li>
 </ul>
-<script type="math/tex; mode=display">\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q=\{0, 1\}</script><ul>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><munder><mo>∑</mo><mrow><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo>∈</mo><mi>B</mi></mrow></munder><msup><mi>x</mi><mi>p</mi></msup><msup><mi>y</mi><mi>q</mi></msup><mi>I</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><mspace width="2em"/><mi>p</mi><mo separator="true">,</mo><mi>q</mi><mo>=</mo><mo stretchy="false">{</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q=\{0, 1\} 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.480449em;vertical-align:-1.430444em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.050005em;"><span style="top:-1.8556639999999998em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight" style="margin-right:0.03588em;">y</span><span class="mrel mtight">∈</span><span class="mord mathnormal mtight" style="margin-right:0.05017em;">B</span></span></span></span><span style="top:-3.0500049999999996em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.430444em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714392em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">p</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714392em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">q</span></span></span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">p</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose">}</span></span></span></span></span></p>
+<ul>
 <li>图像块<em>B</em>的质心可以通过公式中的矩找到：</li>
 </ul>
-<script type="math/tex; mode=display">C = \left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right)</script><ul>
-<li>方向向量$\overrightarrow{OC}$可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向$\theta$为：</li>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>C</mi><mo>=</mo><mrow><mo fence="true">(</mo><mfrac><msub><mi>m</mi><mn>10</mn></msub><msub><mi>m</mi><mn>00</mn></msub></mfrac><mo separator="true">,</mo><mfrac><msub><mi>m</mi><mn>01</mn></msub><msub><mi>m</mi><mn>00</mn></msub></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">C = \left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right) 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.40003em;vertical-align:-0.95003em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></p>
+<ul>
+<li>方向向量<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover accent="true"><mrow><mi>O</mi><mi>C</mi></mrow><mo stretchy="true">→</mo></mover></mrow><annotation encoding="application/x-tex">\overrightarrow{OC}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.20533em;vertical-align:0em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.20533em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span><span class="svg-align" style="top:-3.6833299999999998em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="height:0.522em;min-width:0.888em;"><svg width='400em' height='0.522em' viewBox='0 0 400000 522' preserveAspectRatio='xMaxYMin slice'><path d='M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z'/></svg></span></span></span></span></span></span></span></span></span>可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>为：</li>
 </ul>
-<script type="math/tex; mode=display">\theta = \arctan(\frac{m_{01}}{m_{10}})</script><p><strong>(2)方向不变性的使用</strong><br>首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>θ</mi><mo>=</mo><mi>arctan</mi><mo>⁡</mo><mo stretchy="false">(</mo><mfrac><msub><mi>m</mi><mn>01</mn></msub><msub><mi>m</mi><mn>10</mn></msub></mfrac><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\theta = \arctan(\frac{m_{01}}{m_{10}}) 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.94356em;vertical-align:-0.8360000000000001em;"></span><span class="mop">arctan</span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><strong>(2)方向不变性的使用</strong><br />
+首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
 <p>点对的选取是程序中默认给出的，若不考虑特征点方向，就可能出现一个问题，两帧图片之间是发生了旋转的，若直接选取点对，比如都选取点对(1,1)和(2,2),它们看似坐标一样，但在两幅图片中相对于特征点的位置是不一样的，那这样得到的描述子，进行匹配的时候，是没有参考意义的。</p>
-<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向$\theta$，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
-<p>旋转前坐标为$(x,y)$, 旋转后坐标$(x’,y’)$推导，$\theta$在求角度时得到，则<br>$x’= xcos(θ) - ysin(θ),  y’= xsin(θ) + ycos(θ)$</p>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBextractor-ORBextractor"><a href="#ORBextractor-ORBextractor" class="headerlink" title="ORBextractor::ORBextractor()"></a>ORBextractor::ORBextractor()</h3><p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
+<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
+<p>旋转前坐标为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x,y)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span>, 旋转后坐标<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msup><mi>x</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo separator="true">,</mo><msup><mi>y</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x&#x27;,y&#x27;)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.001892em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>推导，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>在求角度时得到，则<br />
+<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><mi>x</mi><mi>c</mi><mi>o</mi><mi>s</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>−</mo><mi>y</mi><mi>s</mi><mi>i</mi><mi>n</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><msup><mi>y</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><mi>x</mi><mi>s</mi><mi>i</mi><mi>n</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>+</mo><mi>y</mi><mi>c</mi><mi>o</mi><mi>s</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x&#x27;= xcos(θ) - ysin(θ),  y&#x27;= xsin(θ) + ycos(θ)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.751892em;vertical-align:0em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">x</span><span class="mord mathnormal">c</span><span class="mord mathnormal">o</span><span class="mord mathnormal">s</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.001892em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mord mathnormal">s</span><span class="mord mathnormal">i</span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">x</span><span class="mord mathnormal">s</span><span class="mord mathnormal">i</span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mord mathnormal">c</span><span class="mord mathnormal">o</span><span class="mord mathnormal">s</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span></span></span></span></p>
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="orbextractororbextractor"><a class="markdownIt-Anchor" href="#orbextractororbextractor"></a> ORBextractor::ORBextractor()</h3>
+<p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
 <pre><code>std::vector&lt;cv::Point&gt; pattern;     
 
 int nfeatures;      //指定要提取的特征点数目
@@ -337,7 +614,7 @@ double scaleFactor; //指定图像金字塔的缩放系数
 int nlevels;        //指定图像金字塔的层数
 int iniThFAST;      //指定初始的FAST特征点提取参数，可以提取出最明显的角点
 int minThFAST;      //如果因为图像纹理不丰富提取出的特征点不多，为了达到想要的特征点数目，
-                    //就使用这个参数提取出不是那么明显的角点
+				    //就使用这个参数提取出不是那么明显的角点
 
 std::vector&lt;int&gt; mnFeaturesPerLevel;    //每层需要提取出来的特征点个数
 
@@ -347,25 +624,29 @@ std::vector&lt;float&gt; mvScaleFactor;       //存储每层图像缩放系数
 std::vector&lt;float&gt; mvInvScaleFactor;    //存储每层图像缩放系数的倒数
 std::vector&lt;float&gt; mvLevelSigma2;       //存储每层图像相对初始图像缩放因子的平方
 std::vector&lt;float&gt; mvInvLevelSigma2;    //存储每层图像相对初始图像缩放因子的平方的倒数
-</code></pre><p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br>nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
+</code></pre>
+<p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br />
+nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
 <p>mvScaleFactor到mvInvLevelSigma2都是根据nlevels确定向量长度，根据scaleFactor确定向量里面的内容，这些向量的第一个变量都是1，因为金字塔最底层是原始图像，不需要缩放。</p>
 <p>mnFeaturesPerLevel是根据nfeatures得到的，nfeatures是我们一共要获得的特征点数量，我们从金字塔的每层（除最高层）选取一部分特征点，然后总数为nfeatures。其中第一层选取的个数如下：</p>
 <pre><code>float nDesiredFeaturesPerScale = nfeatures*(1 - factor)/(1 - (float)pow((double)factor, (double)nlevels));
-</code></pre><p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
+</code></pre>
+<p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
 <p>pattern就是把按数组定义的点对坐标，存储到Point类型的向量中。</p>
-<p>umax的作用和初始化我们根据下面的图和代码一起看<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax"></p>
+<p>umax的作用和初始化我们根据下面的图和代码一起看<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax" /></p>
 <pre><code>//下面的内容是和特征点的旋转计算有关的
 //预先计算圆形patch中行的结束位置
 //+1中的1表示那个圆的中间行
 umax.resize(HALF_PATCH_SIZE + 1);
 
 //cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
-int v,        //循环辅助变量
-    v0,        //辅助变量
-    vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);    //计算圆的最大行号，+1应该是把中间行也给考虑进去了
-            //NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
-            //是因为圆周上的对称特性
-
+int v,		//循环辅助变量
+	v0,		//辅助变量
+	vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);	//计算圆的最大行号，+1应该是把中间行也给考虑进去了
+			//NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
+			//是因为圆周上的对称特性
+			
 //这里的二分之根2就是对应那个45°圆心角
 
 int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
@@ -374,7 +655,7 @@ const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
 
 //利用圆的方程计算每行像素的u坐标边界（max）
 for (v = 0; v &lt;= vmax; ++v)
-    umax[v] = cvRound(sqrt(hp2 - v * v));        //结果都是大于0的结果，表示x坐标在这一行的边界
+    umax[v] = cvRound(sqrt(hp2 - v * v));		//结果都是大于0的结果，表示x坐标在这一行的边界
 
 // Make sure we are symmetric
 //这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
@@ -386,145 +667,173 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
     umax[v] = v0;
     ++v0;
 &#125;
-</code></pre><p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
-<hr>
-<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
+</code></pre>
+<p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
+<hr />
+<h3 id="orbextractoroperator"><a class="markdownIt-Anchor" href="#orbextractoroperator"></a> ORBextractor::operator()()</h3>
+<p>首先，我们先看传入的参数</p>
 <pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
     InputArray _mask,                           //掩膜mask,为空，估计没什么用
     vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
     OutputArray _descriptors,                   //存储特征点描述子的矩阵 
     std::vector&lt;int&gt; &amp;vLappingArea              //界限
     )
-</code></pre><p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
+</code></pre>
+<p>接下来，步骤如下:<br />
+<strong>1.判断图像是否为空，是否为单通道</strong><br />
+<strong>2.构建图像金字塔</strong></p>
 <pre><code>ComputePyramid(image);
-</code></pre><p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
+</code></pre>
+<p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
 <pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
 vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
 //使用四叉树的方式计算每层图像的特征点并进行分配
 ComputeKeyPointsOctTree(allKeypoints);
-</code></pre><p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br><strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br>这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
+</code></pre>
+<p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br />
+<strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br />
+这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
 <pre><code>//如果图像金字塔中有特征点，那么就创建这个存储描述子的矩阵，注意这个矩阵是存储整个图像金字塔中特征点的描述子的
-_descriptors.create(nkeypoints,        //矩阵的行数，对应为特征点的总个数
-                    32,             //矩阵的列数，对应为使用32*8=256位描述子
-                    CV_8U);            //矩阵元素的格式
+_descriptors.create(nkeypoints,		//矩阵的行数，对应为特征点的总个数
+					32, 			//矩阵的列数，对应为使用32*8=256位描述子
+					CV_8U);			//矩阵元素的格式
 //获取这个描述子的矩阵信息
 descriptors = _descriptors.getMat();
-</code></pre><p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br>5-1.对图像进行高斯模糊<br>5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br>5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
-<hr>
-<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
+</code></pre>
+<p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br />
+5-1.对图像进行高斯模糊<br />
+5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br />
+5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
+<hr />
+<h3 id="computepyramid"><a class="markdownIt-Anchor" href="#computepyramid"></a> ComputePyramid()</h3>
+<pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
 &#123;
     //开始遍历所有的图层
     for (int level = 0; level &lt; nlevels; ++level)
     &#123;
-        //获取本层图像的缩放系数
+	    //获取本层图像的缩放系数
         float scale = mvInvScaleFactor[level];
-        //计算本层图像的像素尺寸大小
+	    //计算本层图像的像素尺寸大小
         Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
-        //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+	    //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
         Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-        // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+	    // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
         Mat temp(wholeSize, image.type()), masktemp;
-        // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+	    // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
         mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
 
         // Compute the resized image
-        //计算第0层以上resize后的图像
+	    //计算第0层以上resize后的图像
         if( level != 0 )
         &#123;
-            //将上一层金字塔图像根据设定sz缩放到当前层级
-            resize(mvImagePyramid[level-1],    //输入图像
-                mvImagePyramid[level],     //输出图像
-                sz,                     //输出图像的尺寸
-                0,                         //水平方向上的缩放系数，留0表示自动计算
-                0,                      //垂直方向上的缩放系数，留0表示自动计算
-                cv::INTER_LINEAR);        //图像缩放的差值算法类型，这里的是线性插值算法
+	        //将上一层金字塔图像根据设定sz缩放到当前层级
+            resize(mvImagePyramid[level-1],	//输入图像
+		        mvImagePyramid[level], 	//输出图像
+		        sz, 				    //输出图像的尺寸
+		        0, 				        //水平方向上的缩放系数，留0表示自动计算
+		        0,  				    //垂直方向上的缩放系数，留0表示自动计算
+		        cv::INTER_LINEAR);		//图像缩放的差值算法类型，这里的是线性插值算法
 
-            //这样做是为了能够正确提取边界的FAST角点        
-            copyMakeBorder(mvImagePyramid[level],             //源图像
-                        temp,                                 //目标图像（此时其实就已经有大了一圈的尺寸了）
-                        EDGE_THRESHOLD, EDGE_THRESHOLD,     //top &amp; bottom 需要扩展的border大小
-                        EDGE_THRESHOLD, EDGE_THRESHOLD,        //left &amp; right 需要扩展的border大小
+	        //这样做是为了能够正确提取边界的FAST角点		
+            copyMakeBorder(mvImagePyramid[level], 	        //源图像
+			            temp, 					            //目标图像（此时其实就已经有大了一圈的尺寸了）
+			            EDGE_THRESHOLD, EDGE_THRESHOLD, 	//top &amp; bottom 需要扩展的border大小
+			            EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
                         BORDER_REFLECT_101+BORDER_ISOLATED);//扩充方式
         &#125;
         else
         &#123;
-            //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
-            copyMakeBorder(image,            
-                        temp, 
+	        //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            copyMakeBorder(image,			
+			            temp, 
                         EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
                         BORDER_REFLECT_101);            
         &#125;
     &#125;
 &#125;
-</code></pre><p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD=19。</p>
-<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
-<hr>
-<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
-<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
-<p>代码运行流程如下:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree"></p>
+</code></pre>
+<p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br />
+1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br />
+2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD=19。</p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp" /><br />
+这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
+<hr />
+<h3 id="computekeypointsocttree"><a class="markdownIt-Anchor" href="#computekeypointsocttree"></a> ComputeKeyPointsOctTree()</h3>
+<p>我们先来理一下该方法的具体原理和流程。</p>
+<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br />
+1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br />
+2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
+<p>代码运行流程如下:<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree" /></p>
 <p>下面具体看代码，主要看遍历网格部分，这段计算机视觉life的注释不太对，我改了一下</p>
 <pre><code>//开始遍历图像网格，还是以行开始遍历的
 for(int i=0; i&lt;nRows; i++)
 &#123;
-    //计算当前网格初始行坐标
+	//计算当前网格初始行坐标
     const float iniY =minBorderY+i*hCell;
     float maxY = iniY+hCell+6;
 
-    //如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
+	//如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
     if(iniY&gt;=maxBorderY-3)
         continue;
-    //如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
+	//如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
     if(maxY&gt;maxBorderY)
         maxY = maxBorderY;
 
-    //开始列的遍历
+	//开始列的遍历
     for(int j=0; j&lt;nCols; j++)
     &#123;
         const float iniX =minBorderX+j*wCell;
-        float maxX = iniX+wCell+6;                
+        float maxX = iniX+wCell+6;				
         if(iniX&gt;=maxBorderX-3)
             continue;
         if(maxX&gt;maxBorderX)
             maxX = maxBorderX;
 
-        //这个容器存储提取到的特征点
+		//这个容器存储提取到的特征点
         vector&lt;cv::KeyPoint&gt; vKeysCell;
 
-        //FAST提取特征点，调用opencv的库函数来检测FAST角点
-        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像，这里就是当前遍历到的图像块
+		//FAST提取特征点，调用opencv的库函数来检测FAST角点
+        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像，这里就是当前遍历到的图像块
             vKeysCell,      //存储角点位置的容器
-            iniThFAST,        //检测阈值
-            true);            //使能非极大值抑制
+		    iniThFAST,		//检测阈值
+	        true);			//使能非极大值抑制
 
-        //如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
+		//如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
         if(vKeysCell.empty())
         &#123;
-            //那么就使用更低的阈值来进行重新检测
-            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像
-                vKeysCell,        //存储角点位置的容器
-                minThFAST,        //更低的检测阈值
-                true);            //使能非极大值抑制
+		    //那么就使用更低的阈值来进行重新检测
+            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像
+                vKeysCell,		//存储角点位置的容器
+			    minThFAST,		//更低的检测阈值
+			    true);			//使能非极大值抑制
         &#125;
 
         //当图像cell中检测到FAST角点的时候执行下面的语句
         if(!vKeysCell.empty())
         &#123;
-            //遍历其中的所有FAST角点
+		    //遍历其中的所有FAST角点
             for(vector&lt;cv::KeyPoint&gt;::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
             &#123;
-                //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
-                //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
-                //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
+			    //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
+			    //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
+			    //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
                 (*vit).pt.x+=j*wCell;
                 (*vit).pt.y+=i*hCell;
-                //然后将其加入到”等待被分配“的特征点容器中
+		        //然后将其加入到”等待被分配“的特征点容器中
                 vToDistributeKeys.push_back(*vit);
             &#125;//遍历图像cell中的所有的提取出来的FAST角点，并且恢复其在整个金字塔当前层图像下的坐标
         &#125;
     &#125;
 &#125;
-</code></pre><p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
-<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2"></p>
+</code></pre>
+<p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
+<p><strong>遍历图像网格</strong><br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell" /><br />
+如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br />
+根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2" /></p>
 <p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
 <pre><code>//声明一个对当前图层的特征点的容器的引用
 vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
@@ -534,11 +843,11 @@ keypoints.reserve(nfeatures);
 // 根据mnFeatuvector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
 //返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
 //得到的特征点的坐标，依旧是在当前图层下来讲的
-keypoints = DistributeOctTree(vToDistributeKeys,             //当前图层提取出来的特征点
-                            minBorderX, maxBorderX,            //当前图层图像的边界
+keypoints = DistributeOctTree(vToDistributeKeys, 			//当前图层提取出来的特征点
+							minBorderX, maxBorderX,		    //当前图层图像的边界
                             minBorderY, maxBorderY,
-                            mnFeaturesPerLevel[level],         //希望保留下来的当前层图像的特征点个数
-                            level);                            //当前层图像所在的图层
+							mnFeaturesPerLevel[level], 	    //希望保留下来的当前层图像的特征点个数
+							level);						    //当前层图像所在的图层
 
 //PATCH_SIZE是对于底层的初始图像来说的，现在要根据当前图层的尺度缩放倍数进行缩放得到缩放后的PATCH大小 和特征点的方向计算有关
 const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
@@ -549,21 +858,25 @@ for(int i=0; i&lt;nkps ; i++)
 &#123;
     keypoints[i].pt.x+=minBorderX;
     keypoints[i].pt.y+=minBorderY;
-    //记录特征点来源的图像金字塔图层
+	//记录特征点来源的图像金字塔图层
     keypoints[i].octave=level;
-    //记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
+	//记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
     keypoints[i].size = scaledPatchSize;
 &#125;
-</code></pre><p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+</code></pre>
+<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
 <p>最后计算特征点方向</p>
 <pre><code>for (int level = 0; level &lt; nlevels; ++level)
-    computeOrientation(mvImagePyramid[level],    //对应的图层的图像
-                       allKeypoints[level],     //这个图层中提取并保留下来的特征点容器
-                       umax);                    //以及PATCH的横坐标边界
-</code></pre><p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
-<hr>
-<h3 id="ORBextractor-DistributeOctTree"><a href="#ORBextractor-DistributeOctTree" class="headerlink" title="ORBextractor::DistributeOctTree()"></a>ORBextractor::DistributeOctTree()</h3><p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br>这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree"></p>
+    computeOrientation(mvImagePyramid[level],	//对应的图层的图像
+					   allKeypoints[level], 	//这个图层中提取并保留下来的特征点容器
+					   umax);					//以及PATCH的横坐标边界
+</code></pre>
+<p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
+<hr />
+<h3 id="orbextractordistributeocttree"><a class="markdownIt-Anchor" href="#orbextractordistributeocttree"></a> ORBextractor::DistributeOctTree()</h3>
+<p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br />
+这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree" /></p>
 
           
         
@@ -683,11 +996,15 @@ for(int i=0; i&lt;nkps ; i++)
       
         
           
-            <h1 id="ORBSLAM3学习笔记-3"><a href="#ORBSLAM3学习笔记-3" class="headerlink" title="ORBSLAM3学习笔记(3)"></a>ORBSLAM3学习笔记(3)</h1><p>这篇博客主要是对Tracking.cc文件的学习。</p>
-<hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Tracking-Tracking"><a href="#Tracking-Tracking" class="headerlink" title="Tracking::Tracking()"></a>Tracking::Tracking()</h3><p>构造函数首先从配置文件中加载相机参数</p>
+            <h1 id="orbslam3学习笔记3"><a class="markdownIt-Anchor" href="#orbslam3学习笔记3"></a> ORBSLAM3学习笔记(3)</h1>
+<p>这篇博客主要是对Tracking.cc文件的学习。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="trackingtracking"><a class="markdownIt-Anchor" href="#trackingtracking"></a> Tracking::Tracking()</h3>
+<p>构造函数首先从配置文件中加载相机参数</p>
 <pre><code>newParameterLoader(settings);
-</code></pre><p>我们马上具体看这个函数是如何实现的：</p>
+</code></pre>
+<p>我们马上具体看这个函数是如何实现的：</p>
 <p><strong>1. 读取相机1</strong></p>
 <pre><code>mpCamera = settings-&gt;camera1();
 mpCamera = mpAtlas-&gt;AddCamera(mpCamera);
@@ -713,8 +1030,13 @@ mK_(0,0) = mpCamera-&gt;getParameter(0);
 mK_(1,1) = mpCamera-&gt;getParameter(1);
 mK_(0,2) = mpCamera-&gt;getParameter(2);
 mK_(1,2) = mpCamera-&gt;getParameter(3);
-</code></pre><p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br>接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector<GeometricCamera*> mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br>由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br>然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
-<p><strong>2. 读取特征点参数</strong><br>这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor类的构造函数，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+</code></pre>
+<p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br />
+接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector&lt;GeometricCamera*&gt; mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br />
+由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br />
+然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
+<p><strong>2. 读取特征点参数</strong><br />
+这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor类的构造函数，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
 <pre><code>mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
 if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -722,162 +1044,225 @@ if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
 
 if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-</code></pre><p>构造Frame类时，若是刚开启追踪，使用的是mpIniORBextractor，之后都是用mpORBextractorLeft了。</p>
-<p><strong>3.读取imu参数</strong><br>imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
+</code></pre>
+<p>构造Frame类时，若是刚开启追踪，使用的是mpIniORBextractor，之后都是用mpORBextractorLeft了。</p>
+<p><strong>3.读取imu参数</strong><br />
+imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
 <p>newParameterLoader(settings);执行完之后，执行一下代码，将另外几个成员变量初始化</p>
 <pre><code>initID = 0; lastID = 0;
 mbInitWith3KFs = false;
 mnNumDataset = 0;
-</code></pre><hr>
-<h3 id="Tracking-GrabImageMonocular"><a href="#Tracking-GrabImageMonocular" class="headerlink" title="Tracking::GrabImageMonocular()"></a>Tracking::GrabImageMonocular()</h3><p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
-<hr>
-<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong><br>这里就只看slam模式下的代码，这部分最关键的就是mState和bOk两个标志位的值，要注意观察其变化。</p>
+</code></pre>
+<hr />
+<h3 id="trackinggrabimagemonocular"><a class="markdownIt-Anchor" href="#trackinggrabimagemonocular"></a> Tracking::GrabImageMonocular()</h3>
+<p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
+<hr />
+<h3 id="trackingtrack"><a class="markdownIt-Anchor" href="#trackingtrack"></a> Tracking::Track()</h3>
+<p><strong>1.从Atlas中取出当前active的地图</strong><br />
+<strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br />
+（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br />
+（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br />
+<strong>3.判断地图是否被更新</strong><br />
+<strong>4.初始化</strong><br />
+根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br />
+<strong>5.系统成功初始化，下面是具体跟踪过程</strong><br />
+这里就只看slam模式下的代码，这部分最关键的就是mState和bOk两个标志位的值，要注意观察其变化。</p>
 <ul>
-<li>若<strong>mState==OK</strong><ul>
-<li>1.检查并更新上一帧被替换的MapPoints<blockquote>
+<li>若<strong>mState==OK</strong>
+<ul>
+<li>1.检查并更新上一帧被替换的MapPoints
+<blockquote>
 <p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
 </blockquote>
 </li>
-<li>2.若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则先用恒速模型跟踪，跟踪失败再换参考关键帧跟踪。<blockquote>
+<li>2.若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则先用恒速模型跟踪，跟踪失败再换参考关键帧跟踪。
+<blockquote>
 <p>这里对bOk进行了改变，<strong>bOK</strong>=TrackReferenceKeyFrame()或TrackReferenceKeyFrame()，这两个函数写在后面了。</p>
 </blockquote>
 </li>
-<li>3.若上面跟踪失败，即bOK==false，则要对<code>mState</code>进行更新。<blockquote>
-<p>1.如果当前帧距离上次重定位成功不到1s，且为单目+IMU 或者 双目+IMU模式，<strong>mState = LOST</strong><br>2.当前地图中关键帧数目较多（大于10），且当前帧距离上次重定位帧超过1s或者非IMU模式，<strong>mState = RECENTLY_LOST</strong>，且要记录丢失时间，存在mTimeStampLost里。<br>3.其他情况下，<strong>mState = LOST</strong></p>
+<li>3.若上面跟踪失败，即bOK==false，则要对<code>mState</code>进行更新。
+<blockquote>
+<p>1.如果当前帧距离上次重定位成功不到1s，且为单目+IMU 或者 双目+IMU模式，<strong>mState = LOST</strong><br />
+2.当前地图中关键帧数目较多（大于10），且当前帧距离上次重定位帧超过1s或者非IMU模式，<strong>mState = RECENTLY_LOST</strong>，且要记录丢失时间，存在mTimeStampLost里。<br />
+3.其他情况下，<strong>mState = LOST</strong></p>
 </blockquote>
 </li>
 </ul>
 </li>
-<li>若<strong>mState!=OK</strong><ul>
-<li>若<strong>mState == RECENTLY_LOST</strong><blockquote>
+<li>若<strong>mState!=OK</strong>
+<ul>
+<li>若<strong>mState == RECENTLY_LOST</strong>
+<blockquote>
 <p>由于我们看的纯单目，所以直接调用重定位函数，<strong>bOK</strong> = Relocalization()，若重定位失败，且当前帧时间和丢失时间超过3了，令<strong>mState = LOST</strong></p>
 </blockquote>
 </li>
 <li>若<strong>mState == LOST</strong>,直接开启新地图，<em>返回</em>。</li>
 </ul>
 </li>
-<li>若<strong>bOK==true</strong>，说明上一步跟踪成功，进行局部地图跟踪<blockquote>
-<p>这里调用了函数<code>TrackLocalMap()</code>,这里对bOK也进行了更改，<strong>bOK =</strong> TrackLocalMap()。<br>虽然前面也进行了跟踪，但只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化。</p>
+<li>若<strong>bOK==true</strong>，说明上一步跟踪成功，进行局部地图跟踪
+<blockquote>
+<p>这里调用了函数<code>TrackLocalMap()</code>,这里对bOK也进行了更改，<strong>bOK =</strong> TrackLocalMap()。<br />
+虽然前面也进行了跟踪，但只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化。</p>
 </blockquote>
 </li>
-<li>更新mState状态。<ul>
+<li>更新mState状态。
+<ul>
 <li>若<strong>bOK==true</strong>,说明上一步的局部地图跟踪也成功了，令<strong>mState = OK</strong>。</li>
-<li>若<strong>bOK==false，但mState == OK</strong><blockquote>
+<li>若<strong>bOK==false，但mState == OK</strong>
+<blockquote>
 <p>这里只有第一阶段跟踪成功，但第二阶段局部地图跟踪失败时执行，这里就是让<strong>mState=RECENTLY_LOST</strong>，记录丢失时间。</p>
 </blockquote>
 </li>
 </ul>
 </li>
-<li>若<strong>bOK == true或mState==RECENTLY_LOST</strong>，更新速度，清除无效地图点，按需创建关键帧。<ul>
-<li>1.更新恒速运动模型<blockquote>
+<li>若<strong>bOK == true或mState==RECENTLY_LOST</strong>，更新速度，清除无效地图点，按需创建关键帧。
+<ul>
+<li>1.更新恒速运动模型
+<blockquote>
 <p>这里将上一帧到当前帧的变换存入了mVelocity，将mbVelocity置为true。</p>
 </blockquote>
 </li>
 <li>2.清除观测不到的地图点</li>
-<li>3.根据条件来判断是否插入关键帧<blockquote>
+<li>3.根据条件来判断是否插入关键帧
+<blockquote>
 <p>需要同时满足bNeedKF=true且bOK=true跟踪成功，bNeedKF的值是由函数NeedNewKeyFrame()得到的。若满足条件，则调用函数CreateNewKeyFrame()创建新关键帧</p>
 </blockquote>
 </li>
 <li>删除当前帧中那些在BA中检测为外点的地图点。</li>
 </ul>
 </li>
-<li>若<strong>mState==LOST</strong><blockquote>
+<li>若<strong>mState==LOST</strong>
+<blockquote>
 <p>如果地图中关键帧小于10，重置当前地图，退出当前跟踪，若大于10，保存当前地图，创建新的地图。</p>
 </blockquote>
 </li>
-<li>设置了参考关键帧,保存上一帧的数据,当前帧变上一帧<blockquote>
-<p>mCurrentFrame.mpReferenceKF = mpReferenceKF;<br>mLastFrame = Frame(mCurrentFrame);</p>
+<li>设置了参考关键帧,保存上一帧的数据,当前帧变上一帧
+<blockquote>
+<p>mCurrentFrame.mpReferenceKF = mpReferenceKF;<br />
+mLastFrame = Frame(mCurrentFrame);</p>
 </blockquote>
 </li>
 </ul>
-<p><strong>6.记录位姿信息，用于最后保存所有的轨迹</strong><br>  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure></p>
-<hr>
-<h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><ul>
-<li><p><strong>如果单目初始器还没有被创建，则创建。</strong><br>这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
+<p><strong>6.记录位姿信息，用于最后保存所有的轨迹</strong></p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<hr />
+<h3 id="trackingmonocularinitialization"><a class="markdownIt-Anchor" href="#trackingmonocularinitialization"></a> Tracking::MonocularInitialization()</h3>
+<ul>
+<li>
+<p><strong>如果单目初始器还没有被创建，则创建。</strong><br />
+这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
 <blockquote>
 <p>mInitialFrame将当前帧作为初始帧</p>
+</blockquote>
+<blockquote>
 <p>mvbPrevMatched用来存储当前帧的所有特征点</p>
+</blockquote>
+<blockquote>
 <p>初始化mvIniMatches，保存参考帧匹配到的特征点，index保存是参考帧对应特征点索引，值保存的是匹配到特征点索引。</p>
 </blockquote>
 <p>成员变量初始化完成之后，将标志位mbReadyToInitializate置为true，等待下一帧。</p>
 </li>
-<li><strong>单目初始器创建完成，且第二帧到来后</strong><ul>
+<li>
+<p><strong>单目初始器创建完成，且第二帧到来后</strong></p>
+<ul>
 <li>判断当前帧特征点数量是否足够，不够则重新构造初始器</li>
-<li>在mInitialFrame与mCurrentFrame中找匹配的特征点对<ul>
-<li>创建ORBmatcher类对象matcher<pre><code>ORBmatcher matcher(0.9,true);
-</code></pre></li>
-<li>调用matcher的SearchForInitialization()函数进行特征点匹配，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher</a></li>
+<li>在mInitialFrame与mCurrentFrame中找匹配的特征点对
+<ul>
+<li>创建ORBmatcher类对象matcher<pre class="highlight"><code class="">ORBmatcher matcher(0.9,true);
+</code></pre>
+</li>
+<li>调用matcher的SearchForInitialization()函数进行特征点匹配，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher</a></li>
 <li>验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化</li>
 </ul>
 </li>
-<li>通过H模型或F模型进行单目初始化，得到两帧间相对运动、初始MapPoints，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/11/ORBSLAM3-NOTE-9/">TwoViewReconstruction.cc</a></li>
+<li>通过H模型或F模型进行单目初始化，得到两帧间相对运动、初始MapPoints，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/11/ORBSLAM3-NOTE-9/">TwoViewReconstruction.cc</a></li>
 <li>初始化成功后，删除那些无法进行三角化的匹配点</li>
 <li>将初始化的第一帧作为世界坐标系，因此第一帧变换矩阵为单位矩阵,把之前得到的两帧之间的变换矩阵存入当前帧对象中。</li>
 <li>调用CreateInitialMapMonocular()函数，创建初始化地图点MapPoints。</li>
 </ul>
 </li>
 </ul>
-<hr>
-<h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br>4.遍历匹配点，进行一系列操作</p>
+<hr />
+<h3 id="trackingcreateinitialmapmonocular"><a class="markdownIt-Anchor" href="#trackingcreateinitialmapmonocular"></a> Tracking::CreateInitialMapMonocular()</h3>
+<p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br />
+2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br />
+3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br />
+4.遍历匹配点，进行一系列操作</p>
 <ul>
-<li>4.1 用3D点构造地图点<blockquote>
+<li>4.1 用3D点构造地图点
+<blockquote>
 <p>这步就是用遍历的特征点对应的3D点创建MapPoint*类对象pMP。</p>
 </blockquote>
 </li>
-<li><p>4.2 为该MapPoint添加属性</p>
+<li>4.2 为该MapPoint添加属性
 <ul>
-<li>4.2.1 首先把MapPoint添加到两个关键帧里面去。<blockquote>
+<li>4.2.1 首先把MapPoint添加到两个关键帧里面去。</li>
+</ul>
+<blockquote>
 <p>就是把MapPoint存入pKFini,pKFcur的成员变量<code>mvpMapPoints</code>容器中，<strong>存的位置就是当前遍历到的特征点索引值</strong>。</p>
 </blockquote>
+<ul>
+<li>
+<p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation(),具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</p>
 </li>
-<li><p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation(),具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</p>
+<li>
+<p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
 </li>
-<li><p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
+</ul>
 <blockquote>
 <p>该函数简单来说就是遍历能观察到它的关键帧，根据保存的特征点索引值，获取所有描述子，计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值，将这个最好的描述子存入成员变量<code>mDescriptor</code>中。</p>
 </blockquote>
-</li>
-<li>更新该MapPoint平均观测方向以及观测距离的范围，具体看<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</li>
+<ul>
+<li>更新该MapPoint平均观测方向以及观测距离的范围，具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</li>
 </ul>
 </li>
 <li>4.3 将MapPoint存入<code>mCurrentFrame</code>的<code>mvpMapPoints</code>容器中，位置就是对应特征点的索引值。同时，将<code>mvbOutlier</code>容器同样位置存入false，表示该特征点不是异常值。</li>
-<li>5.更新关键帧间的连接关系，调用了函数UpdateConnections()，具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a>。</li>
-<li>6.全局BA优化，同时优化所有位姿和三维点。<blockquote>
+<li>5.更新关键帧间的连接关系，调用了函数UpdateConnections()，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a>。</li>
+<li>6.全局BA优化，同时优化所有位姿和三维点。
+<blockquote>
 <p>调用了函数Optimizer::GlobalBundleAdjustemnt(),它接收两个参数，一个是优化目标，此处即是mpMap，里面包括了关键帧pose和地图点坐标；第二个是迭代次数，此处为20次。在函数内部，调用了BundleAdjustment函数——实现了最小化重投影误差的优化问题，并利用g2o框架求解。</p>
 </blockquote>
 </li>
-<li>7.将平移尺度和3D点尺度归一化。<blockquote>
+<li>7.将平移尺度和3D点尺度归一化。
+<blockquote>
 <p>方法就是求得当前3D点的深度中位数，将平移向量和3D点坐标除以该值。</p>
 </blockquote>
 </li>
-<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。<blockquote>
+<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。
+<blockquote>
 <p>这里会把两个关键帧插入<code>mpLocalMapper</code>的<code>mlNewKeyFrames</code>列表中,这样LocalMapping线程就能接收到关键帧来处理了。</p>
 </blockquote>
 </li>
 </ul>
 <p>到此为止，单目初始化终于完成了，这部分真的看了不少时间啊。</p>
-<hr>
-<h3 id="Tracking-TrackReferenceKeyFrame"><a href="#Tracking-TrackReferenceKeyFrame" class="headerlink" title="Tracking::TrackReferenceKeyFrame()"></a>Tracking::TrackReferenceKeyFrame()</h3><ol>
+<hr />
+<h3 id="trackingtrackreferencekeyframe"><a class="markdownIt-Anchor" href="#trackingtrackreferencekeyframe"></a> Tracking::TrackReferenceKeyFrame()</h3>
+<ol>
 <li>将当前帧的描述子转化为BoW向量</li>
-<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配<blockquote>
+<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配
+<blockquote>
 <p>这里调用了函数ORBmatcher::SearchByBoW(),其实和我们之前看的ORBmatcher::SearchForTriangulation()中间部分差不多，就一点差别，就不细讲了。</p>
 </blockquote>
 </li>
 <li>将上一帧的位姿态作为当前帧位姿的初始值</li>
-<li>通过优化3D-2D的重投影误差来获得位姿<blockquote>
+<li>通过优化3D-2D的重投影误差来获得位姿
+<blockquote>
 <p>这里其实就是对单帧位姿的BA优化，优化过程中还会对残差进行卡方检验，由此确定内外点。</p>
 </blockquote>
 </li>
-<li>剔除优化后的匹配点中的外点<blockquote>
+<li>剔除优化后的匹配点中的外点
+<blockquote>
 <p>这里由于第四步已经找出内外点了，所以只需遍历mvpMapPoints，若此时mvbOutlier为true，则将该点先拷贝到pMP中，将mvpMapPoints中的该点置为空，mvbOutlier置为false，再将pMP的mbTrackInView置为false，mnLastFrameSeen赋值为mCurrentFrame的mnId;</p>
 </blockquote>
 </li>
 <li>跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</li>
 </ol>
-<hr>
-<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><p>1.更新上一帧的位姿</p>
+<hr />
+<h3 id="trackingtrackwithmotionmodel"><a class="markdownIt-Anchor" href="#trackingtrackwithmotionmodel"></a> Tracking::TrackWithMotionModel()</h3>
+<p>1.更新上一帧的位姿</p>
 <blockquote>
-<p>调用了函数UpdateLastFrame(),由于是单目模式，所以这里的操作很少，简单介绍一下：<br>首先，得到lastframe的参考关键帧到lastframe的位姿变换Tlr，这个存储在mlRelativeFramePoses，然后再用Tlr乘以参考关键帧的位姿Trw，就得到了上一张位姿Tlw。</p>
+<p>调用了函数UpdateLastFrame(),由于是单目模式，所以这里的操作很少，简单介绍一下：<br />
+首先，得到lastframe的参考关键帧到lastframe的位姿变换Tlr，这个存储在mlRelativeFramePoses，然后再用Tlr乘以参考关键帧的位姿Trw，就得到了上一张位姿Tlw。</p>
 </blockquote>
 <p>2.根据恒速模型得到当前帧的初始位姿。</p>
 <blockquote>
@@ -885,29 +1270,38 @@ mnNumDataset = 0;
 </blockquote>
 <p>3.用上一帧地图点进行投影匹配，如果匹配点不够，则扩大搜索半径再来一次。</p>
 <blockquote>
-<p>这里调用了函数<code>SearchByProjection()</code>,这里不用词袋加速匹配是因为我们通过恒速模型已经得到了初始位姿，可以直接通过2D-3D的投影关系搜索匹配点，速度更快。<br>具体步骤简单来说就是把3D点位姿变换，然后投影得到2D坐标，以该坐标为圆形，在搜索半径内找到可以匹配的点，然后就是找最佳匹配点，用旋转差直方图来筛掉错误匹配对等一系列操作了。</p>
+<p>这里调用了函数<code>SearchByProjection()</code>,这里不用词袋加速匹配是因为我们通过恒速模型已经得到了初始位姿，可以直接通过2D-3D的投影关系搜索匹配点，速度更快。<br />
+具体步骤简单来说就是把3D点位姿变换，然后投影得到2D坐标，以该坐标为圆形，在搜索半径内找到可以匹配的点，然后就是找最佳匹配点，用旋转差直方图来筛掉错误匹配对等一系列操作了。</p>
 </blockquote>
 <p>4.通过优化3D-2D的重投影误差来获得位姿</p>
 <blockquote>
 <p>这里和上面的参考关键帧跟踪一样，就是当前帧的初始位姿不同。</p>
 </blockquote>
-<p>5.剔除优化后的匹配点中的外点<br>6.跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</p>
-<hr>
-<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3><hr>
-<h3 id="Tracking-TrackLocalMap"><a href="#Tracking-TrackLocalMap" class="headerlink" title="Tracking::TrackLocalMap()"></a>Tracking::TrackLocalMap()</h3><p>1.更新局部关键帧和局部地图点</p>
+<p>5.剔除优化后的匹配点中的外点<br />
+6.跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</p>
+<hr />
+<h3 id="trackingrelocalization"><a class="markdownIt-Anchor" href="#trackingrelocalization"></a> Tracking::Relocalization()</h3>
+<hr />
+<h3 id="trackingtracklocalmap"><a class="markdownIt-Anchor" href="#trackingtracklocalmap"></a> Tracking::TrackLocalMap()</h3>
+<p>1.更新局部关键帧和局部地图点</p>
 <blockquote>
-<p>调用函数UpdateLocalMap()，该函数中有两个函数UpdateLocalKeyFrames()和UpdateLocalPoints()，分别实现局部关键帧和局部地图点的更新，用于局部跟踪。<br><strong>UpdateLocalKeyFrames()</strong>:该函数的作用就是更新成员变量<code>mvpLocalKeyFrames</code>,将三种关键帧存入该向量中，分别是①能观测到当前帧地图点的关键帧，也称一级共视关键帧;②一级共视关键帧的共视关键帧，称为二级共视关键帧;③一级共视关键帧的子关键帧、父关键帧。<br><strong>UpdateLocalPoints()</strong>:该函数的作用是更新成员变量<code>mvpLocalMapPoints</code>,遍历<code>mvpLocalKeyFrames</code>，将其中关键帧的地图点存入该变量。</p>
+<p>调用函数UpdateLocalMap()，该函数中有两个函数UpdateLocalKeyFrames()和UpdateLocalPoints()，分别实现局部关键帧和局部地图点的更新，用于局部跟踪。<br />
+<strong>UpdateLocalKeyFrames()</strong>:该函数的作用就是更新成员变量<code>mvpLocalKeyFrames</code>,将三种关键帧存入该向量中，分别是①能观测到当前帧地图点的关键帧，也称一级共视关键帧;②一级共视关键帧的共视关键帧，称为二级共视关键帧;③一级共视关键帧的子关键帧、父关键帧。<br />
+<strong>UpdateLocalPoints()</strong>:该函数的作用是更新成员变量<code>mvpLocalMapPoints</code>,遍历<code>mvpLocalKeyFrames</code>，将其中关键帧的地图点存入该变量。</p>
 </blockquote>
 <p>2.筛选局部地图中新增的在视野范围内的地图点，得到更多的匹配关系</p>
 <blockquote>
 <p>调用函数SearchLocalPoints()。</p>
 </blockquote>
-<p>3.利用前面新增的更多的匹配关系，BA优化得到更准确位姿<br>4.遍历当前帧地图点，更新当前帧的地图点被观测程度，并统计跟踪局部地图后匹配数目</p>
+<p>3.利用前面新增的更多的匹配关系，BA优化得到更准确位姿<br />
+4.遍历当前帧地图点，更新当前帧的地图点被观测程度，并统计跟踪局部地图后匹配数目</p>
 <blockquote>
-<p>这里就是更新两个成员变量，若当前帧的地图点不是外点，该地图点的<code>mnFound</code>++。成员变量<code>mnMatchesInliers</code>++，记录当前帧跟踪到的地图点数目，用于统计跟踪效果。<br>5.纯单目情况下，<code>mnMatchesInliers</code>大于30，则跟踪成功。</p>
+<p>这里就是更新两个成员变量，若当前帧的地图点不是外点，该地图点的<code>mnFound</code><ins>。成员变量<code>mnMatchesInliers</code></ins>，记录当前帧跟踪到的地图点数目，用于统计跟踪效果。<br />
+5.纯单目情况下，<code>mnMatchesInliers</code>大于30，则跟踪成功。</p>
 </blockquote>
-<hr>
-<h3 id="Tracking-SearchLocalPoints"><a href="#Tracking-SearchLocalPoints" class="headerlink" title="Tracking::SearchLocalPoints()"></a>Tracking::SearchLocalPoints()</h3><p>1.遍历当前帧的地图点，标记这些地图点不参与之后的投影搜索匹配。</p>
+<hr />
+<h3 id="trackingsearchlocalpoints"><a class="markdownIt-Anchor" href="#trackingsearchlocalpoints"></a> Tracking::SearchLocalPoints()</h3>
+<p>1.遍历当前帧的地图点，标记这些地图点不参与之后的投影搜索匹配。</p>
 <pre><code>// 更新能观测到该点的帧数加1(被当前帧观测了)
 pMP-&gt;IncreaseVisible(); //mnVisible++
 // 标记该点被当前帧观测到
@@ -915,26 +1309,42 @@ pMP-&gt;mnLastFrameSeen = mCurrentFrame.mnId;
 // 标记该点在后面搜索匹配时不被投影，因为已经有匹配了
 pMP-&gt;mbTrackInView = false;
 pMP-&gt;mbTrackInViewR = false;
-</code></pre><p>2.判断所有局部地图点中除当前帧地图点外的点，是否在当前帧视野范围内</p>
+</code></pre>
+<p>2.判断所有局部地图点中除当前帧地图点外的点，是否在当前帧视野范围内</p>
 <blockquote>
-<p>调用函数isInFrustum(),详情见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>,若在视野内，则pMP-&gt;IncreaseVisible()，nToMatch++。接下来判断pMP的mbTrackInView是否为true(若在视野内，isInFrustum()会将其置为true)，然后将该3D点的投影坐标存入mCurrentFrame.mmProjectPoints[ pMP-&gt;mnId]中。</p>
+<p>调用函数isInFrustum(),详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>,若在视野内，则pMP-&gt;IncreaseVisible()，nToMatch++。接下来判断pMP的mbTrackInView是否为true(若在视野内，isInFrustum()会将其置为true)，然后将该3D点的投影坐标存入mCurrentFrame.mmProjectPoints[ pMP-&gt;mnId]中。</p>
 </blockquote>
 <p>3.设置搜索阈值，调用函数SearchByProjection()进行匹配。</p>
 <blockquote>
-<p>这里讲一下SearchByProjection()(由于这个函数有5种重载，就不在ORBmatcher.cc文件里一个个列出来讲了，毕竟有很多地方都是重复的)。<br>1.遍历有效的局部地图点，主要是根据mbTrackInView(判断地图点是否在视野内时更新过)，bFarPoints和thFarPoints判断<br>2.设定搜索搜索窗口的大小。若当前视角和平均视角夹角较小时, r取2.5，否则取4<br>3.通过投影点以及搜索窗口和预测的尺度进行搜索, 找出搜索半径内的候选匹配点索引<br>接下来就是那些通用步骤了，不过这里不用旋转差直方图来筛选。</p>
+<p>这里讲一下SearchByProjection()(由于这个函数有5种重载，就不在ORBmatcher.cc文件里一个个列出来讲了，毕竟有很多地方都是重复的)。<br />
+1.遍历有效的局部地图点，主要是根据mbTrackInView(判断地图点是否在视野内时更新过)，bFarPoints和thFarPoints判断<br />
+2.设定搜索搜索窗口的大小。若当前视角和平均视角夹角较小时, r取2.5，否则取4<br />
+3.通过投影点以及搜索窗口和预测的尺度进行搜索, 找出搜索半径内的候选匹配点索引<br />
+接下来就是那些通用步骤了，不过这里不用旋转差直方图来筛选。</p>
 </blockquote>
-<hr>
-<h3 id="Tracking-NeedNewKeyFrame"><a href="#Tracking-NeedNewKeyFrame" class="headerlink" title="Tracking::NeedNewKeyFrame()"></a>Tracking::NeedNewKeyFrame()</h3><p>该函数用来判断当前帧是否需要插入关键帧<br>1.纯跟踪模式下不插入关键帧，如果局部地图被闭环检测使用，则不插入关键帧<br>2.如果距离上一次重定位比较近，或者关键帧数目超出最大限制，不插入关键帧<br>3.得到参考关键帧跟踪到的地图点数量</p>
+<hr />
+<h3 id="trackingneednewkeyframe"><a class="markdownIt-Anchor" href="#trackingneednewkeyframe"></a> Tracking::NeedNewKeyFrame()</h3>
+<p>该函数用来判断当前帧是否需要插入关键帧<br />
+1.纯跟踪模式下不插入关键帧，如果局部地图被闭环检测使用，则不插入关键帧<br />
+2.如果距离上一次重定位比较近，或者关键帧数目超出最大限制，不插入关键帧<br />
+3.得到参考关键帧跟踪到的地图点数量</p>
 <blockquote>
 <p>只有当地图点被2或3个以上关键帧观测到才会被计数，结果存入nRefMatches中。</p>
 </blockquote>
-<p>4.查询局部地图管理器是否繁忙,也就是当前能否接受新的关键帧<br>5.决策是否需要插入关键帧</p>
+<p>4.查询局部地图管理器是否繁忙,也就是当前能否接受新的关键帧<br />
+5.决策是否需要插入关键帧</p>
 <blockquote>
-<p>单目情况下，要进行以下判断：<br>条件a1:很长时间没有插入关键帧<br>条件a2:满足插入关键帧的最小间隔并且localMapper处于空闲状态<br>条件b:mnMatchesInliers&lt; nRefMatches*0.9且mnMatchesInliers&gt;15<br>若a1或a2任一满足，且b满足，则local mapping线程空闲时或者正在做imu初始化时可以直接插入，不空闲的时候要根据情况插入。</p>
+<p>单目情况下，要进行以下判断：<br />
+条件a1:很长时间没有插入关键帧<br />
+条件a2:满足插入关键帧的最小间隔并且localMapper处于空闲状态<br />
+条件b:mnMatchesInliers&lt; nRefMatches*0.9且mnMatchesInliers&gt;15<br />
+若a1或a2任一满足，且b满足，则local mapping线程空闲时或者正在做imu初始化时可以直接插入，不空闲的时候要根据情况插入。</p>
 </blockquote>
 <p>以上判断是纯单目下的，若加上imu或者是双目，rgbd会复杂一些。</p>
-<hr>
-<h3 id="Tracking-CreateNewKeyFrame"><a href="#Tracking-CreateNewKeyFrame" class="headerlink" title="Tracking::CreateNewKeyFrame()"></a>Tracking::CreateNewKeyFrame()</h3><p>1.将当前帧构造成关键帧<br>2.将当前关键帧设置为当前帧的参考关键帧</p>
+<hr />
+<h3 id="trackingcreatenewkeyframe"><a class="markdownIt-Anchor" href="#trackingcreatenewkeyframe"></a> Tracking::CreateNewKeyFrame()</h3>
+<p>1.将当前帧构造成关键帧<br />
+2.将当前关键帧设置为当前帧的参考关键帧</p>
 <pre><code>mpReferenceKF = pKF;
 mCurrentFrame.mpReferenceKF = pKF;
 
@@ -943,7 +1353,8 @@ if(mpLastKeyFrame)
     pKF-&gt;mPrevKF = mpLastKeyFrame;
     mpLastKeyFrame-&gt;mNextKF = pKF;
 &#125;
-</code></pre><p>3.关键帧插入到列表mlNewKeyFrames中，等待local mapping线程处理</p>
+</code></pre>
+<p>3.关键帧插入到列表mlNewKeyFrames中，等待local mapping线程处理</p>
 <pre><code>mpLocalMapper-&gt;InsertKeyFrame(pKF);
 
 // 插入好了，允许局部建图停止
@@ -953,6 +1364,7 @@ mpLocalMapper-&gt;SetNotStop(false);
 mnLastKeyFrameId = mCurrentFrame.mnId;
 mpLastKeyFrame = pKF;
 </code></pre>
+
           
         
       
@@ -1071,8 +1483,18 @@ mpLastKeyFrame = pKF;
       
         
           
-            <h1 id="ORBSLAM3学习笔记-2"><a href="#ORBSLAM3学习笔记-2" class="headerlink" title="ORBSLAM3学习笔记(2)"></a>ORBSLAM3学习笔记(2)</h1><p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
-<h2 id="System-lt-span-gt-cc"><a href="#System-lt-span-gt-cc" class="headerlink" title="System.&lt;/span&gt;cc"></a>System.&lt;/span&gt;cc</h2><h3 id="System-System"><a href="#System-System" class="headerlink" title="System::System()"></a>System::System()</h3><p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br>先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br>1.读取当前传感器类型<br>2.读取配置文件<br>3.加载Vocabulary<br>4.创建关键帧库<br>5.创建多地图<br>6.创建线程 跟踪、局部建图、回环、显示路径。</p>
+            <h1 id="orbslam3学习笔记2"><a class="markdownIt-Anchor" href="#orbslam3学习笔记2"></a> ORBSLAM3学习笔记(2)</h1>
+<p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
+<h2 id="systemspancc"><a class="markdownIt-Anchor" href="#systemspancc"></a> System.</span>cc</h2>
+<h3 id="systemsystem"><a class="markdownIt-Anchor" href="#systemsystem"></a> System::System()</h3>
+<p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br />
+先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br />
+1.读取当前传感器类型<br />
+2.读取配置文件<br />
+3.加载Vocabulary<br />
+4.创建关键帧库<br />
+5.创建多地图<br />
+6.创建线程 跟踪、局部建图、回环、显示路径。</p>
 <p>首先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>System::System(const string &amp;strVocFile,    //词袋文件所在路径
     const string &amp;strSettingsFile,          //配置文件所在路径
@@ -1087,7 +1509,9 @@ mpLastKeyFrame = pKF;
     mbActivateLocalizationMode(false),      //是否开启局部地图定位开关 
     mbDeactivateLocalizationMode(false), 
     mbShutDown(false)
-</code></pre><p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br>其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
+</code></pre>
+<p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br />
+其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
 <pre><code>enum eSensor&#123;
     MONOCULAR=0,
     STEREO=1,
@@ -1096,10 +1520,13 @@ mpLastKeyFrame = pKF;
     IMU_STEREO=4,
     IMU_RGBD=5,
 &#125;;
-</code></pre><hr>
-<h4 id="Settings类对象的初始化"><a href="#Settings类对象的初始化" class="headerlink" title="Settings类对象的初始化"></a>Settings类对象的初始化</h4><p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
+</code></pre>
+<hr />
+<h4 id="settings类对象的初始化"><a class="markdownIt-Anchor" href="#settings类对象的初始化"></a> Settings类对象的初始化</h4>
+<p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
 <pre><code>settings_ = new Settings(strSettingsFile,mSensor);
-</code></pre><p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
+</code></pre>
+<p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
 <p>先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>Settings::Settings(
     const std::string &amp;configFile,  //配置文件
@@ -1109,27 +1536,43 @@ mpLastKeyFrame = pKF;
     bNeedToRectify_(false), 
     bNeedToResize1_(false),
     bNeedToResize2_(false)
-</code></pre><p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
+</code></pre>
+<p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
 <pre><code>readCamera1(fSettings);
-</code></pre><p>该函数主要实现了将三个setting类的成员变量初始化:<br><strong>1.GeometricCamera* calibration1_</strong><br>calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
+</code></pre>
+<p>该函数主要实现了将三个setting类的成员变量初始化:<br />
+<strong>1.GeometricCamera* calibration1_</strong><br />
+calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
 <pre><code>Pinhole(const std::vector&lt;float&gt; _vParameters) : GeometricCamera(_vParameters), tvr(nullptr) &#123;
     assert(mvParameters.size() == 4);
     mnId=nNextId++;
     mnType = CAM_PINHOLE;
 &#125;
-</code></pre><p>GeometricCamera类有三个成员变量，分别是               </p>
+</code></pre>
+<p>GeometricCamera类有三个成员变量，分别是</p>
 <pre><code>std::vector&lt;float&gt; mvParameters;
 unsigned int mnId;
 unsigned int mnType;
-</code></pre><p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br>故calibration1_对象中保存了相机的内参，id和类型。</p>
-<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br>即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
-<p><strong>3.bool bNeedToUndistort_</strong><br>判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
+</code></pre>
+<p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br />
+故calibration1_对象中保存了相机的内参，id和类型。</p>
+<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br />
+即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
+<p><strong>3.bool bNeedToUndistort_</strong><br />
+判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
 <p>读取完Camera1再根据sensor_类型判断是否需要调用readCamera2(fSettings)函数，由于我现在看的是单目相机，就不需要执行这个函数了。然后调用函数</p>
 <pre><code>readImageInfo(fSettings);
-</code></pre><p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
+</code></pre>
+<p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
 <p>接着根据sensor_类型判断是否需要调用readIMU(fSettings)和readRGBD(fSettings)。然后调用函数</p>
 <pre><code>readORB(fSettings);
-</code></pre><p>该函数初始化成员变量<br><strong>int nFeatures_</strong> 指定要提取的特征点数目<br><strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br><strong>int nLevels_</strong> 指定图像金字塔的层数<br><strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br><strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
+</code></pre>
+<p>该函数初始化成员变量<br />
+<strong>int nFeatures_</strong> 指定要提取的特征点数目<br />
+<strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br />
+<strong>int nLevels_</strong> 指定图像金字塔的层数<br />
+<strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br />
+<strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
 <p>接下来仍然是调用函数初始化成员变量，分别调用了readViewer(fSettings)，readLoadAndSave(fSettings)，readOtherParameters(fSettings)，以下变量被初始化</p>
 <pre><code>/*
 * Viewer stuff
@@ -1152,19 +1595,24 @@ std::string sLoadFrom_, sSaveto_;
 * Other stuff
 */
 float thFarPoints_;
-</code></pre><p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
+</code></pre>
+<p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
 <p>总结，Settings类主要就是将配置文件里的数据读取到Settings类的对象中，总体比较简单。</p>
-<hr>
+<hr />
 <p>settings_初始化完成后，保存及加载地图的名字，目前这两个参数都是空的。</p>
 <pre><code>mStrLoadAtlasFromFile = settings_-&gt;atlasLoadFile();
 mStrSaveAtlasToFile = settings_-&gt;atlasSaveFile();
-</code></pre><p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
+</code></pre>
+<p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
 <pre><code>mpVocabulary = new ORBVocabulary();
-</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
-<hr>
-<h4 id="KeyFrameDatabase类对象的初始化"><a href="#KeyFrameDatabase类对象的初始化" class="headerlink" title="KeyFrameDatabase类对象的初始化"></a>KeyFrameDatabase类对象的初始化</h4><p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
+</code></pre>
+<p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary&lt;DBoW2::FORB::TDescriptor，</span>DBoW2::FORB&gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
+<hr />
+<h4 id="keyframedatabase类对象的初始化"><a class="markdownIt-Anchor" href="#keyframedatabase类对象的初始化"></a> KeyFrameDatabase类对象的初始化</h4>
+<p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
 <pre><code>mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-</code></pre><p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
+</code></pre>
+<p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
 <pre><code>protected:
 // Associated vocabulary
 const ORBVocabulary* mpVoc;
@@ -1177,23 +1625,29 @@ std::vector&lt;list&lt;long unsigned int&gt; &gt; mvBackupInvertedFileId;
 
 // Mutex
 std::mutex mMutex;
-</code></pre><p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br>接下来看KeyFrameDatabase类的构造函数</p>
+</code></pre>
+<p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br />
+接下来看KeyFrameDatabase类的构造函数</p>
 <pre><code>// 构造函数
 KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;voc)
 &#123;
     mvInvertedFile.resize(voc.size());
 &#125;
-</code></pre><p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
-<hr>
-<h4 id="Atlas类对象的初始化"><a href="#Atlas类对象的初始化" class="headerlink" title="Atlas类对象的初始化"></a>Atlas类对象的初始化</h4><p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
+</code></pre>
+<p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
+<hr />
+<h4 id="atlas类对象的初始化"><a class="markdownIt-Anchor" href="#atlas类对象的初始化"></a> Atlas类对象的初始化</h4>
+<p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
 <pre><code>mpAtlas = new Atlas(0);
-</code></pre><p>直接来看Atlas类的构造函数</p>
+</code></pre>
+<p>直接来看Atlas类的构造函数</p>
 <pre><code>Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid), mHasViewer(false)
 &#123;
     mpCurrentMap = static_cast&lt;Map *&gt;(NULL);
     CreateNewMap();
 &#125;
-</code></pre><p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
+</code></pre>
+<p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
 <pre><code>void Atlas::CreateNewMap()
 &#123;
     // 锁住地图集
@@ -1219,19 +1673,22 @@ KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;vo
     mpCurrentMap-&gt;SetCurrentMap();              //设置为活跃地图
     mspMaps.insert(mpCurrentMap);               //插入地图集
 &#125;
-</code></pre><p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
-<hr>
+</code></pre>
+<p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
+<hr />
 <p>接下来将用于显示帧和地图的成员变量初始化，由Viewer调用。</p>
 <pre><code>mpFrameDrawer = new FrameDrawer(mpAtlas);
 mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-</code></pre><p>先看FrameDrawer类的构造函数</p>
+</code></pre>
+<p>先看FrameDrawer类的构造函数</p>
 <pre><code>FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 &#123;
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
     mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 &#125;
-</code></pre><p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
+</code></pre>
+<p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">这篇博客</a>。</p>
 <p>再看MapDrawer类的构造函数</p>
 <pre><code>MapDrawer::MapDrawer(Atlas* pAtlas, const string &amp;strSettingPath, Settings* settings):mpAtlas(pAtlas)
 &#123;
@@ -1256,7 +1713,8 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
         &#125;
     &#125;
 &#125;
-</code></pre><p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
+</code></pre>
+<p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
 <pre><code>void MapDrawer::newParameterLoader(Settings *settings) &#123;
     mKeyFrameSize = settings-&gt;keyFrameSize();
     mKeyFrameLineWidth = settings-&gt;keyFrameLineWidth();
@@ -1265,18 +1723,24 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     mCameraSize = settings-&gt;cameraSize();
     mCameraLineWidth  = settings-&gt;cameraLineWidth();
 &#125;
-</code></pre><hr>
-<h4 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h4><p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
+</code></pre>
+<hr />
+<h4 id="tracking类对象的初始化"><a class="markdownIt-Anchor" href="#tracking类对象的初始化"></a> Tracking类对象的初始化</h4>
+<p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
 <pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
                          mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-</code></pre><p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
-<hr>
-<h4 id="创建并开启local-mapping线程"><a href="#创建并开启local-mapping线程" class="headerlink" title="创建并开启local mapping线程"></a>创建并开启local mapping线程</h4><p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
+</code></pre>
+<p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
+<hr />
+<h4 id="创建并开启local-mapping线程"><a class="markdownIt-Anchor" href="#创建并开启local-mapping线程"></a> 创建并开启local mapping线程</h4>
+<p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
 <pre><code>mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                  mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-</code></pre><p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
+</code></pre>
+<p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
 <pre><code>mptLocalMapping = new thread(&amp;ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
-</code></pre><p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
+</code></pre>
+<p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
 <p>上面执行完后(LocalMapping::Run 函数还在子线程中继续跑)，执行下面的内容，对mpLocalMapper对象剩下的一些成员变量初始化。</p>
 <pre><code>// 设置最远3D地图点的深度值，如果超过阈值，说明可能三角化不太准确，丢弃
 if(settings_)
@@ -1291,12 +1755,16 @@ if(mpLocalMapper-&gt;mThFarPoints!=0)
 &#125;
 else
     mpLocalMapper-&gt;mbFarPoints = false;
-</code></pre><hr>
-<h4 id="创建并开启闭环线程"><a href="#创建并开启闭环线程" class="headerlink" title="创建并开启闭环线程"></a>创建并开启闭环线程</h4><pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
+</code></pre>
+<hr />
+<h4 id="创建并开启闭环线程"><a class="markdownIt-Anchor" href="#创建并开启闭环线程"></a> 创建并开启闭环线程</h4>
+<pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
 mptLoopClosing = new thread(&amp;ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-</code></pre><p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
-<hr>
-<h4 id="设置线程间的指针"><a href="#设置线程间的指针" class="headerlink" title="设置线程间的指针"></a>设置线程间的指针</h4><pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
+</code></pre>
+<p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
+<hr />
+<h4 id="设置线程间的指针"><a class="markdownIt-Anchor" href="#设置线程间的指针"></a> 设置线程间的指针</h4>
+<pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
 mpTracker-&gt;SetLoopClosing(mpLoopCloser);
 
 mpLocalMapper-&gt;SetTracker(mpTracker);
@@ -1304,9 +1772,11 @@ mpLocalMapper-&gt;SetLoopCloser(mpLoopCloser);
 
 mpLoopCloser-&gt;SetTracker(mpTracker);
 mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
-</code></pre><p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
-<hr>
-<h4 id="创建并开启显示线程"><a href="#创建并开启显示线程" class="headerlink" title="创建并开启显示线程"></a>创建并开启显示线程</h4><pre><code>if(bUseViewer)
+</code></pre>
+<p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
+<hr />
+<h4 id="创建并开启显示线程"><a class="markdownIt-Anchor" href="#创建并开启显示线程"></a> 创建并开启显示线程</h4>
+<pre><code>if(bUseViewer)
 //if(false) // TODO
 &#123;
     mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile,settings_);
@@ -1315,12 +1785,15 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
     mpLoopCloser-&gt;mpViewer = mpViewer;
     mpViewer-&gt;both = mpFrameDrawer-&gt;both;
 &#125;
-</code></pre><p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
+</code></pre>
+<p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
 <p>System类对象的初始化基本就完成了。</p>
-<hr>
-<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
+<hr />
+<h3 id="systemtrackmonocular"><a class="markdownIt-Anchor" href="#systemtrackmonocular"></a> System::TrackMonocular()</h3>
+<p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
 <pre><code>Sophus::SE3f Tcw = mpTracker-&gt;GrabImageMonocular(imToFeed,timestamp,filename);
-</code></pre><p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
+</code></pre>
+<p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
 <p>待更新。</p>
 
           
@@ -1441,12 +1914,18 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
       
         
           
-            <h1 id="ORBSLAM3学习笔记-1"><a href="#ORBSLAM3学习笔记-1" class="headerlink" title="ORBSLAM3学习笔记(1)"></a>ORBSLAM3学习笔记(1)</h1><p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。<em>ps:源码用的是计算机视觉life的注释版本</em></p>
-<hr>
-<h2 id="框架结构"><a href="#框架结构" class="headerlink" title="框架结构"></a>框架结构</h2><p>orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。</p>
-<p><strong>Examples目录</strong><br>examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br>除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS/src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
-<hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>main函数在ROS/src目录下的ros_mono.cc文件，整体代码量不多，我就先放在下面了。</p>
+            <h1 id="orbslam3学习笔记1"><a class="markdownIt-Anchor" href="#orbslam3学习笔记1"></a> ORBSLAM3学习笔记(1)</h1>
+<p>最近开始阅读orbslam3的源码，想一边学习一边写博客记录，以便以后回顾总结，目前slam方面的基础一般，读源码时可能遇到的问题较多，希望能够坚持读下去。<em>ps:源码用的是计算机视觉life的注释版本</em></p>
+<hr />
+<h2 id="框架结构"><a class="markdownIt-Anchor" href="#框架结构"></a> 框架结构</h2>
+<p>orbslam3的阅读时，我们主要看的是Examples，include，src目录下的文件。include，src目录下主要就是头文件和库函数，下面具体看一下Examples目录。</p>
+<p><strong>Examples目录</strong><br />
+examples目录下包含了几种传感器的简单案例，也支持ros系统。案例使用的是KITTI,EuRoC,和TUM数据集，文件夹中包含了对应的标定文件，即.yaml文件，目录中还有包含真实传感器的标定文件。<br />
+除了这些settings文件，该框架的各种传感器的程序入口也在该目录下。比如我现在看的单目相机，因为我想基于ros运行orbslam3，它的程序入口就是ROS/src目录下的ros_mono.cc文件。马上源码的阅读也会从这个文件开始。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="main函数"><a class="markdownIt-Anchor" href="#main函数"></a> main函数</h3>
+<p>main函数在ROS/src目录下的ros_mono.cc文件，整体代码量不多，我就先放在下面了。</p>
 <pre><code>int main(int argc, char **argv)
 &#123;
     ros::init(argc, argv, &quot;Mono&quot;);
@@ -1479,12 +1958,15 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
 
     return 0;
 &#125;
-</code></pre><p><strong>先解释一下main函数的运行流程</strong></p>
+</code></pre>
+<p><strong>先解释一下main函数的运行流程</strong></p>
 <pre><code>ros::init(argc, argv, &quot;Mono&quot;);
 ros::start();
-</code></pre><p>这两句用来启动ros结点，之后的if判断是否输入两个参数，这两个参数分别是词袋文件和标定文件的路径。</p>
+</code></pre>
+<p>这两句用来启动ros结点，之后的if判断是否输入两个参数，这两个参数分别是词袋文件和标定文件的路径。</p>
 <pre><code>ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR,true);
-</code></pre><p>这句是初始化一个slam系统，初始化包括定位、回环、查看线程。 首先会根据输入选择rgbd、mono等容器，然后初始化启动定位、关闭定位、换地图、reset地图等。ORB_SLAM3::System类在System.h中,具体实现在System.cc中，故具体初始化流程在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中会详细说明。</p>
+</code></pre>
+<p>这句是初始化一个slam系统，初始化包括定位、回环、查看线程。 首先会根据输入选择rgbd、mono等容器，然后初始化启动定位、关闭定位、换地图、reset地图等。ORB_SLAM3::System类在System.h中,具体实现在System.cc中，故具体初始化流程在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中会详细说明。</p>
 <p>初始化完成，创建ImageGrabber对象，在回调函数中调用ImageGrabber类的函数GrabImage</p>
 <pre><code>void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr&amp; msg)
 &#123;
@@ -1502,7 +1984,8 @@ ros::start();
 
     mpSLAM-&gt;TrackMonocular(cv_ptr-&gt;image,cv_ptr-&gt;header.stamp.toSec());
 &#125;
-</code></pre><p>ros结点接收发布方传来的图像，转换为一个 CvImage 对象，并将其赋值给 cv_ptr。调用mpSLAM的TrackMonocular函数时，作为参数传入，第一个是图像信息，第二个是时间戳。TrackMonocular()就放在<a target="_blank" rel="noopener" href="https://www.jzhblog.top/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中讲了。</p>
+</code></pre>
+<p>ros结点接收发布方传来的图像，转换为一个 CvImage 对象，并将其赋值给 cv_ptr。调用mpSLAM的TrackMonocular函数时，作为参数传入，第一个是图像信息，第二个是时间戳。TrackMonocular()就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/27/ORBSLAM3_NOTE_2/">System.cc</a>中讲了。</p>
 
           
         
@@ -1587,7 +2070,7 @@ ros::start();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
