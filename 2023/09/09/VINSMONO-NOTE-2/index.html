@@ -79,12 +79,12 @@
 
 
 
-<meta name="description" content="VINSMONO学习笔记(2)这篇博客开始就是对功能包estimator_node的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。  源码阅读main()函数main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParameter()读取了">
+<meta name="description" content="VINSMONO学习笔记(2) 这篇博客开始就是对功能包estimator_node的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。   源码阅读  main()函数 main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParamete">
 <meta property="og:type" content="article">
 <meta property="og:title" content="VINS-MONO源码阅读:预积分">
 <meta property="og:url" content="http://example.com/2023/09/09/VINSMONO-NOTE-2/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="VINSMONO学习笔记(2)这篇博客开始就是对功能包estimator_node的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。  源码阅读main()函数main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParameter()读取了">
+<meta property="og:description" content="VINSMONO学习笔记(2) 这篇博客开始就是对功能包estimator_node的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。   源码阅读  main()函数 main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParamete">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E4%B8%AD%E5%80%BC%E6%B3%95.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E9%A2%84%E7%A7%AF%E5%88%86.png">
@@ -94,7 +94,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE3.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE4.png">
 <meta property="article:published_time" content="2023-09-09T09:21:24.000Z">
-<meta property="article:modified_time" content="2023-09-12T08:49:16.241Z">
+<meta property="article:modified_time" content="2023-09-19T06:23:51.661Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="VINSMONO NOTE">
 <meta name="twitter:card" content="summary">
@@ -318,11 +318,16 @@
       
 
       
-        <h1 id="VINSMONO学习笔记-2"><a href="#VINSMONO学习笔记-2" class="headerlink" title="VINSMONO学习笔记(2)"></a>VINSMONO学习笔记(2)</h1><p>这篇博客开始就是对功能包<code>estimator_node</code>的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。</p>
-<hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="main-函数"><a href="#main-函数" class="headerlink" title="main()函数"></a>main()函数</h3><p>main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParameter()读取了每一个相机到IMU坐标系的旋转/平移外参数和非线性优化的重投影误差部分的信息矩阵。<strong><code>estimator</code>这个变量相当重要，之后基本都是对其进行操作，这里建议把他的缺省构造函数好好看一下。</strong><br>接下来，registerPub(n)发布用于RVIZ显示的Topic。然后就是定义了四个订阅方，接收对应的信息，并启动一个子线程调用函数<code>process()</code>。下面会着重讲回调函数<code>imu_callback()</code>和<code>process()</code>中涉及预积分的部分。</p>
-<hr>
-<h3 id="void-imu-callback"><a href="#void-imu-callback" class="headerlink" title="void imu_callback()"></a>void imu_callback()</h3><p>这个函数是只要接收到imu数据就会执行。首先，先更新最新的imu数据时间<code>last_imu_t</code>,往<code>imu_buf</code>里放IMU数据，缓存起来。con.notify_one()这句代码用处是每次执行后就会唤醒函数<code>process()</code>中的con.wait(…),执行该语句。这里的代码是要用到线程锁的，避免imu_buf存取数据冲突。</p>
+        <h1 id="vinsmono学习笔记2"><a class="markdownIt-Anchor" href="#vinsmono学习笔记2"></a> VINSMONO学习笔记(2)</h1>
+<p>这篇博客开始就是对功能包<code>estimator_node</code>的学习了，这个功能包实现了预积分，初始化，非线性优化，闭环检测功能，这篇重点把预积分部分的代码梳理清楚。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="main函数"><a class="markdownIt-Anchor" href="#main函数"></a> main()函数</h3>
+<p>main()函数中，首先调用函数readParameters(n)从yaml文件中读取相关参数，至于读了哪些参数等用到再解释。然后，estimator.setParameter()读取了每一个相机到IMU坐标系的旋转/平移外参数和非线性优化的重投影误差部分的信息矩阵。<strong><code>estimator</code>这个变量相当重要，之后基本都是对其进行操作，这里建议把他的缺省构造函数好好看一下。</strong><br />
+接下来，registerPub(n)发布用于RVIZ显示的Topic。然后就是定义了四个订阅方，接收对应的信息，并启动一个子线程调用函数<code>process()</code>。下面会着重讲回调函数<code>imu_callback()</code>和<code>process()</code>中涉及预积分的部分。</p>
+<hr />
+<h3 id="void-imu_callback"><a class="markdownIt-Anchor" href="#void-imu_callback"></a> void imu_callback()</h3>
+<p>这个函数是只要接收到imu数据就会执行。首先，先更新最新的imu数据时间<code>last_imu_t</code>,往<code>imu_buf</code>里放IMU数据，缓存起来。con.notify_one()这句代码用处是每次执行后就会唤醒函数<code>process()</code>中的con.wait(…),执行该语句。这里的代码是要用到线程锁的，避免imu_buf存取数据冲突。</p>
 <pre><code>last_imu_t = imu_msg-&gt;header.stamp.toSec();
 m_buf.lock();
 imu_buf.push(imu_msg);
@@ -338,18 +343,25 @@ last_imu_t = imu_msg-&gt;header.stamp.toSec();
     if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR)
         pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
 &#125;
-</code></pre><p>然后，执行函数predict(imu_msg)，该函数就是读取传来的imu数据，使用中值法求解PVQ，更新tmp_Q，tmp_P，tmp_V的值，然后更新acc_0和gyr_0，作为下一次中执法的初始值，具体公式如下图所示：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/中值法.png" alt="中值法"><br>这里的数据都是世界坐标系下的。其实未初始化时，这个函数虽然在跑，但得到的结果都是无效的，因为此时该函数里的<code>estimator.g</code>，<code>tmp_Ba</code>,<code>tmp_Bg</code>一直是(0,0,0)。<br>最后，如果当前处于非线性优化阶段的话，需要把predict函数计算得到的PVQ发布到rviz里去，见utility/visualization.cpp的pubLatestOdometry()函数。</p>
-<hr>
-<h3 id="void-process"><a href="#void-process" class="headerlink" title="void process()"></a>void process()</h3><p>1.获得measurements数据，首先先要看一下measurements的数据类型，还是挺复杂的。</p>
+</code></pre>
+<p>然后，执行函数predict(imu_msg)，该函数就是读取传来的imu数据，使用中值法求解PVQ，更新tmp_Q，tmp_P，tmp_V的值，然后更新acc_0和gyr_0，作为下一次中执法的初始值，具体公式如下图所示：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E4%B8%AD%E5%80%BC%E6%B3%95.png" alt="中值法" /><br />
+这里的数据都是世界坐标系下的。其实未初始化时，这个函数虽然在跑，但得到的结果都是无效的，因为此时该函数里的<code>estimator.g</code>，<code>tmp_Ba</code>,<code>tmp_Bg</code>一直是(0,0,0)。<br />
+最后，如果当前处于非线性优化阶段的话，需要把predict函数计算得到的PVQ发布到rviz里去，见utility/visualization.cpp的pubLatestOdometry()函数。</p>
+<hr />
+<h3 id="void-process"><a class="markdownIt-Anchor" href="#void-process"></a> void process()</h3>
+<p>1.获得measurements数据，首先先要看一下measurements的数据类型，还是挺复杂的。</p>
 <pre><code>std::vector&lt;std::pair&lt;std::vector&lt;sensor_msgs::ImuConstPtr&gt;, sensor_msgs::PointCloudConstPtr&gt;&gt; measurements;
-</code></pre><p><code>measurements</code>最外层看是一个向量容器，这个容器中存储一些数据对（std::pair），然后再看单个数据对，它的第一位也是一个容器，里面存放着一段时间下的imu数据，第二位存放的是一帧图像中的特征点数据，就是<code>feature_tracker_node</code>传过来的，至于具体怎么把数据放进measurements，这些数据又是怎么选取配对的，要看函数getMeasurements()，这个函数里主要就是有几个判断：</p>
+</code></pre>
+<p><code>measurements</code>最外层看是一个向量容器，这个容器中存储一些数据对（std::pair），然后再看单个数据对，它的第一位也是一个容器，里面存放着一段时间下的imu数据，第二位存放的是一帧图像中的特征点数据，就是<code>feature_tracker_node</code>传过来的，至于具体怎么把数据放进measurements，这些数据又是怎么选取配对的，要看函数getMeasurements()，这个函数里主要就是有几个判断：</p>
 <ul>
 <li><strong>if (imu_buf.empty() || feature_buf.empty())</strong>，这个说明数据取完了，说明配对完成，直接返回；</li>
-<li><strong>if (!(imu_buf.back()-&gt;header.stamp.toSec() &gt; feature_buf.front()-&gt;header.stamp.toSec() + estimator.td))</strong>，这里imu_buf里面所有数据的时间戳都比img buf第一个帧时间戳要早，说明缺乏IMU数据，需要等待IMU数据；</li>
-<li><strong>if (!(imu_buf.front()-&gt;header.stamp.toSec() &lt; feature_buf.front()-&gt;header.stamp.toSec() + estimator.td))</strong>，IMU第一个数据的时间要大于第一个图像特征数据的时间，说明有图像帧太老了，讲<code>feature_buf</code>中的数据pop出一个，然后直接从头判断；</li>
+<li><strong>if (!(imu_buf.back()-&gt;header.stamp.toSec() &gt; feature_buf.front()-&gt;header.stamp.toSec() + <a target="_blank" rel="noopener" href="http://estimator.td">estimator.td</a>))</strong>，这里imu_buf里面所有数据的时间戳都比img buf第一个帧时间戳要早，说明缺乏IMU数据，需要等待IMU数据；</li>
+<li><strong>if (!(imu_buf.front()-&gt;header.stamp.toSec() &lt; feature_buf.front()-&gt;header.stamp.toSec() + <a target="_blank" rel="noopener" href="http://estimator.td">estimator.td</a>))</strong>，IMU第一个数据的时间要大于第一个图像特征数据的时间，说明有图像帧太老了，讲<code>feature_buf</code>中的数据pop出一个，然后直接从头判断；</li>
 </ul>
 <p>上面的判断结束后，从<code>feature_buf</code>中pop出一个存到img_msg中，然后遍历imu_buf，讲时间戳小于img_msg的imu数据存到容器IMUs中，然后将IMUs和img_msg作为一个数据对存到measurements中。</p>
-<p>2.遍历measurements，对于每个measurement，先遍历所有imu数据，读取imu数据的加速度和角速度，然后调用estimator.processIMU()，将他们作为参数传进processIMU()函数进行操作。<br>这里有一点要注意，往processIMU()传数据时，imu时间戳大于或等于图像时间戳的那个数据要进行一下简单的线性分配。</p>
+<p>2.遍历measurements，对于每个measurement，先遍历所有imu数据，读取imu数据的加速度和角速度，然后调用estimator.processIMU()，将他们作为参数传进processIMU()函数进行操作。<br />
+这里有一点要注意，往processIMU()传数据时，imu时间戳大于或等于图像时间戳的那个数据要进行一下简单的线性分配。</p>
 <pre><code>//对于大多数情况，IMU的时间戳都会比img的早，此时直接选取IMU的数据就行
 if (t &lt;= img_t)  //http://wiki.ros.org/sensor_msgs
 &#123;   
@@ -387,12 +399,20 @@ else//每个大于图像帧时间戳的第一个imu_msg是被两个图像帧共�
     rz = w1 * rz + w2 * imu_msg-&gt;angular_velocity.z;
     estimator.processIMU(dt_1, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
 &#125;
-</code></pre><hr>
-<h3 id="void-Estimator-processIMU"><a href="#void-Estimator-processIMU" class="headerlink" title="void Estimator::processIMU()"></a>void Estimator::processIMU()</h3><p>首先判断传来的imu是不是整个系统下的第一个imu数据，如果是，则要先给acc_0和gyr_0赋值。然后，判断pre_integrations[frame_count]是否为空，若为空，则new一个,主要操作就是给pre_integrations[frame_count]的成员参数acc_0, gyr_0，linearized_ba, linearized_bg赋值,未初始化时，linearized_ba, linearized_bg的赋值其实都为零。<br>这里的<code>pre_integrations[]</code>就是estimator的成员变量，数组大小为10，就是滑动窗口大小，在estimator的构造函数中，<code>pre_integrations[]</code>中的所有数据都先置为空。<code>pre_integrations[]</code>中的每个数据都是IntegrationBase类型的，这个类型的数据用来存储两帧之间的所有imu数据，预积分值，预积分累计误差的协方差以及残差的jacobian。<br>然后判断frame_count是否为0，若为0则不用进行预积分，直接更新acc_0和gyr_0就结束了，frame_count增加的操作在estimator.processImage()中。<br>若frame_count不为0，则进行预积分，关于预积分的操作从下面这句展开：</p>
+</code></pre>
+<hr />
+<h3 id="void-estimatorprocessimu"><a class="markdownIt-Anchor" href="#void-estimatorprocessimu"></a> void Estimator::processIMU()</h3>
+<p>首先判断传来的imu是不是整个系统下的第一个imu数据，如果是，则要先给acc_0和gyr_0赋值。然后，判断pre_integrations[frame_count]是否为空，若为空，则new一个,主要操作就是给pre_integrations[frame_count]的成员参数acc_0, gyr_0，linearized_ba, linearized_bg赋值,未初始化时，linearized_ba, linearized_bg的赋值其实都为零。<br />
+这里的<code>pre_integrations[]</code>就是estimator的成员变量，数组大小为10，就是滑动窗口大小，在estimator的构造函数中，<code>pre_integrations[]</code>中的所有数据都先置为空。<code>pre_integrations[]</code>中的每个数据都是IntegrationBase类型的，这个类型的数据用来存储两帧之间的所有imu数据，预积分值，预积分累计误差的协方差以及残差的jacobian。<br />
+然后判断frame_count是否为0，若为0则不用进行预积分，直接更新acc_0和gyr_0就结束了，frame_count增加的操作在estimator.processImage()中。<br />
+若frame_count不为0，则进行预积分，关于预积分的操作从下面这句展开：</p>
 <pre><code>pre_integrations[frame_count]-&gt;push_back(dt, linear_acceleration, angular_velocity);
-</code></pre><p>这个push_back()是pre_integrations[frame_count]的函数，即IntegrationBase类的成员函数，该函数先把时差，加速度，角速度存到pre_integrations[frame_count]的成员变量dt_buf，acc_buf，gyr_buf中，然后调用函数propagate(dt, acc, gyr)，这个函数也是IntegrationBase类的成员函数，这个函数就放在下面讲了。<br>接下来，把预积分数据也存到tmp_pre_integration中，执行完processIMU()后，下面processImage()函数里，要用tmp_pre_integration给imageframe.pre_integration赋值。</p>
+</code></pre>
+<p>这个push_back()是pre_integrations[frame_count]的函数，即IntegrationBase类的成员函数，该函数先把时差，加速度，角速度存到pre_integrations[frame_count]的成员变量dt_buf，acc_buf，gyr_buf中，然后调用函数propagate(dt, acc, gyr)，这个函数也是IntegrationBase类的成员函数，这个函数就放在下面讲了。<br />
+接下来，把预积分数据也存到tmp_pre_integration中，执行完processIMU()后，下面processImage()函数里，要用tmp_pre_integration给imageframe.pre_integration赋值。</p>
 <pre><code>tmp_pre_integration-&gt;push_back(dt, linear_acceleration, angular_velocity);
-</code></pre><p>然后就是一些参数存储和更新的工作了：</p>
+</code></pre>
+<p>然后就是一些参数存储和更新的工作了：</p>
 <pre><code>dt_buf[frame_count].push_back(dt);
 linear_acceleration_buf[frame_count].push_back(linear_acceleration);
 angular_velocity_buf[frame_count].push_back(angular_velocity);
@@ -408,19 +428,23 @@ Vs[j] += dt * un_acc;
 
 acc_0 = linear_acceleration;
 gyr_0 = angular_velocity;
-</code></pre><hr>
-<h3 id="void-propagate"><a href="#void-propagate" class="headerlink" title="void propagate()"></a>void propagate()</h3><p>首先，通过传来的参数，给pre_integrations[frame_count]的成员变量dt, acc_1, gyr_1赋值，再创建一系列变量：</p>
+</code></pre>
+<hr />
+<h3 id="void-propagate"><a class="markdownIt-Anchor" href="#void-propagate"></a> void propagate()</h3>
+<p>首先，通过传来的参数，给pre_integrations[frame_count]的成员变量dt, acc_1, gyr_1赋值，再创建一系列变量：</p>
 <pre><code>Vector3d result_delta_p;
 Quaterniond result_delta_q;
 Vector3d result_delta_v;
 Vector3d result_linearized_ba;
 Vector3d result_linearized_bg;
-</code></pre><p>再调用函数</p>
+</code></pre>
+<p>再调用函数</p>
 <pre><code>midPointIntegration(_dt, acc_0, gyr_0, _acc_1, _gyr_1, delta_p, delta_q, delta_v,
                         linearized_ba, linearized_bg,
                         result_delta_p, result_delta_q, result_delta_v,
                         result_linearized_ba, result_linearized_bg, 1);
-</code></pre><p>这个函数的结果就是保存在上面创建的变量里，下面细看这个函数，midPointIntegration()总体分为两部分，一部分是预积分：</p>
+</code></pre>
+<p>这个函数的结果就是保存在上面创建的变量里，下面细看这个函数，midPointIntegration()总体分为两部分，一部分是预积分：</p>
 <pre><code>Vector3d un_acc_0 = delta_q * (_acc_0 - linearized_ba);
 Vector3d un_gyr = 0.5 * (_gyr_0 + _gyr_1) - linearized_bg;
 result_delta_q = delta_q * Quaterniond(1, un_gyr(0) * _dt / 2, un_gyr(1) * _dt / 2, un_gyr(2) * _dt / 2);
@@ -430,7 +454,10 @@ result_delta_p = delta_p + delta_v * _dt + 0.5 * un_acc * _dt * _dt;
 result_delta_v = delta_v + un_acc * _dt;
 result_linearized_ba = linearized_ba;
 result_linearized_bg = linearized_bg;
-</code></pre><p>这里对应的就是预积分的离散形式，具体公式如下图所示：<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/预积分.png" alt="预积分"><br><code>result_delta_q</code>，<code>result_delta_p</code>,<code>result_delta_v</code>,<code>result_linearized_ba</code>,<code>result_linearized_bg</code>就是对应着图中蓝色部分和最后两个，其中<code>result_linearized_ba</code>,<code>result_linearized_bg</code>在未初始化时，都是0。</p>
+</code></pre>
+<p>这里对应的就是预积分的离散形式，具体公式如下图所示：<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E9%A2%84%E7%A7%AF%E5%88%86.png" alt="预积分" /><br />
+<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>a</mi><msub><mi>b</mi><mi>k</mi></msub></msup></mrow><annotation encoding="application/x-tex">a^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8491079999999999em;vertical-align:0em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>这种就是imu的加速计测量值，是在自身载体系下的加速度，所以外面会乘<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><msub><mi>b</mi><mi>i</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub></mrow><annotation encoding="application/x-tex">q_{b_ib_{k+1}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7280849999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3280857142857143em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span></span></span>转到第i帧的坐标系下。</p>
+<p><code>result_delta_q</code>，<code>result_delta_p</code>,<code>result_delta_v</code>,<code>result_linearized_ba</code>,<code>result_linearized_bg</code>就是对应着图中蓝色部分和最后两个，其中<code>result_linearized_ba</code>,<code>result_linearized_bg</code>在未初始化时，都是0，之后会重新预积分的。</p>
 <p>第二部分是计算累计误差的协方差和残差关于ba、bg的Jacobian。</p>
 <pre><code>MatrixXd F = MatrixXd::Zero(15, 15);
 F.block&lt;3, 3&gt;(0, 0) = Matrix3d::Identity();
@@ -468,7 +495,19 @@ V.block&lt;3, 3&gt;(12, 15) = MatrixXd::Identity(3,3) * _dt;
 //step_V = V;
 jacobian = F * jacobian;
 covariance = F * covariance * F.transpose() + V * noise * V.transpose();
-</code></pre><p>先简单介绍一下其原理：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差1.png" alt="协方差1"><br>把上述公式套到imu的误差传递中，可得到下面这个式子：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差5.png" alt="协方差5"><br>这里我们得到了当前imu数据与上一个imu数据误差的线性关系，两帧的协方差可以根据这种线性关系递推得到：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差2.png" alt="协方差2"><br>这里的${\sum _i}_{k - 1}$就是上一个imu数据协方差，${\sum _n}$是噪声矩阵，在构造函数中通过从yaml文件中读取的噪声标准差数据赋了值。<br>由上所述，我们现在要求的就是矩阵F,G，结果如下：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差3.png" alt="协方差3"><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/协方差4.png" alt="协方差4"><br>具体的运算过程太长了，可以去看深蓝学院的ppt，这里的求解内容就存在了代码中的矩阵F和V中，然后用这两个矩阵完成对协方差和雅可比的更新，关于这里的雅可比，目前还不是特别懂，看懂了再回来更新。。。。</p>
+</code></pre>
+<p>先简单介绍一下其原理：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE1.png" alt="协方差1" /><br />
+把上述公式套到imu的误差传递中，可得到下面这个式子：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE5.png" alt="协方差5" /><br />
+这里我们得到了当前imu数据与上一个imu数据误差的线性关系，两帧的协方差可以根据这种线性关系递推得到：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE2.png" alt="协方差2" /><br />
+这里的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><msub><mo>∑</mo><mi>i</mi></msub><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">{\sum _i}_{k - 1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1577410000000001em;vertical-align:-0.407741em;"></span><span class="mord"><span class="mord"><span class="mop"><span class="mop op-symbol small-op" style="position:relative;top:-0.0000050000000000050004em;">∑</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.16195399999999993em;"><span style="top:-2.40029em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29971000000000003em;"><span></span></span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.13669799999999988em;"><span style="top:-2.35059em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.407741em;"><span></span></span></span></span></span></span></span></span></span>就是上一个imu数据协方差，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>n</mi></msub></mrow><annotation encoding="application/x-tex">{\sum _n}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0497100000000001em;vertical-align:-0.29971000000000003em;"></span><span class="mord"><span class="mop"><span class="mop op-symbol small-op" style="position:relative;top:-0.0000050000000000050004em;">∑</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.0016819999999999613em;"><span style="top:-2.40029em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29971000000000003em;"><span></span></span></span></span></span></span></span></span></span></span>是噪声矩阵，在构造函数中通过从yaml文件中读取的噪声标准差数据赋了值。<br />
+由上所述，我们现在要求的就是矩阵F,G，结果如下：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE3.png" alt="协方差3" /><br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/%E5%8D%8F%E6%96%B9%E5%B7%AE4.png" alt="协方差4" /><br />
+具体的运算过程太长了，可以去看深蓝学院的ppt，这里的求解内容就存在了代码中的矩阵F和V中，然后用这两个矩阵完成对协方差和雅可比的更新。<br />
+协方差可用于预积分非线性优化时，转换成信息矩阵。这里的雅可比，只对残差对<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>a</mi></msub><mo separator="true">,</mo><msub><mi>b</mi><mi>g</mi></msub></mrow><annotation encoding="application/x-tex">b_a,b_g</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>的雅可比进行了更新，初始化的时候会用到，非线性优化时，会把所有雅可比都计算出来，下面贴一下协方差和雅可比矩阵的图，以便对它们有个基础认知。</p>
 
       
     </div>
@@ -509,8 +548,8 @@ covariance = F * covariance * F.transpose() + V * noise * V.transpose();
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2023/09/11/VINSMONO-NOTE-3/" rel="prev" title="VINS-MONO源码阅读:初始化">
-                VINS-MONO源码阅读:初始化 <i class="fa fa-chevron-right"></i>
+              <a href="/2023/09/11/VINSMONO-NOTE-3/" rel="prev" title="VINS-MONO源码阅读:初始化1">
+                VINS-MONO源码阅读:初始化1 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -588,7 +627,7 @@ covariance = F * covariance * F.transpose() + V * noise * V.transpose();
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">16</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -634,7 +673,7 @@ covariance = F * covariance * F.transpose() + V * noise * V.transpose();
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VINSMONO%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-2"><span class="nav-number">1.</span> <span class="nav-text">VINSMONO学习笔记(2)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#main-%E5%87%BD%E6%95%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text">main()函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-imu-callback"><span class="nav-number">1.1.2.</span> <span class="nav-text">void imu_callback()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-process"><span class="nav-number">1.1.3.</span> <span class="nav-text">void process()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-Estimator-processIMU"><span class="nav-number">1.1.4.</span> <span class="nav-text">void Estimator::processIMU()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-propagate"><span class="nav-number">1.1.5.</span> <span class="nav-text">void propagate()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vinsmono%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B02"><span class="nav-number">1.</span> <span class="nav-text"> VINSMONO学习笔记(2)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text"> 源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#main%E5%87%BD%E6%95%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text"> main()函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-imu_callback"><span class="nav-number">1.1.2.</span> <span class="nav-text"> void imu_callback()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-process"><span class="nav-number">1.1.3.</span> <span class="nav-text"> void process()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-estimatorprocessimu"><span class="nav-number">1.1.4.</span> <span class="nav-text"> void Estimator::processIMU()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-propagate"><span class="nav-number">1.1.5.</span> <span class="nav-text"> void propagate()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>

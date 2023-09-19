@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="VINSMONO NOTE," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="VINSMONO学习笔记(4) 这篇博客继续学习初始化，还剩下visualInitialAlign()一个函数要看，但内容比较多，也非常重要，就全放在这篇博客里了。   原理讲解及源码阅读  标定IMU角速度bias 下面看详细代码,先主要来看得到增量方程的那个循环: for (frame_i &#x3D; all_image_frame.begin(); next(frame_i) !&#x3D; all_ima">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VINS-MONO源码阅读:初始化2">
+<meta property="og:url" content="http://example.com/2023/09/15/VINSMONO-NOTE-4/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="VINSMONO学习笔记(4) 这篇博客继续学习初始化，还剩下visualInitialAlign()一个函数要看，但内容比较多，也非常重要，就全放在这篇博客里了。   原理讲解及源码阅读  标定IMU角速度bias 下面看详细代码,先主要来看得到增量方程的那个循环: for (frame_i &#x3D; all_image_frame.begin(); next(frame_i) !&#x3D; all_ima">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs2.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs3.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs5.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs6.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs7.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs8.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs9.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/vgs10.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs13.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_2.png">
+<meta property="article:published_time" content="2023-09-15T08:25:16.000Z">
+<meta property="article:modified_time" content="2023-09-19T10:17:05.724Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="VINSMONO NOTE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://example.com/2023/09/15/VINSMONO-NOTE-4/"/>
+
+
+
+
+
+  <title>VINS-MONO源码阅读:初始化2 | Hexo</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/09/15/VINSMONO-NOTE-4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">VINS-MONO源码阅读:初始化2</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2023-09-15T16:25:16+08:00">
+                2023-09-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="vinsmono学习笔记4"><a class="markdownIt-Anchor" href="#vinsmono学习笔记4"></a> VINSMONO学习笔记(4)</h1>
+<p>这篇博客继续学习初始化，还剩下visualInitialAlign()一个函数要看，但内容比较多，也非常重要，就全放在这篇博客里了。</p>
+<hr />
+<h2 id="原理讲解及源码阅读"><a class="markdownIt-Anchor" href="#原理讲解及源码阅读"></a> 原理讲解及源码阅读</h2>
+<h3 id="标定imu角速度bias"><a class="markdownIt-Anchor" href="#标定imu角速度bias"></a> 标定IMU角速度bias</h3>
+<p>下面看详细代码,先主要来看得到增量方程的那个循环:</p>
+<pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end(); frame_i++)
+&#123;
+    frame_j = next(frame_i);
+    MatrixXd tmp_A(3, 3);
+    tmp_A.setZero();
+    VectorXd tmp_b(3);
+    tmp_b.setZero();
+    Eigen::Quaterniond q_ij(frame_i-&gt;second.R.transpose() * frame_j-&gt;second.R);
+    tmp_A = frame_j-&gt;second.pre_integration-&gt;jacobian.template block&lt;3, 3&gt;(O_R, O_BG);
+    tmp_b = 2 * (frame_j-&gt;second.pre_integration-&gt;delta_q.inverse() * q_ij).vec();
+    A += tmp_A.transpose() * tmp_A;
+    b += tmp_A.transpose() * tmp_b;
+&#125;
+</code></pre>
+<p>这里就是遍历所有图像帧，frame_i就是当前帧，frame_j就是当前帧的下一帧，q_ij就是通过图像帧旋转和之前标定的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>得到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">b_{k+1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.902771em;vertical-align:-0.208331em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.208331em;"><span></span></span></span></span></span></span></span></span></span>到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">b_{k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的旋转，tmp_A是预积分<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>对角速度bias的雅可比。之前预积分的时候对pre_integration的jacobian中的残差对<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>a</mi></msub><mo separator="true">,</mo><msub><mi>b</mi><mi>g</mi></msub></mrow><annotation encoding="application/x-tex">b_a,b_g</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>的雅可比进行了更新，这里从中取了我们需要的部分，具体可以去看预积分那篇最后雅可比的图，还是挺一目了然的。</p>
+<p>使用ldlt分解求得bias后要重新进行预积分，把角速度bias带进去：</p>
+<pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end( ); frame_i++)
+&#123;
+    frame_j = next(frame_i);
+    frame_j-&gt;second.pre_integration-&gt;repropagate(Vector3d::Zero(), Bgs[0]);
+&#125;
+</code></pre>
+<p>函数repropagate实现了重新求解预积分，如下所示：</p>
+<pre><code>void repropagate(const Eigen::Vector3d &amp;_linearized_ba, const Eigen::Vector3d &amp;_linearized_bg)
+&#123;
+    sum_dt = 0.0;
+    acc_0 = linearized_acc;
+    gyr_0 = linearized_gyr;
+    delta_p.setZero();
+    delta_q.setIdentity();
+    delta_v.setZero();
+    linearized_ba = _linearized_ba;
+    linearized_bg = _linearized_bg;
+    jacobian.setIdentity();
+    covariance.setZero();
+    for (int i = 0; i &lt; static_cast&lt;int&gt;(dt_buf.size()); i++)
+        propagate(dt_buf[i], acc_buf[i], gyr_buf[i]);
+&#125;
+</code></pre>
+<p>这里就是先把预积分相关的变量全部先置为0，再遍历上一帧到这一帧的所有imu数据，这些都存在pre_integration对象的成员变量dt_buf, acc_buf, gyr_buf容器中，调用函数propagate()，按遍历顺序传入对应参数，重新进行预积分。</p>
+<hr />
+<h3 id="初始化速度-重力和尺度因子"><a class="markdownIt-Anchor" href="#初始化速度-重力和尺度因子"></a> 初始化速度、重力和尺度因子</h3>
+<p>先确定要估计的变量：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs1.png" alt="gvs1" /><br />
+其中，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>v</mi><mi>k</mi><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">v_k^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2380759999999997em;vertical-align:-0.3013079999999999em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3013079999999999em;"><span></span></span></span></span></span></span></span></span></span>表示<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span>时刻body坐标系的速度在body坐标系下的表示。<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>g</mi><msub><mi>c</mi><mn>0</mn></msub></msup></mrow><annotation encoding="application/x-tex">g^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.858832em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>为重力向量在参考帧(即之前的第l帧)相机坐标系下的表示。<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi></mrow><annotation encoding="application/x-tex">s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal">s</span></span></span></span>表示尺度因子，将视觉轨迹拉伸到米制单位。</p>
+<p>世界坐标系下的预积分约束如下：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs2.png" alt="gvs2" /></p>
+<p>但是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span>坐标系我们不知道，只知道l帧相机坐标系，所以需要把上面的公式转到l帧相机坐标系上(<strong>下面的公式中<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">c_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>其实是l帧</strong>)：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs3.png" alt="gvs3" /></p>
+<p>先看<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub></mrow><annotation encoding="application/x-tex">\alpha_{b_kb_{k+1}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7280849999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.0037em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span></span></span>,理想状态下，式子左边减去右边结果应该为0，下面看详细推导：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs5.png" alt="gvs4" /></p>
+<p>把要估计的量及其系数放在等式右边，其他的放在左边，再转换为矩阵形式，可得到下式：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs6.png" alt="gvs5" /></p>
+<p>接下来再看<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub></mrow><annotation encoding="application/x-tex">\beta_{b_kb_{k+1}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9919649999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span></span></span>，具体操作和上面差不多：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs7.png" alt="gvs6" /></p>
+<p>然后将两个矩阵合并：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs8.png" alt="gvs7" /></p>
+<p>最后将其变成增量方程形式:<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs9.png" alt="gvs8" /><br />
+然后和标定角速度bias时一样，用ldlt分解求得估计值就行，下面看具体代码:</p>
+<pre><code>bool LinearAlignment(map&lt;double, ImageFrame&gt; &amp;all_image_frame, Vector3d &amp;g, VectorXd &amp;x)
+&#123;
+    int all_frame_count = all_image_frame.size();
+    int n_state = all_frame_count * 3 + 3 + 1;
+
+    MatrixXd A&#123;n_state, n_state&#125;;
+    A.setZero();
+    VectorXd b&#123;n_state&#125;;
+    b.setZero();
+
+    map&lt;double, ImageFrame&gt;::iterator frame_i;
+    map&lt;double, ImageFrame&gt;::iterator frame_j;
+    int i = 0;
+    ...
+    ...
+&#125;
+</code></pre>
+<p>这里是定义总的增量方程的左边的信息矩阵A以及右边的雅可比乘残差矩阵b，n_state是矩阵大小。上面原理部分只是讲了两帧之间的参数估计，但实际上，每加一帧就要多估计一个v。因此，下面计算增量方程时，都是按帧遍历，计算完两帧之间的增量方程的左右两边，再把数据放到A,b对应矩阵块里面，下面为具体代码：</p>
+<pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end(); frame_i++, i++)
+&#123;
+    frame_j = next(frame_i);
+
+    MatrixXd tmp_A(6, 10);
+    tmp_A.setZero();
+    VectorXd tmp_b(6);
+    tmp_b.setZero();
+
+    double dt = frame_j-&gt;second.pre_integration-&gt;sum_dt;
+
+    tmp_A.block&lt;3, 3&gt;(0, 0) = -dt * Matrix3d::Identity();
+    tmp_A.block&lt;3, 3&gt;(0, 6) = frame_i-&gt;second.R.transpose() * dt * dt / 2 * Matrix3d::Identity();
+    tmp_A.block&lt;3, 1&gt;(0, 9) = frame_i-&gt;second.R.transpose() * (frame_j-&gt;second.T - frame_i-&gt;second.T) / 100.0;     
+    tmp_b.block&lt;3, 1&gt;(0, 0) = frame_j-&gt;second.pre_integration-&gt;delta_p + frame_i-&gt;second.R.transpose() * frame_j-&gt;second.R * TIC[0] - TIC[0];
+    //cout &lt;&lt; &quot;delta_p   &quot; &lt;&lt; frame_j-&gt;second.pre_integration-&gt;delta_p.transpose() &lt;&lt; endl;
+    tmp_A.block&lt;3, 3&gt;(3, 0) = -Matrix3d::Identity();
+    tmp_A.block&lt;3, 3&gt;(3, 3) = frame_i-&gt;second.R.transpose() * frame_j-&gt;second.R;
+    tmp_A.block&lt;3, 3&gt;(3, 6) = frame_i-&gt;second.R.transpose() * dt * Matrix3d::Identity();
+    tmp_b.block&lt;3, 1&gt;(3, 0) = frame_j-&gt;second.pre_integration-&gt;delta_v;
+    //cout &lt;&lt; &quot;delta_v   &quot; &lt;&lt; frame_j-&gt;second.pre_integration-&gt;delta_v.transpose() &lt;&lt; endl;
+
+    Matrix&lt;double, 6, 6&gt; cov_inv = Matrix&lt;double, 6, 6&gt;::Zero();
+    //cov.block&lt;6, 6&gt;(0, 0) = IMU_cov[i + 1];
+    //MatrixXd cov_inv = cov.inverse();
+    cov_inv.setIdentity();
+
+    MatrixXd r_A = tmp_A.transpose() * cov_inv * tmp_A;
+    VectorXd r_b = tmp_A.transpose() * cov_inv * tmp_b;
+
+    A.block&lt;6, 6&gt;(i * 3, i * 3) += r_A.topLeftCorner&lt;6, 6&gt;();
+    b.segment&lt;6&gt;(i * 3) += r_b.head&lt;6&gt;();
+
+    A.bottomRightCorner&lt;4, 4&gt;() += r_A.bottomRightCorner&lt;4, 4&gt;();
+    b.tail&lt;4&gt;() += r_b.tail&lt;4&gt;();
+
+    A.block&lt;6, 4&gt;(i * 3, n_state - 4) += r_A.topRightCorner&lt;6, 4&gt;();
+    A.block&lt;4, 6&gt;(n_state - 4, i * 3) += r_A.bottomLeftCorner&lt;4, 6&gt;();
+&#125;
+</code></pre>
+<p>前面计算r_A和r_b就是按照上面讲的公式写代码就行，很简单，这里主要看怎么放入最终的矩阵里，先看左边的矩阵A，我画了一个图，应该挺好理解的：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/vgs10.png" alt="gvs9" /><br />
+这里就拿第一个得到的r_A举例，这里把矩阵大小和每块放在哪里都画出来了，其他的以此类推。下面时右边的矩阵，其实差不多，这里也展示以下：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs13.png" alt="gvs10" /><br />
+增量矩阵得到后，ldlt求解就行，不多说了。</p>
+<hr />
+<h3 id="优化重力向量g_c_0"><a class="markdownIt-Anchor" href="#优化重力向量g_c_0"></a> 优化重力向量<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><msub><mi>c</mi><mn>0</mn></msub></msub></mrow><annotation encoding="application/x-tex">g_{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68066em;vertical-align:-0.2501em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139199999999997em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2501em;"><span></span></span></span></span></span></span></span></span></span></h3>
+<p>具体原理如下，由于这部分挺简单的，就直接放深蓝学院ppt的图了：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_1.png" alt="gc0_1.png" /><br />
+这里就是把<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover accent="true"><mi>g</mi><mo>^</mo></mover><msub><mi>c</mi><mn>0</mn></msub></msup></mrow><annotation encoding="application/x-tex">\hat g^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.69444em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.22222em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.19444em;"><span></span></span></span></span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>带入上面那个的式子，优化变量g变为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>w</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">w_1,w_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.02691em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.02691em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>,具体式子如下：<br />
+<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_2.png" alt="gc0_2.png" /><br />
+同样是用ldlt求解。</p>
+<hr />
+<h3 id="bool-estimatorvisualinitialalign"><a class="markdownIt-Anchor" href="#bool-estimatorvisualinitialalign"></a> bool Estimator::visualInitialAlign()</h3>
+<p>下面总的来看这个函数<br />
+<strong>1.计算陀螺仪偏置，尺度，重力加速度和速度</strong></p>
+<pre><code>bool Estimator::visualInitialAlign()
+&#123;
+    TicToc t_g;
+    VectorXd x;
+    if(!VisualIMUAlignment(all_image_frame, Bgs, g, x))
+        return false;
+    ...
+&#125;
+</code></pre>
+<p><strong>2.遍历所有帧，将每帧到l图像帧的位移和对应的imu到l图像帧的旋转存到Ps和Rs数组，并将它们都置为关键帧</strong></p>
+<pre><code>bool Estimator::visualInitialAlign()
+&#123;
+    // 1. 计算陀螺仪偏置，尺度，重力加速度和速度
+    TicToc t_g;
+    VectorXd x;
+    if(!VisualIMUAlignment(all_image_frame, Bgs, g, x))
+        return false;
+        ...
+    // 2. 传递所有图像帧的位姿Ps、Rs，并将其置为关键帧    
+    for (int i = 0; i &lt;= frame_count; i++)    
+    &#123;        
+        Matrix3d Ri = all_image_frame[Headers[i]].R;        
+        Vector3d Pi = all_image_frame[Headers[i]].T;        
+        Ps[i] = Pi;        
+        Rs[i] = Ri;        
+        all_image_frame[Headers[i]].is_key_frame = true;    
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p><strong>3.重新计算所有f_manager的特征点深度</strong></p>
+<pre><code>// 3. 重新计算所有f_manager的特征点深度    
+VectorXd dep = f_manager.getDepthVector();    
+for (int i = 0; i &lt; dep.size(); i++)        
+    dep[i] = -1;//将所有特征点的深度置为-1    
+f_manager.clearDepth(dep);
+
+//triangulat on cam pose , no tic //重新计算特征点的深度    
+Vector3d TIC_TMP[NUM_OF_CAM];    
+for (int i = 0; i &lt; NUM_OF_CAM; i++)        
+    TIC_TMP[i].setZero();    
+    //RIC中存放的是相机到IMU的旋转，在相机-IMU外参标定部分求得    
+    ric[0] = RIC[0];    
+    f_manager.setRic(ric);    
+    // 三角化计算地图点的深度
+    // Ps中存放的是各个帧相对于参考帧之间的平移，RIC[0]为相机-IMU之间的旋转    
+    f_manager.triangulate(Ps, &amp;(TIC_TMP[0]), &amp;(RIC[0]));
+</code></pre>
+<p><strong>4.IMU的bias改变，重新计算滑窗内的预积分</strong></p>
+<pre><code>for (int i = 0; i &lt;= WINDOW_SIZE; i++)    
+&#123;        
+    pre_integrations[i]-&gt;repropagate(Vector3d::Zero(), Bgs[i]);    
+&#125;
+</code></pre>
+<p><strong>5.将<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">P_s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">V_s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、depth尺度s缩放后更新坐标系</strong></p>
+<pre><code>// 5. 将Ps、Vs、depth尺度s缩放后从l帧转变为相对于c0帧图像坐标系下
+/**           
+* 前面初始化中，计算出来的是相对滑动窗口中第l帧的位姿，在这里转换到IMU bo坐标系下           
+* s*p_bk^​b0​​=s*p_bk^​cl​​−s*p_b0^​cl​​=(s*p_ck^​cl​​−R_bk​^cl​​*p_c^b​)−(s*p_c0^​cl​​−R_b0​^cl​​*p_c^b​)           
+* TIC[0]是相机到IMU的平移量           
+* Rs是IMU第k帧到滑动窗口中图像第l帧的旋转           
+* Ps是滑动窗口中第k帧到第l帧的平移量           
+* 注意：如果运行的脚本是配置文件中无外参的脚本，那么这里的TIC都是0          
+*/    
+// (1) 位移Ps    
+double s = (x.tail&lt;1&gt;())(0);
+for (int i = frame_count; i &gt;= 0; i--)
+// Ps转变为第i帧imu坐标系到第0帧imu坐标系的变换
+// 之前相机第l帧为参考系，转换到IMU bo为基准坐标系        
+    Ps[i] = s * Ps[i] - Rs[i] * TIC[0] - (s * Ps[0] - Rs[0] * TIC[0]);    
+// （2）速度Vs
+int kv = -1;   
+map&lt;double, ImageFrame&gt;::iterator frame_i;    
+for (frame_i = all_image_frame.begin(); frame_i != all_image_frame.end(); frame_i++)    
+&#123;        
+    if (frame_i-&gt;second.is_key_frame)        
+    &#123;            
+        kv++;            
+        Vs[kv] = frame_i-&gt;second.R * x.segment&lt;3&gt;(kv * 3);        
+    &#125;    
+&#125;    
+// (3) 深度
+// 更新每个地图点被观测到的帧数(used_num)和预测的深度(estimated_depth)
+for (auto &amp;it_per_id : f_manager.feature)    
+&#123;        
+    it_per_id.used_num = it_per_id.feature_per_frame.size();        
+    if (!(it_per_id.used_num &gt;= 2 &amp;&amp; it_per_id.start_frame &lt; WINDOW_SIZE - 2))            
+        continue;        
+    it_per_id.estimated_depth *= s;    
+&#125;
+</code></pre>
+<p>这里强调以下，这里的Ps存的是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>坐标系下<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">b_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">b_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的位移，Vs存的是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>坐标系下每帧的速度。</p>
+<p><strong>6.通过将重力旋转到z轴上，得到世界坐标系与相机坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>之间的旋转矩阵rot_diff</strong></p>
+<pre><code>/**
+ * refine之后就获得了C_0坐标系下的重力g^&#123;c_0&#125;，此时通过将g^&#123;c_0&#125;旋转至z轴方向，
+ * 这样就可以计算相机系到世界坐标系的旋转矩阵q_&#123;c_0&#125;^w，这里求得的是rot_diff,这样就可以将所有变量调整至世界系中。
+*/    
+// Rs是IMU第k帧到滑动窗口中图像第l帧的旋转
+// R0将参考坐标系旋转到z轴垂直向上    
+Matrix3d R0 = Utility::g2R(g);
+// R0将参考系的y轴旋转到第0帧的IMU正前方，这个时候x轴也确定了向右。     
+double yaw = Utility::R2ypr(R0 * Rs[0]).x();    
+//  相机系到世界坐标系的旋转矩阵 R0    
+R0 = Utility::ypr2R(Eigen::Vector3d&#123;-yaw, 0, 0&#125;) * R0; // 只考虑偏航角的影响    
+g = R0 * g;    
+//Matrix3d rot_diff = R0 * Rs[0].transpose();    
+Matrix3d rot_diff = R0;
+</code></pre>
+<p>rot_diff就是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>w</mi><mi>l</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{wl}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.00773em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.02691em;">w</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>,感觉在vins里l参考帧的坐标系其实就是初始相机坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">c_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></p>
+<p><strong>7.所有变量从参考坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>旋转到世界坐标系w</strong></p>
+<pre><code>for (int i = 0; i &lt;= frame_count; i++)    
+&#123;        
+    Ps[i] = rot_diff * Ps[i];        
+    Rs[i] = rot_diff * Rs[i];        
+    Vs[i] = rot_diff * Vs[i];    
+&#125;    
+//ROS_DEBUG_STREAM(&quot;g0     &quot; &lt;&lt; g.transpose());    
+//ROS_DEBUG_STREAM(&quot;my R0  &quot; &lt;&lt; Utility::R2ypr(Rs[0]).transpose());
+return true;
+</code></pre>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/VINSMONO-NOTE/" rel="tag"># VINSMONO NOTE</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/09/11/VINSMONO-NOTE-3/" rel="next" title="VINS-MONO源码阅读:初始化1">
+                <i class="fa fa-chevron-left"></i> VINS-MONO源码阅读:初始化1
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vinsmono%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B04"><span class="nav-number">1.</span> <span class="nav-text"> VINSMONO学习笔记(4)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%E8%AE%B2%E8%A7%A3%E5%8F%8A%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.</span> <span class="nav-text"> 原理讲解及源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%87%E5%AE%9Aimu%E8%A7%92%E9%80%9F%E5%BA%A6bias"><span class="nav-number">1.1.1.</span> <span class="nav-text"> 标定IMU角速度bias</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E9%80%9F%E5%BA%A6-%E9%87%8D%E5%8A%9B%E5%92%8C%E5%B0%BA%E5%BA%A6%E5%9B%A0%E5%AD%90"><span class="nav-number">1.1.2.</span> <span class="nav-text"> 初始化速度、重力和尺度因子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E9%87%8D%E5%8A%9B%E5%90%91%E9%87%8Fg_c_0"><span class="nav-number">1.1.3.</span> <span class="nav-text"> 优化重力向量gc0g_{c_0}gc0​​</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bool-estimatorvisualinitialalign"><span class="nav-number">1.1.4.</span> <span class="nav-text"> bool Estimator::visualInitialAlign()</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
