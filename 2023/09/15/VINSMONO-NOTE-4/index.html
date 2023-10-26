@@ -104,7 +104,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_1.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_2.png">
 <meta property="article:published_time" content="2023-09-15T08:25:16.000Z">
-<meta property="article:modified_time" content="2023-09-19T10:34:42.276Z">
+<meta property="article:modified_time" content="2023-10-09T06:58:19.045Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="VINSMONO NOTE">
 <meta name="twitter:card" content="summary">
@@ -447,7 +447,7 @@
         return false;
     ...
 &#125;
-</code></pre><p><strong>2.遍历所有帧，将每帧到l图像帧的位移和对应的imu到l图像帧的旋转存到Ps和Rs数组，并将它们都置为关键帧</strong></p>
+</code></pre><p><strong>2.遍历所有帧，将每个图像帧到l图像帧的位移和对应的imu到l图像帧的旋转存到Ps和Rs数组，并将它们都置为关键帧</strong></p>
 <pre><code>bool Estimator::visualInitialAlign()
 &#123;
     // 1. 计算陀螺仪偏置，尺度，重力加速度和速度
@@ -495,7 +495,7 @@ for (int i = 0; i &lt; NUM_OF_CAM; i++)
 * 前面初始化中，计算出来的是相对滑动窗口中第l帧的位姿，在这里转换到IMU bo坐标系下           
 * s*p_bk^​b0​​=s*p_bk^​cl​​−s*p_b0^​cl​​=(s*p_ck^​cl​​−R_bk​^cl​​*p_c^b​)−(s*p_c0^​cl​​−R_b0​^cl​​*p_c^b​)           
 * TIC[0]是相机到IMU的平移量           
-* Rs是IMU第k帧到滑动窗口中图像第l帧的旋转           
+* Rs是IMU第k帧imu坐标系到滑动窗口中图像第l帧的旋转           
 * Ps是滑动窗口中第k帧到第l帧的平移量           
 * 注意：如果运行的脚本是配置文件中无外参的脚本，那么这里的TIC都是0          
 */    
@@ -525,11 +525,11 @@ for (auto &amp;it_per_id : f_manager.feature)
         continue;        
     it_per_id.estimated_depth *= s;    
 &#125;
-</code></pre><p>这里强调以下，这里的Ps存的是$l$坐标系下$b_0$到$b_i$的位移，Vs存的是$l$坐标系下每帧的速度。</p>
+</code></pre><p><strong><em>这里强调一下，这里的Ps存的是$l$坐标系下$b_0$到$b_i$的位移，Vs存的是$l$坐标系下每帧的速度。</em></strong></p>
 <p><strong>6.通过将重力旋转到z轴上，得到世界坐标系与相机坐标系$l$之间的旋转矩阵rot_diff</strong></p>
 <pre><code>/**
- * refine之后就获得了C_0坐标系下的重力g^&#123;c_0&#125;，此时通过将g^&#123;c_0&#125;旋转至z轴方向，
- * 这样就可以计算相机系到世界坐标系的旋转矩阵q_&#123;c_0&#125;^w，这里求得的是rot_diff,这样就可以将所有变量调整至世界系中。
+ * 通过将g旋转至z轴方向，
+ * 这样就可以计算相机系到世界坐标系的旋转矩阵，这里求得的是rot_diff,这样就可以将所有变量调整至世界系中。
 */    
 // Rs是IMU第k帧到滑动窗口中图像第l帧的旋转
 // R0将参考坐标系旋转到z轴垂直向上    
@@ -538,8 +538,7 @@ Matrix3d R0 = Utility::g2R(g);
 double yaw = Utility::R2ypr(R0 * Rs[0]).x();    
 //  相机系到世界坐标系的旋转矩阵 R0    
 R0 = Utility::ypr2R(Eigen::Vector3d&#123;-yaw, 0, 0&#125;) * R0; // 只考虑偏航角的影响    
-g = R0 * g;    
-//Matrix3d rot_diff = R0 * Rs[0].transpose();    
+g = R0 * g;      
 Matrix3d rot_diff = R0;
 </code></pre><p>rot_diff就是$R_{wl}$,感觉在vins里l参考帧的坐标系其实就是初始相机坐标系$c_0$</p>
 <p><strong>7.所有变量从参考坐标系$l$旋转到世界坐标系w</strong></p>
