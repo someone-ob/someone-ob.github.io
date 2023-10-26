@@ -1029,15 +1029,11 @@ for(int i=0; i&lt;nkps ; i++)
       
         
           
-            <h1 id="orbslam3学习笔记3"><a class="markdownIt-Anchor" href="#orbslam3学习笔记3"></a> ORBSLAM3学习笔记(3)</h1>
-<p>这篇博客主要是对Tracking.cc文件的学习。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="trackingtracking"><a class="markdownIt-Anchor" href="#trackingtracking"></a> Tracking::Tracking()</h3>
-<p>构造函数首先从配置文件中加载相机参数</p>
+            <h1 id="ORBSLAM3学习笔记-3"><a href="#ORBSLAM3学习笔记-3" class="headerlink" title="ORBSLAM3学习笔记(3)"></a>ORBSLAM3学习笔记(3)</h1><p>这篇博客主要是对Tracking.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Tracking-Tracking"><a href="#Tracking-Tracking" class="headerlink" title="Tracking::Tracking()"></a>Tracking::Tracking()</h3><p>构造函数首先从配置文件中加载相机参数</p>
 <pre><code>newParameterLoader(settings);
-</code></pre>
-<p>我们马上具体看这个函数是如何实现的：</p>
+</code></pre><p>我们马上具体看这个函数是如何实现的：</p>
 <p><strong>1. 读取相机1</strong></p>
 <pre><code>mpCamera = settings-&gt;camera1();
 mpCamera = mpAtlas-&gt;AddCamera(mpCamera);
@@ -1063,13 +1059,8 @@ mK_(0,0) = mpCamera-&gt;getParameter(0);
 mK_(1,1) = mpCamera-&gt;getParameter(1);
 mK_(0,2) = mpCamera-&gt;getParameter(2);
 mK_(1,2) = mpCamera-&gt;getParameter(3);
-</code></pre>
-<p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br />
-接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector&lt;GeometricCamera*&gt; mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br />
-由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br />
-然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
-<p><strong>2. 读取特征点参数</strong><br />
-这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor类的构造函数，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+</code></pre><p>mpCamera是GeometricCamera类型的成员变量，第一行吧settings里储存的calibration1_传递给它。<br>接下来执行mpAtlas对象的AddCamera()函数,mpAtlas对象里有一个成员变量std::vector<GeometricCamera*> mvpCameras,用来存储这个多地图系统下所用到的相机，这个函数就是往mvpCameras中添加一个相机。<br>由于需要去畸变，又把settings里存储的畸变参数转为cv::Mat格式传递给成员变量mDistCoef。<br>然后，把相机内参分别存储到mK和mK_中，mK是cv::Mat类型的，mK_是Eigen::Matrix3f类型的。</p>
+<p><strong>2. 读取特征点参数</strong><br>这一步是将ORBextractor类型的成员变量mpORBextractorLeft初始化，这里用到了ORBextractor类的构造函数，由于内容有点多，就把内容放在另一篇博客里了，详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
 <pre><code>mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
 if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -1077,133 +1068,90 @@ if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
 
 if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
     mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-</code></pre>
-<p>构造Frame类时，若是刚开启追踪，使用的是mpIniORBextractor，之后都是用mpORBextractorLeft了。</p>
-<p><strong>3.读取imu参数</strong><br />
-imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
+</code></pre><p>构造Frame类时，若是刚开启追踪，使用的是mpIniORBextractor，之后都是用mpORBextractorLeft了。</p>
+<p><strong>3.读取imu参数</strong><br>imu这部分先不看了，先把纯单目看完，imu联合部分留到以后补充。</p>
 <p>newParameterLoader(settings);执行完之后，执行一下代码，将另外几个成员变量初始化</p>
 <pre><code>initID = 0; lastID = 0;
 mbInitWith3KFs = false;
 mnNumDataset = 0;
-</code></pre>
-<hr />
-<h3 id="trackinggrabimagemonocular"><a class="markdownIt-Anchor" href="#trackinggrabimagemonocular"></a> Tracking::GrabImageMonocular()</h3>
-<p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
-<hr />
-<h3 id="trackingtrack"><a class="markdownIt-Anchor" href="#trackingtrack"></a> Tracking::Track()</h3>
-<p><strong>1.从Atlas中取出当前active的地图</strong><br />
-<strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br />
-（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br />
-（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br />
-<strong>3.判断地图是否被更新</strong><br />
-<strong>4.初始化</strong><br />
-根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br />
-<strong>5.系统成功初始化，下面是具体跟踪过程</strong><br />
-这里就只看slam模式下的代码，这部分最关键的就是mState和bOk两个标志位的值，要注意观察其变化。</p>
+</code></pre><hr>
+<h3 id="Tracking-GrabImageMonocular"><a href="#Tracking-GrabImageMonocular" class="headerlink" title="Tracking::GrabImageMonocular()"></a>Tracking::GrabImageMonocular()</h3><p>该函数就是把传来的彩色图转化为灰度图，然后对Frame类对象mCurrentFrame初始化，得到当前帧。具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a>设置好mCurrentFrame的mNameFile和mnDataset后，调用Track()开始追踪。</p>
+<hr>
+<h3 id="Tracking-Track"><a href="#Tracking-Track" class="headerlink" title="Tracking::Track()"></a>Tracking::Track()</h3><p><strong>1.从Atlas中取出当前active的地图</strong><br><strong>2.处理时间戳异常的情况，这里有分两种情况：</strong><br>（1）如果当前图像时间戳比前一帧图像时间戳小，说明出错了，清除imu数据，调用CreateMapInAtlas()创建新的子地图。CreateMapInAtlas()的功能就是在Atlas中保存当前地图，创建新地图，所有跟状态相关的变量全部重置。<br>（2）如果当前图像时间戳和前一帧图像时间戳大于1s，说明时间戳明显跳变了，直接返回。<br><strong>3.判断地图是否被更新</strong><br><strong>4.初始化</strong><br>根据相机类型和带不带imu进行初始化，初始化时调用MonocularInitialization()。这里首先是创建了一个单目初始器，下面mState判断时，还是会直接返回，等第二帧到来后，再调用MonocularInitialization()才能彻底完成初始化，然后等待下一帧到来。<br><strong>5.系统成功初始化，下面是具体跟踪过程</strong><br>这里就只看slam模式下的代码，这部分最关键的就是mState和bOk两个标志位的值，要注意观察其变化。</p>
 <ul>
-<li>若<strong>mState==OK</strong>
-<ul>
-<li>1.检查并更新上一帧被替换的MapPoints
-<blockquote>
+<li>若<strong>mState==OK</strong><ul>
+<li>1.检查并更新上一帧被替换的MapPoints<blockquote>
 <p>这里调用了函数CheckReplacedInLastFrame()，局部建图线程则可能会对原有的地图点进行替换.在这里进行检查。过程很简单，遍历<code>mLastFrame</code>的所有地图点，若地图点的<code>mpReplaced</code>存在，则用<code>mpReplaced</code>替换该地图点。</p>
 </blockquote>
 </li>
-<li>2.若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则先用恒速模型跟踪，跟踪失败再换参考关键帧跟踪。
-<blockquote>
+<li>2.若运动模型是空的并且imu未初始化或刚完成重定位，跟踪参考关键帧；否则先用恒速模型跟踪，跟踪失败再换参考关键帧跟踪。<blockquote>
 <p>这里对bOk进行了改变，<strong>bOK</strong>=TrackReferenceKeyFrame()或TrackReferenceKeyFrame()，这两个函数写在后面了。</p>
 </blockquote>
 </li>
-<li>3.若上面跟踪失败，即bOK==false，则要对<code>mState</code>进行更新。
-<blockquote>
-<p>1.如果当前帧距离上次重定位成功不到1s，且为单目+IMU 或者 双目+IMU模式，<strong>mState = LOST</strong><br />
-2.当前地图中关键帧数目较多（大于10），且当前帧距离上次重定位帧超过1s或者非IMU模式，<strong>mState = RECENTLY_LOST</strong>，且要记录丢失时间，存在mTimeStampLost里。<br />
-3.其他情况下，<strong>mState = LOST</strong></p>
+<li>3.若上面跟踪失败，即bOK==false，则要对<code>mState</code>进行更新。<blockquote>
+<p>1.如果当前帧距离上次重定位成功不到1s，且为单目+IMU 或者 双目+IMU模式，<strong>mState = LOST</strong><br>2.当前地图中关键帧数目较多（大于10），且当前帧距离上次重定位帧超过1s或者非IMU模式，<strong>mState = RECENTLY_LOST</strong>，且要记录丢失时间，存在mTimeStampLost里。<br>3.其他情况下，<strong>mState = LOST</strong></p>
 </blockquote>
 </li>
 </ul>
 </li>
-<li>若<strong>mState!=OK</strong>
-<ul>
-<li>若<strong>mState == RECENTLY_LOST</strong>
-<blockquote>
+<li>若<strong>mState!=OK</strong><ul>
+<li>若<strong>mState == RECENTLY_LOST</strong><blockquote>
 <p>由于我们看的纯单目，所以直接调用重定位函数，<strong>bOK</strong> = Relocalization()，若重定位失败，且当前帧时间和丢失时间超过3了，令<strong>mState = LOST</strong></p>
 </blockquote>
 </li>
 <li>若<strong>mState == LOST</strong>,直接开启新地图，<em>返回</em>。</li>
 </ul>
 </li>
-<li>若<strong>bOK==true</strong>，说明上一步跟踪成功，进行局部地图跟踪
-<blockquote>
-<p>这里调用了函数<code>TrackLocalMap()</code>,这里对bOK也进行了更改，<strong>bOK =</strong> TrackLocalMap()。<br />
-虽然前面也进行了跟踪，但只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化。</p>
+<li>若<strong>bOK==true</strong>，说明上一步跟踪成功，进行局部地图跟踪<blockquote>
+<p>这里调用了函数<code>TrackLocalMap()</code>,这里对bOK也进行了更改，<strong>bOK =</strong> TrackLocalMap()。<br>虽然前面也进行了跟踪，但只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化。</p>
 </blockquote>
 </li>
-<li>更新mState状态。
-<ul>
+<li>更新mState状态。<ul>
 <li>若<strong>bOK==true</strong>,说明上一步的局部地图跟踪也成功了，令<strong>mState = OK</strong>。</li>
-<li>若<strong>bOK==false，但mState == OK</strong>
-<blockquote>
+<li>若<strong>bOK==false，但mState == OK</strong><blockquote>
 <p>这里只有第一阶段跟踪成功，但第二阶段局部地图跟踪失败时执行，这里就是让<strong>mState=RECENTLY_LOST</strong>，记录丢失时间。</p>
 </blockquote>
 </li>
 </ul>
 </li>
-<li>若<strong>bOK == true或mState==RECENTLY_LOST</strong>，更新速度，清除无效地图点，按需创建关键帧。
-<ul>
-<li>1.更新恒速运动模型
-<blockquote>
+<li>若<strong>bOK == true或mState==RECENTLY_LOST</strong>，更新速度，清除无效地图点，按需创建关键帧。<ul>
+<li>1.更新恒速运动模型<blockquote>
 <p>这里将上一帧到当前帧的变换存入了mVelocity，将mbVelocity置为true。</p>
 </blockquote>
 </li>
 <li>2.清除观测不到的地图点</li>
-<li>3.根据条件来判断是否插入关键帧
-<blockquote>
+<li>3.根据条件来判断是否插入关键帧<blockquote>
 <p>需要同时满足bNeedKF=true且bOK=true跟踪成功，bNeedKF的值是由函数NeedNewKeyFrame()得到的。若满足条件，则调用函数CreateNewKeyFrame()创建新关键帧</p>
 </blockquote>
 </li>
 <li>删除当前帧中那些在BA中检测为外点的地图点。</li>
 </ul>
 </li>
-<li>若<strong>mState==LOST</strong>
-<blockquote>
+<li>若<strong>mState==LOST</strong><blockquote>
 <p>如果地图中关键帧小于10，重置当前地图，退出当前跟踪，若大于10，保存当前地图，创建新的地图。</p>
 </blockquote>
 </li>
-<li>设置了参考关键帧,保存上一帧的数据,当前帧变上一帧
-<blockquote>
-<p>mCurrentFrame.mpReferenceKF = mpReferenceKF;<br />
-mLastFrame = Frame(mCurrentFrame);</p>
+<li>设置了参考关键帧,保存上一帧的数据,当前帧变上一帧<blockquote>
+<p>mCurrentFrame.mpReferenceKF = mpReferenceKF;<br>mLastFrame = Frame(mCurrentFrame);</p>
 </blockquote>
 </li>
 </ul>
-<p><strong>6.记录位姿信息，用于最后保存所有的轨迹</strong></p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
-<hr />
-<h3 id="trackingmonocularinitialization"><a class="markdownIt-Anchor" href="#trackingmonocularinitialization"></a> Tracking::MonocularInitialization()</h3>
-<ul>
-<li>
-<p><strong>如果单目初始器还没有被创建，则创建。</strong><br />
-这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
+<p><strong>6.记录位姿信息，用于最后保存所有的轨迹</strong><br>  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">if(mCurrentFrame.isSet())</span><br><span class="line">      &#123;</span><br><span class="line">          // 计算相对姿态Tcr = Tcw * Twr, Twr = Trw^-1</span><br><span class="line">          Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF-&gt;GetPoseInverse();</span><br><span class="line">          mlRelativeFramePoses.push_back(Tcr_);</span><br><span class="line">          mlpReferences.push_back(mCurrentFrame.mpReferenceKF);</span><br><span class="line">          mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br><span class="line">      else</span><br><span class="line">      &#123;</span><br><span class="line">          // This can happen if tracking is lost</span><br><span class="line">          // 如果跟踪失败，则相对位姿使用上一次值</span><br><span class="line">          mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());</span><br><span class="line">          mlpReferences.push_back(mlpReferences.back());</span><br><span class="line">          mlFrameTimes.push_back(mlFrameTimes.back());</span><br><span class="line">          mlbLost.push_back(mState==LOST);</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure></p>
+<hr>
+<h3 id="Tracking-MonocularInitialization"><a href="#Tracking-MonocularInitialization" class="headerlink" title="Tracking::MonocularInitialization()"></a>Tracking::MonocularInitialization()</h3><ul>
+<li><p><strong>如果单目初始器还没有被创建，则创建。</strong><br>这里完成了一些成员变量的初始化，这里就看一下对应成员变量的作用。</p>
 <blockquote>
 <p>mInitialFrame将当前帧作为初始帧</p>
-</blockquote>
-<blockquote>
 <p>mvbPrevMatched用来存储当前帧的所有特征点</p>
-</blockquote>
-<blockquote>
 <p>初始化mvIniMatches，保存参考帧匹配到的特征点，index保存是参考帧对应特征点索引，值保存的是匹配到特征点索引。</p>
 </blockquote>
 <p>成员变量初始化完成之后，将标志位mbReadyToInitializate置为true，等待下一帧。</p>
 </li>
-<li>
-<p><strong>单目初始器创建完成，且第二帧到来后</strong></p>
-<ul>
+<li><strong>单目初始器创建完成，且第二帧到来后</strong><ul>
 <li>判断当前帧特征点数量是否足够，不够则重新构造初始器</li>
-<li>在mInitialFrame与mCurrentFrame中找匹配的特征点对
-<ul>
-<li>创建ORBmatcher类对象matcher<pre class="highlight"><code class="">ORBmatcher matcher(0.9,true);
-</code></pre>
-</li>
+<li>在mInitialFrame与mCurrentFrame中找匹配的特征点对<ul>
+<li>创建ORBmatcher类对象matcher<pre><code>ORBmatcher matcher(0.9,true);
+</code></pre></li>
 <li>调用matcher的SearchForInitialization()函数进行特征点匹配，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/10/ORBSLAM3-NOTE-8/">ORBmatcher</a></li>
 <li>验证匹配结果，如果初始化的两帧之间的匹配点太少，重新初始化</li>
 </ul>
@@ -1215,87 +1163,67 @@ mLastFrame = Frame(mCurrentFrame);</p>
 </ul>
 </li>
 </ul>
-<hr />
-<h3 id="trackingcreateinitialmapmonocular"><a class="markdownIt-Anchor" href="#trackingcreateinitialmapmonocular"></a> Tracking::CreateInitialMapMonocular()</h3>
-<p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br />
-2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br />
-3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br />
-4.遍历匹配点，进行一系列操作</p>
+<hr>
+<h3 id="Tracking-CreateInitialMapMonocular"><a href="#Tracking-CreateInitialMapMonocular" class="headerlink" title="Tracking::CreateInitialMapMonocular()"></a>Tracking::CreateInitialMapMonocular()</h3><p>1.把单目初始化时候的参考帧和当前帧作为关键帧，创建两个关键帧对象。<br>2.将这两个关键帧的描述子转为BoW，调用了函数ComputeBoW(),详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a><br>3.将这两个关键帧插入到<code>mpAtlas</code>的成员变量<code>mpCurrentMap</code>中。<br>4.遍历匹配点，进行一系列操作</p>
 <ul>
-<li>4.1 用3D点构造地图点
-<blockquote>
+<li>4.1 用3D点构造地图点<blockquote>
 <p>这步就是用遍历的特征点对应的3D点创建MapPoint*类对象pMP。</p>
 </blockquote>
 </li>
-<li>4.2 为该MapPoint添加属性
+<li><p>4.2 为该MapPoint添加属性</p>
 <ul>
-<li>4.2.1 首先把MapPoint添加到两个关键帧里面去。</li>
-</ul>
-<blockquote>
+<li>4.2.1 首先把MapPoint添加到两个关键帧里面去。<blockquote>
 <p>就是把MapPoint存入pKFini,pKFcur的成员变量<code>mvpMapPoints</code>容器中，<strong>存的位置就是当前遍历到的特征点索引值</strong>。</p>
 </blockquote>
-<ul>
-<li>
-<p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation(),具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</p>
 </li>
-<li>
-<p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
+<li><p>4.2.2 给MapPoint添加能观察到它的关键帧及对应特征点的索引值,调用了函数AddObservation(),具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</p>
 </li>
-</ul>
+<li><p>4.2.3 从众多观测到该MapPoint的特征点中挑选最有代表性的描述子,调用函数ComputeDistinctiveDescriptors()。</p>
 <blockquote>
 <p>该函数简单来说就是遍历能观察到它的关键帧，根据保存的特征点索引值，获取所有描述子，计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值，将这个最好的描述子存入成员变量<code>mDescriptor</code>中。</p>
 </blockquote>
-<ul>
+</li>
 <li>更新该MapPoint平均观测方向以及观测距离的范围，具体看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>。</li>
 </ul>
 </li>
 <li>4.3 将MapPoint存入<code>mCurrentFrame</code>的<code>mvpMapPoints</code>容器中，位置就是对应特征点的索引值。同时，将<code>mvbOutlier</code>容器同样位置存入false，表示该特征点不是异常值。</li>
 <li>5.更新关键帧间的连接关系，调用了函数UpdateConnections()，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-10/">KeyFrame.cc</a>。</li>
-<li>6.全局BA优化，同时优化所有位姿和三维点。
-<blockquote>
+<li>6.全局BA优化，同时优化所有位姿和三维点。<blockquote>
 <p>调用了函数Optimizer::GlobalBundleAdjustemnt(),它接收两个参数，一个是优化目标，此处即是mpMap，里面包括了关键帧pose和地图点坐标；第二个是迭代次数，此处为20次。在函数内部，调用了BundleAdjustment函数——实现了最小化重投影误差的优化问题，并利用g2o框架求解。</p>
 </blockquote>
 </li>
-<li>7.将平移尺度和3D点尺度归一化。
-<blockquote>
+<li>7.将平移尺度和3D点尺度归一化。<blockquote>
 <p>方法就是求得当前3D点的深度中位数，将平移向量和3D点坐标除以该值。</p>
 </blockquote>
 </li>
-<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。
-<blockquote>
+<li>8.将关键帧插入局部地图，更新归一化后的位姿、局部地图点，更新跟踪状态变量mState。<blockquote>
 <p>这里会把两个关键帧插入<code>mpLocalMapper</code>的<code>mlNewKeyFrames</code>列表中,这样LocalMapping线程就能接收到关键帧来处理了。</p>
 </blockquote>
 </li>
 </ul>
 <p>到此为止，单目初始化终于完成了，这部分真的看了不少时间啊。</p>
-<hr />
-<h3 id="trackingtrackreferencekeyframe"><a class="markdownIt-Anchor" href="#trackingtrackreferencekeyframe"></a> Tracking::TrackReferenceKeyFrame()</h3>
-<ol>
+<hr>
+<h3 id="Tracking-TrackReferenceKeyFrame"><a href="#Tracking-TrackReferenceKeyFrame" class="headerlink" title="Tracking::TrackReferenceKeyFrame()"></a>Tracking::TrackReferenceKeyFrame()</h3><ol>
 <li>将当前帧的描述子转化为BoW向量</li>
-<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配
-<blockquote>
+<li>通过词袋BoW加速当前帧与参考帧之间的特征点匹配<blockquote>
 <p>这里调用了函数ORBmatcher::SearchByBoW(),其实和我们之前看的ORBmatcher::SearchForTriangulation()中间部分差不多，就一点差别，就不细讲了。</p>
 </blockquote>
 </li>
 <li>将上一帧的位姿态作为当前帧位姿的初始值</li>
-<li>通过优化3D-2D的重投影误差来获得位姿
-<blockquote>
+<li>通过优化3D-2D的重投影误差来获得位姿<blockquote>
 <p>这里其实就是对单帧位姿的BA优化，优化过程中还会对残差进行卡方检验，由此确定内外点。</p>
 </blockquote>
 </li>
-<li>剔除优化后的匹配点中的外点
-<blockquote>
+<li>剔除优化后的匹配点中的外点<blockquote>
 <p>这里由于第四步已经找出内外点了，所以只需遍历mvpMapPoints，若此时mvbOutlier为true，则将该点先拷贝到pMP中，将mvpMapPoints中的该点置为空，mvbOutlier置为false，再将pMP的mbTrackInView置为false，mnLastFrameSeen赋值为mCurrentFrame的mnId;</p>
 </blockquote>
 </li>
 <li>跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</li>
 </ol>
-<hr />
-<h3 id="trackingtrackwithmotionmodel"><a class="markdownIt-Anchor" href="#trackingtrackwithmotionmodel"></a> Tracking::TrackWithMotionModel()</h3>
-<p>1.更新上一帧的位姿</p>
+<hr>
+<h3 id="Tracking-TrackWithMotionModel"><a href="#Tracking-TrackWithMotionModel" class="headerlink" title="Tracking::TrackWithMotionModel()"></a>Tracking::TrackWithMotionModel()</h3><p>1.更新上一帧的位姿</p>
 <blockquote>
-<p>调用了函数UpdateLastFrame(),由于是单目模式，所以这里的操作很少，简单介绍一下：<br />
-首先，得到lastframe的参考关键帧到lastframe的位姿变换Tlr，这个存储在mlRelativeFramePoses，然后再用Tlr乘以参考关键帧的位姿Trw，就得到了上一张位姿Tlw。</p>
+<p>调用了函数UpdateLastFrame(),由于是单目模式，所以这里的操作很少，简单介绍一下：<br>首先，得到lastframe的参考关键帧到lastframe的位姿变换Tlr，这个存储在mlRelativeFramePoses，然后再用Tlr乘以参考关键帧的位姿Trw，就得到了上一张位姿Tlw。</p>
 </blockquote>
 <p>2.根据恒速模型得到当前帧的初始位姿。</p>
 <blockquote>
@@ -1303,38 +1231,29 @@ mLastFrame = Frame(mCurrentFrame);</p>
 </blockquote>
 <p>3.用上一帧地图点进行投影匹配，如果匹配点不够，则扩大搜索半径再来一次。</p>
 <blockquote>
-<p>这里调用了函数<code>SearchByProjection()</code>,这里不用词袋加速匹配是因为我们通过恒速模型已经得到了初始位姿，可以直接通过2D-3D的投影关系搜索匹配点，速度更快。<br />
-具体步骤简单来说就是把3D点位姿变换，然后投影得到2D坐标，以该坐标为圆形，在搜索半径内找到可以匹配的点，然后就是找最佳匹配点，用旋转差直方图来筛掉错误匹配对等一系列操作了。</p>
+<p>这里调用了函数<code>SearchByProjection()</code>,这里不用词袋加速匹配是因为我们通过恒速模型已经得到了初始位姿，可以直接通过2D-3D的投影关系搜索匹配点，速度更快。<br>具体步骤简单来说就是把3D点位姿变换，然后投影得到2D坐标，以该坐标为圆形，在搜索半径内找到可以匹配的点，然后就是找最佳匹配点，用旋转差直方图来筛掉错误匹配对等一系列操作了。</p>
 </blockquote>
 <p>4.通过优化3D-2D的重投影误差来获得位姿</p>
 <blockquote>
 <p>这里和上面的参考关键帧跟踪一样，就是当前帧的初始位姿不同。</p>
 </blockquote>
-<p>5.剔除优化后的匹配点中的外点<br />
-6.跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</p>
-<hr />
-<h3 id="trackingrelocalization"><a class="markdownIt-Anchor" href="#trackingrelocalization"></a> Tracking::Relocalization()</h3>
-<hr />
-<h3 id="trackingtracklocalmap"><a class="markdownIt-Anchor" href="#trackingtracklocalmap"></a> Tracking::TrackLocalMap()</h3>
-<p>1.更新局部关键帧和局部地图点</p>
+<p>5.剔除优化后的匹配点中的外点<br>6.跟踪成功的数目超过10才认为跟踪成功，否则跟踪失败</p>
+<hr>
+<h3 id="Tracking-Relocalization"><a href="#Tracking-Relocalization" class="headerlink" title="Tracking::Relocalization()"></a>Tracking::Relocalization()</h3><hr>
+<h3 id="Tracking-TrackLocalMap"><a href="#Tracking-TrackLocalMap" class="headerlink" title="Tracking::TrackLocalMap()"></a>Tracking::TrackLocalMap()</h3><p>1.更新局部关键帧和局部地图点</p>
 <blockquote>
-<p>调用函数UpdateLocalMap()，该函数中有两个函数UpdateLocalKeyFrames()和UpdateLocalPoints()，分别实现局部关键帧和局部地图点的更新，用于局部跟踪。<br />
-<strong>UpdateLocalKeyFrames()</strong>:该函数的作用就是更新成员变量<code>mvpLocalKeyFrames</code>,将三种关键帧存入该向量中，分别是①能观测到当前帧地图点的关键帧，也称一级共视关键帧;②一级共视关键帧的共视关键帧，称为二级共视关键帧;③一级共视关键帧的子关键帧、父关键帧。<br />
-<strong>UpdateLocalPoints()</strong>:该函数的作用是更新成员变量<code>mvpLocalMapPoints</code>,遍历<code>mvpLocalKeyFrames</code>，将其中关键帧的地图点存入该变量。</p>
+<p>调用函数UpdateLocalMap()，该函数中有两个函数UpdateLocalKeyFrames()和UpdateLocalPoints()，分别实现局部关键帧和局部地图点的更新，用于局部跟踪。<br><strong>UpdateLocalKeyFrames()</strong>:该函数的作用就是更新成员变量<code>mvpLocalKeyFrames</code>,将三种关键帧存入该向量中，分别是①能观测到当前帧地图点的关键帧，也称一级共视关键帧;②一级共视关键帧的共视关键帧，称为二级共视关键帧;③一级共视关键帧的子关键帧、父关键帧。<br><strong>UpdateLocalPoints()</strong>:该函数的作用是更新成员变量<code>mvpLocalMapPoints</code>,遍历<code>mvpLocalKeyFrames</code>，将其中关键帧的地图点存入该变量。</p>
 </blockquote>
 <p>2.筛选局部地图中新增的在视野范围内的地图点，得到更多的匹配关系</p>
 <blockquote>
 <p>调用函数SearchLocalPoints()。</p>
 </blockquote>
-<p>3.利用前面新增的更多的匹配关系，BA优化得到更准确位姿<br />
-4.遍历当前帧地图点，更新当前帧的地图点被观测程度，并统计跟踪局部地图后匹配数目</p>
+<p>3.利用前面新增的更多的匹配关系，BA优化得到更准确位姿<br>4.遍历当前帧地图点，更新当前帧的地图点被观测程度，并统计跟踪局部地图后匹配数目</p>
 <blockquote>
-<p>这里就是更新两个成员变量，若当前帧的地图点不是外点，该地图点的<code>mnFound</code><ins>。成员变量<code>mnMatchesInliers</code></ins>，记录当前帧跟踪到的地图点数目，用于统计跟踪效果。<br />
-5.纯单目情况下，<code>mnMatchesInliers</code>大于30，则跟踪成功。</p>
+<p>这里就是更新两个成员变量，若当前帧的地图点不是外点，该地图点的<code>mnFound</code>++。成员变量<code>mnMatchesInliers</code>++，记录当前帧跟踪到的地图点数目，用于统计跟踪效果。<br>5.纯单目情况下，<code>mnMatchesInliers</code>大于30，则跟踪成功。</p>
 </blockquote>
-<hr />
-<h3 id="trackingsearchlocalpoints"><a class="markdownIt-Anchor" href="#trackingsearchlocalpoints"></a> Tracking::SearchLocalPoints()</h3>
-<p>1.遍历当前帧的地图点，标记这些地图点不参与之后的投影搜索匹配。</p>
+<hr>
+<h3 id="Tracking-SearchLocalPoints"><a href="#Tracking-SearchLocalPoints" class="headerlink" title="Tracking::SearchLocalPoints()"></a>Tracking::SearchLocalPoints()</h3><p>1.遍历当前帧的地图点，标记这些地图点不参与之后的投影搜索匹配。</p>
 <pre><code>// 更新能观测到该点的帧数加1(被当前帧观测了)
 pMP-&gt;IncreaseVisible(); //mnVisible++
 // 标记该点被当前帧观测到
@@ -1342,42 +1261,26 @@ pMP-&gt;mnLastFrameSeen = mCurrentFrame.mnId;
 // 标记该点在后面搜索匹配时不被投影，因为已经有匹配了
 pMP-&gt;mbTrackInView = false;
 pMP-&gt;mbTrackInViewR = false;
-</code></pre>
-<p>2.判断所有局部地图点中除当前帧地图点外的点，是否在当前帧视野范围内</p>
+</code></pre><p>2.判断所有局部地图点中除当前帧地图点外的点，是否在当前帧视野范围内</p>
 <blockquote>
 <p>调用函数isInFrustum(),详情见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/04/13/ORBSLAM3-NOTE-11/">MapPoint.cc</a>,若在视野内，则pMP-&gt;IncreaseVisible()，nToMatch++。接下来判断pMP的mbTrackInView是否为true(若在视野内，isInFrustum()会将其置为true)，然后将该3D点的投影坐标存入mCurrentFrame.mmProjectPoints[ pMP-&gt;mnId]中。</p>
 </blockquote>
 <p>3.设置搜索阈值，调用函数SearchByProjection()进行匹配。</p>
 <blockquote>
-<p>这里讲一下SearchByProjection()(由于这个函数有5种重载，就不在ORBmatcher.cc文件里一个个列出来讲了，毕竟有很多地方都是重复的)。<br />
-1.遍历有效的局部地图点，主要是根据mbTrackInView(判断地图点是否在视野内时更新过)，bFarPoints和thFarPoints判断<br />
-2.设定搜索搜索窗口的大小。若当前视角和平均视角夹角较小时, r取2.5，否则取4<br />
-3.通过投影点以及搜索窗口和预测的尺度进行搜索, 找出搜索半径内的候选匹配点索引<br />
-接下来就是那些通用步骤了，不过这里不用旋转差直方图来筛选。</p>
+<p>这里讲一下SearchByProjection()(由于这个函数有5种重载，就不在ORBmatcher.cc文件里一个个列出来讲了，毕竟有很多地方都是重复的)。<br>1.遍历有效的局部地图点，主要是根据mbTrackInView(判断地图点是否在视野内时更新过)，bFarPoints和thFarPoints判断<br>2.设定搜索搜索窗口的大小。若当前视角和平均视角夹角较小时, r取2.5，否则取4<br>3.通过投影点以及搜索窗口和预测的尺度进行搜索, 找出搜索半径内的候选匹配点索引<br>接下来就是那些通用步骤了，不过这里不用旋转差直方图来筛选。</p>
 </blockquote>
-<hr />
-<h3 id="trackingneednewkeyframe"><a class="markdownIt-Anchor" href="#trackingneednewkeyframe"></a> Tracking::NeedNewKeyFrame()</h3>
-<p>该函数用来判断当前帧是否需要插入关键帧<br />
-1.纯跟踪模式下不插入关键帧，如果局部地图被闭环检测使用，则不插入关键帧<br />
-2.如果距离上一次重定位比较近，或者关键帧数目超出最大限制，不插入关键帧<br />
-3.得到参考关键帧跟踪到的地图点数量</p>
+<hr>
+<h3 id="Tracking-NeedNewKeyFrame"><a href="#Tracking-NeedNewKeyFrame" class="headerlink" title="Tracking::NeedNewKeyFrame()"></a>Tracking::NeedNewKeyFrame()</h3><p>该函数用来判断当前帧是否需要插入关键帧<br>1.纯跟踪模式下不插入关键帧，如果局部地图被闭环检测使用，则不插入关键帧<br>2.如果距离上一次重定位比较近，或者关键帧数目超出最大限制，不插入关键帧<br>3.得到参考关键帧跟踪到的地图点数量</p>
 <blockquote>
 <p>只有当地图点被2或3个以上关键帧观测到才会被计数，结果存入nRefMatches中。</p>
 </blockquote>
-<p>4.查询局部地图管理器是否繁忙,也就是当前能否接受新的关键帧<br />
-5.决策是否需要插入关键帧</p>
+<p>4.查询局部地图管理器是否繁忙,也就是当前能否接受新的关键帧<br>5.决策是否需要插入关键帧</p>
 <blockquote>
-<p>单目情况下，要进行以下判断：<br />
-条件a1:很长时间没有插入关键帧<br />
-条件a2:满足插入关键帧的最小间隔并且localMapper处于空闲状态<br />
-条件b:mnMatchesInliers&lt; nRefMatches*0.9且mnMatchesInliers&gt;15<br />
-若a1或a2任一满足，且b满足，则local mapping线程空闲时或者正在做imu初始化时可以直接插入，不空闲的时候要根据情况插入。</p>
+<p>单目情况下，要进行以下判断：<br>条件a1:很长时间没有插入关键帧<br>条件a2:满足插入关键帧的最小间隔并且localMapper处于空闲状态<br>条件b:mnMatchesInliers&lt; nRefMatches*0.9且mnMatchesInliers&gt;15<br>若a1或a2任一满足，且b满足，则local mapping线程空闲时或者正在做imu初始化时可以直接插入，不空闲的时候要根据情况插入。</p>
 </blockquote>
 <p>以上判断是纯单目下的，若加上imu或者是双目，rgbd会复杂一些。</p>
-<hr />
-<h3 id="trackingcreatenewkeyframe"><a class="markdownIt-Anchor" href="#trackingcreatenewkeyframe"></a> Tracking::CreateNewKeyFrame()</h3>
-<p>1.将当前帧构造成关键帧<br />
-2.将当前关键帧设置为当前帧的参考关键帧</p>
+<hr>
+<h3 id="Tracking-CreateNewKeyFrame"><a href="#Tracking-CreateNewKeyFrame" class="headerlink" title="Tracking::CreateNewKeyFrame()"></a>Tracking::CreateNewKeyFrame()</h3><p>1.将当前帧构造成关键帧<br>2.将当前关键帧设置为当前帧的参考关键帧</p>
 <pre><code>mpReferenceKF = pKF;
 mCurrentFrame.mpReferenceKF = pKF;
 
@@ -1386,8 +1289,7 @@ if(mpLastKeyFrame)
     pKF-&gt;mPrevKF = mpLastKeyFrame;
     mpLastKeyFrame-&gt;mNextKF = pKF;
 &#125;
-</code></pre>
-<p>3.关键帧插入到列表mlNewKeyFrames中，等待local mapping线程处理</p>
+</code></pre><p>3.关键帧插入到列表mlNewKeyFrames中，等待local mapping线程处理</p>
 <pre><code>mpLocalMapper-&gt;InsertKeyFrame(pKF);
 
 // 插入好了，允许局部建图停止
@@ -1397,7 +1299,6 @@ mpLocalMapper-&gt;SetNotStop(false);
 mnLastKeyFrameId = mCurrentFrame.mnId;
 mpLastKeyFrame = pKF;
 </code></pre>
-
           
         
       
