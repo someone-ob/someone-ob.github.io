@@ -651,48 +651,26 @@ id="localmappingkeyframeculling">LocalMapping::KeyFrameCulling()</h3>
       
         
           
-            <h1 id="orbslam3学习笔记4"><a class="markdownIt-Anchor" href="#orbslam3学习笔记4"></a> ORBSLAM3学习笔记(4)</h1>
-<p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
-<hr />
-<h2 id="基本原理"><a class="markdownIt-Anchor" href="#基本原理"></a> 基本原理</h2>
-<h3 id="1关键点提取"><a class="markdownIt-Anchor" href="#1关键点提取"></a> 1.关键点提取</h3>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points" /></p>
+            <h1 id="ORBSLAM3学习笔记-4"><a href="#ORBSLAM3学习笔记-4" class="headerlink" title="ORBSLAM3学习笔记(4)"></a>ORBSLAM3学习笔记(4)</h1><p>这篇博客主要是对ORBextractor.cc文件的学习，主要讲一下orb特征点提取的基本原理，还有相关函数代码的阅读。</p>
+<hr>
+<h2 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h2><h3 id="1-关键点提取"><a href="#1-关键点提取" class="headerlink" title="1.关键点提取"></a>1.关键点提取</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/1.png" alt="Key points"></p>
 <p>关于关键点的选取比较简单，以某个像素为中心p，取周围16个像素点，近似一个圆。设置一个阈值T，假设这个点附近有N个点的亮度大于或者小于p的亮度+T或者p的亮度-T则认为这个点是特征点。</p>
-<h3 id="2描述子获取"><a class="markdownIt-Anchor" href="#2描述子获取"></a> 2.描述子获取</h3>
-<p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
-<p><strong>(1)灰度质心法原理</strong><br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B" /><br />
-该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
+<h3 id="2-描述子获取"><a href="#2-描述子获取" class="headerlink" title="2.描述子获取"></a>2.描述子获取</h3><p>描述子获取方面要用到orb特征点的方向不变性，为了得到方向不变性，我们要计算关键点所在图像块的灰度质心，关键点方向就是关键点与图像块质心连接的向量。</p>
+<p><strong>(1)灰度质心法原理</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/2.png" alt="图像块B"><br>该图是选取了关键点周围的图像块B(实际的图像块应该是圆形的，这里是为了方便讲解)，I(0,0)是关键点，以此图为例，介绍灰度质心法。</p>
 <ul>
-<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi>p</mi><mi>q</mi></mrow></msub></mrow><annotation encoding="application/x-tex">m_{pq}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.716668em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">p</span><span class="mord mathnormal mtight" style="margin-right:0.03588em;">q</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>定义为:</li>
+<li>选择某个图像块<em>B</em>，然后将图像块<em>B</em>的矩$m_{pq}$定义为:</li>
 </ul>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><munder><mo>∑</mo><mrow><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo>∈</mo><mi>B</mi></mrow></munder><msup><mi>x</mi><mi>p</mi></msup><msup><mi>y</mi><mi>q</mi></msup><mi>I</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><mspace width="2em"/><mi>p</mi><mo separator="true">,</mo><mi>q</mi><mo>=</mo><mo stretchy="false">{</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q=\{0, 1\} 
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.480449em;vertical-align:-1.430444em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.050005em;"><span style="top:-1.8556639999999998em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight" style="margin-right:0.03588em;">y</span><span class="mrel mtight">∈</span><span class="mord mathnormal mtight" style="margin-right:0.05017em;">B</span></span></span></span><span style="top:-3.0500049999999996em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.430444em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714392em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">p</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714392em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">q</span></span></span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">p</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose">}</span></span></span></span></span></p>
-<ul>
+<script type="math/tex; mode=display">\sum_{x,y\in B}x^{p}y^{q}I(x, y),\qquad p,q=\{0, 1\}</script><ul>
 <li>图像块<em>B</em>的质心可以通过公式中的矩找到：</li>
 </ul>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>C</mi><mo>=</mo><mrow><mo fence="true">(</mo><mfrac><msub><mi>m</mi><mn>10</mn></msub><msub><mi>m</mi><mn>00</mn></msub></mfrac><mo separator="true">,</mo><mfrac><msub><mi>m</mi><mn>01</mn></msub><msub><mi>m</mi><mn>00</mn></msub></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">C = \left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right) 
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.40003em;vertical-align:-0.95003em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></p>
-<ul>
-<li>方向向量<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover accent="true"><mrow><mi>O</mi><mi>C</mi></mrow><mo stretchy="true">→</mo></mover></mrow><annotation encoding="application/x-tex">\overrightarrow{OC}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.20533em;vertical-align:0em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.20533em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span><span class="svg-align" style="top:-3.6833299999999998em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="height:0.522em;min-width:0.888em;"><svg width='400em' height='0.522em' viewBox='0 0 400000 522' preserveAspectRatio='xMaxYMin slice'><path d='M0 241v40h399891c-47.3 35.3-84 78-110 128
--16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
- 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
- 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
--40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
--12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
- 151.7 139 205zm0 0v40h399900v-40z'/></svg></span></span></span></span></span></span></span></span></span>可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>为：</li>
+<script type="math/tex; mode=display">C = \left(\frac{m_{10}}{m_{00}},\frac{m_{01}}{m_{00}}\right)</script><ul>
+<li>方向向量$\overrightarrow{OC}$可以通过将图像块<em>B</em>的几何中心和它的质心连接在一起得到，所以可以定义特征点的方向$\theta$为：</li>
 </ul>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>θ</mi><mo>=</mo><mi>arctan</mi><mo>⁡</mo><mo stretchy="false">(</mo><mfrac><msub><mi>m</mi><mn>01</mn></msub><msub><mi>m</mi><mn>10</mn></msub></mfrac><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\theta = \arctan(\frac{m_{01}}{m_{10}}) 
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.94356em;vertical-align:-0.8360000000000001em;"></span><span class="mop">arctan</span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1075599999999999em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span></span></span></span></span></p>
-<p><strong>(2)方向不变性的使用</strong><br />
-首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
+<script type="math/tex; mode=display">\theta = \arctan(\frac{m_{01}}{m_{10}})</script><p><strong>(2)方向不变性的使用</strong><br>首先，介绍一下BRIEF描述子，这一种二进制描述子，orbslam3中位数是128位，描述子的获取是通过在关键点周围选取128对点，比较这两个新点的像素值，前者大于后者d为0，前者小于后者d为1。</p>
 <p>点对的选取是程序中默认给出的，若不考虑特征点方向，就可能出现一个问题，两帧图片之间是发生了旋转的，若直接选取点对，比如都选取点对(1,1)和(2,2),它们看似坐标一样，但在两幅图片中相对于特征点的位置是不一样的，那这样得到的描述子，进行匹配的时候，是没有参考意义的。</p>
-<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
-<p>旋转前坐标为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x,y)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span>, 旋转后坐标<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msup><mi>x</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo separator="true">,</mo><msup><mi>y</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x&#x27;,y&#x27;)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.001892em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>推导，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>在求角度时得到，则<br />
-<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>x</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><mi>x</mi><mi>c</mi><mi>o</mi><mi>s</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>−</mo><mi>y</mi><mi>s</mi><mi>i</mi><mi>n</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><msup><mi>y</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><mi>x</mi><mi>s</mi><mi>i</mi><mi>n</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>+</mo><mi>y</mi><mi>c</mi><mi>o</mi><mi>s</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x&#x27;= xcos(θ) - ysin(θ),  y&#x27;= xsin(θ) + ycos(θ)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.751892em;vertical-align:0em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">x</span><span class="mord mathnormal">c</span><span class="mord mathnormal">o</span><span class="mord mathnormal">s</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.001892em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mord mathnormal">s</span><span class="mord mathnormal">i</span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">x</span><span class="mord mathnormal">s</span><span class="mord mathnormal">i</span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mord mathnormal">c</span><span class="mord mathnormal">o</span><span class="mord mathnormal">s</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span></span></span></span></p>
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="orbextractororbextractor"><a class="markdownIt-Anchor" href="#orbextractororbextractor"></a> ORBextractor::ORBextractor()</h3>
-<p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
+<p>所以我们在获取每个关键点的描述子时，要根据之前得到的关键点方向$\theta$，把图片和所有点对旋转到与x轴平行，再进行点对比较。</p>
+<p>旋转前坐标为$(x,y)$, 旋转后坐标$(x’,y’)$推导，$\theta$在求角度时得到，则<br>$x’= xcos(θ) - ysin(θ),  y’= xsin(θ) + ycos(θ)$</p>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBextractor-ORBextractor"><a href="#ORBextractor-ORBextractor" class="headerlink" title="ORBextractor::ORBextractor()"></a>ORBextractor::ORBextractor()</h3><p>这是构造函数，主要是用来初始化成员变量，比较简单，我们就先在ORBextractor.h中看一下类的成员变量有哪些。</p>
 <pre><code>std::vector&lt;cv::Point&gt; pattern;     
 
 int nfeatures;      //指定要提取的特征点数目
@@ -700,7 +678,7 @@ double scaleFactor; //指定图像金字塔的缩放系数
 int nlevels;        //指定图像金字塔的层数
 int iniThFAST;      //指定初始的FAST特征点提取参数，可以提取出最明显的角点
 int minThFAST;      //如果因为图像纹理不丰富提取出的特征点不多，为了达到想要的特征点数目，
-				    //就使用这个参数提取出不是那么明显的角点
+                    //就使用这个参数提取出不是那么明显的角点
 
 std::vector&lt;int&gt; mnFeaturesPerLevel;    //每层需要提取出来的特征点个数
 
@@ -710,29 +688,25 @@ std::vector&lt;float&gt; mvScaleFactor;       //存储每层图像缩放系数
 std::vector&lt;float&gt; mvInvScaleFactor;    //存储每层图像缩放系数的倒数
 std::vector&lt;float&gt; mvLevelSigma2;       //存储每层图像相对初始图像缩放因子的平方
 std::vector&lt;float&gt; mvInvLevelSigma2;    //存储每层图像相对初始图像缩放因子的平方的倒数
-</code></pre>
-<p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br />
-nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
+</code></pre><p>这些参数的功能都注释好了，现在看一下这些参数是如何初始化的。<br>nfeatures到minThFAST都是通过传递过来的参数赋值，这些参数是从配置文件中读取的。</p>
 <p>mvScaleFactor到mvInvLevelSigma2都是根据nlevels确定向量长度，根据scaleFactor确定向量里面的内容，这些向量的第一个变量都是1，因为金字塔最底层是原始图像，不需要缩放。</p>
 <p>mnFeaturesPerLevel是根据nfeatures得到的，nfeatures是我们一共要获得的特征点数量，我们从金字塔的每层（除最高层）选取一部分特征点，然后总数为nfeatures。其中第一层选取的个数如下：</p>
 <pre><code>float nDesiredFeaturesPerScale = nfeatures*(1 - factor)/(1 - (float)pow((double)factor, (double)nlevels));
-</code></pre>
-<p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
+</code></pre><p>每上一层，取这个数层缩放比例的倒数。如果最后取到的特征点总数达不到nfeatures，那我们就在最高层取还差的数量。</p>
 <p>pattern就是把按数组定义的点对坐标，存储到Point类型的向量中。</p>
-<p>umax的作用和初始化我们根据下面的图和代码一起看<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax" /></p>
+<p>umax的作用和初始化我们根据下面的图和代码一起看<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/3.png" alt="umax"></p>
 <pre><code>//下面的内容是和特征点的旋转计算有关的
 //预先计算圆形patch中行的结束位置
 //+1中的1表示那个圆的中间行
 umax.resize(HALF_PATCH_SIZE + 1);
 
 //cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
-int v,		//循环辅助变量
-	v0,		//辅助变量
-	vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);	//计算圆的最大行号，+1应该是把中间行也给考虑进去了
-			//NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
-			//是因为圆周上的对称特性
-			
+int v,        //循环辅助变量
+    v0,        //辅助变量
+    vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);    //计算圆的最大行号，+1应该是把中间行也给考虑进去了
+            //NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
+            //是因为圆周上的对称特性
+
 //这里的二分之根2就是对应那个45°圆心角
 
 int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
@@ -741,7 +715,7 @@ const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
 
 //利用圆的方程计算每行像素的u坐标边界（max）
 for (v = 0; v &lt;= vmax; ++v)
-    umax[v] = cvRound(sqrt(hp2 - v * v));		//结果都是大于0的结果，表示x坐标在这一行的边界
+    umax[v] = cvRound(sqrt(hp2 - v * v));        //结果都是大于0的结果，表示x坐标在这一行的边界
 
 // Make sure we are symmetric
 //这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
@@ -753,173 +727,145 @@ for (v = HALF_PATCH_SIZE, v0 = 0; v &gt;= vmin; --v)
     umax[v] = v0;
     ++v0;
 &#125;
-</code></pre>
-<p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
-<hr />
-<h3 id="orbextractoroperator"><a class="markdownIt-Anchor" href="#orbextractoroperator"></a> ORBextractor::operator()()</h3>
-<p>首先，我们先看传入的参数</p>
+</code></pre><p>由于我们选取的图像块是圆形的(为了保证旋转不变性)，每行的像素个数不像矩形都是一样的，所以我们要存储每行像素的u坐标边界。HALF_PATCH_SIZE是定义好的全局变量，就是图像块的半径，大小为16。每行的umax通过勾股定理求得。</p>
+<hr>
+<h3 id="ORBextractor-operator"><a href="#ORBextractor-operator" class="headerlink" title="ORBextractor::operator()()"></a>ORBextractor::operator()()</h3><p>首先，我们先看传入的参数</p>
 <pre><code>int ORBextractor::operator()(InputArray _image, //输入原始图的图像   
     InputArray _mask,                           //掩膜mask,为空，估计没什么用
     vector&lt;KeyPoint&gt;&amp; _keypoints,               //存储特征点关键点的向量
     OutputArray _descriptors,                   //存储特征点描述子的矩阵 
     std::vector&lt;int&gt; &amp;vLappingArea              //界限
     )
-</code></pre>
-<p>接下来，步骤如下:<br />
-<strong>1.判断图像是否为空，是否为单通道</strong><br />
-<strong>2.构建图像金字塔</strong></p>
+</code></pre><p>接下来，步骤如下:<br><strong>1.判断图像是否为空，是否为单通道</strong><br><strong>2.构建图像金字塔</strong></p>
 <pre><code>ComputePyramid(image);
-</code></pre>
-<p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
+</code></pre><p><strong>3.计算图像的特征点，并且将特征点进行均匀化</strong></p>
 <pre><code>// 存储所有的特征点，注意此处为二维的vector，第一维存储的是金字塔的层数，第二维存储的是那一层金字塔图像里提取的所有特征点
 vector &lt; vector&lt;KeyPoint&gt; &gt; allKeypoints; 
 //使用四叉树的方式计算每层图像的特征点并进行分配
 ComputeKeyPointsOctTree(allKeypoints);
-</code></pre>
-<p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br />
-<strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br />
-这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
+</code></pre><p>这里得到了金字塔每层均匀的特征点，且特征点都是带角度的。<br><strong>4.拷贝图像描述子到新的矩阵descriptors</strong><br>这里就是创建了一个Mat矩阵_descriptors，然后拷贝到传过来的参数descriptors中，这时descriptors中还没有数据。有一说一，感觉直接用descriptors创建也行，不用拷贝。</p>
 <pre><code>//如果图像金字塔中有特征点，那么就创建这个存储描述子的矩阵，注意这个矩阵是存储整个图像金字塔中特征点的描述子的
-_descriptors.create(nkeypoints,		//矩阵的行数，对应为特征点的总个数
-					32, 			//矩阵的列数，对应为使用32*8=256位描述子
-					CV_8U);			//矩阵元素的格式
+_descriptors.create(nkeypoints,        //矩阵的行数，对应为特征点的总个数
+                    32,             //矩阵的列数，对应为使用32*8=256位描述子
+                    CV_8U);            //矩阵元素的格式
 //获取这个描述子的矩阵信息
 descriptors = _descriptors.getMat();
-</code></pre>
-<p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br />
-5-1.对图像进行高斯模糊<br />
-5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br />
-5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
-<hr />
-<h3 id="computepyramid"><a class="markdownIt-Anchor" href="#computepyramid"></a> ComputePyramid()</h3>
-<pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
+</code></pre><p><strong>5.遍历图像金字塔的每一层，进行如下操作</strong><br>5-1.对图像进行高斯模糊<br>5-2.计算高斯模糊后图像的描述子，使用了函数computeDescriptors()，计算方法就是博客前面提到的，代码就不细看了。<br>5-3.对非第0层图像中的特征点的坐标恢复到第0层图像（原图像）的坐标系下,得到所有层特征点在第0层里的坐标放到_keypoints里面，描述子拷贝到descriptors中，特征点与其对应的描述子在vector容器中的位置是一样的。</p>
+<hr>
+<h3 id="ComputePyramid"><a href="#ComputePyramid" class="headerlink" title="ComputePyramid()"></a>ComputePyramid()</h3><pre><code>void ORBextractor::ComputePyramid(cv::Mat image)
 &#123;
     //开始遍历所有的图层
     for (int level = 0; level &lt; nlevels; ++level)
     &#123;
-	    //获取本层图像的缩放系数
+        //获取本层图像的缩放系数
         float scale = mvInvScaleFactor[level];
-	    //计算本层图像的像素尺寸大小
+        //计算本层图像的像素尺寸大小
         Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
-	    //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+        //将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
         Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-	    // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+        // 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
         Mat temp(wholeSize, image.type()), masktemp;
-	    // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+        // 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
         mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
 
         // Compute the resized image
-	    //计算第0层以上resize后的图像
+        //计算第0层以上resize后的图像
         if( level != 0 )
         &#123;
-	        //将上一层金字塔图像根据设定sz缩放到当前层级
-            resize(mvImagePyramid[level-1],	//输入图像
-		        mvImagePyramid[level], 	//输出图像
-		        sz, 				    //输出图像的尺寸
-		        0, 				        //水平方向上的缩放系数，留0表示自动计算
-		        0,  				    //垂直方向上的缩放系数，留0表示自动计算
-		        cv::INTER_LINEAR);		//图像缩放的差值算法类型，这里的是线性插值算法
+            //将上一层金字塔图像根据设定sz缩放到当前层级
+            resize(mvImagePyramid[level-1],    //输入图像
+                mvImagePyramid[level],     //输出图像
+                sz,                     //输出图像的尺寸
+                0,                         //水平方向上的缩放系数，留0表示自动计算
+                0,                      //垂直方向上的缩放系数，留0表示自动计算
+                cv::INTER_LINEAR);        //图像缩放的差值算法类型，这里的是线性插值算法
 
-	        //这样做是为了能够正确提取边界的FAST角点		
-            copyMakeBorder(mvImagePyramid[level], 	        //源图像
-			            temp, 					            //目标图像（此时其实就已经有大了一圈的尺寸了）
-			            EDGE_THRESHOLD, EDGE_THRESHOLD, 	//top &amp; bottom 需要扩展的border大小
-			            EDGE_THRESHOLD, EDGE_THRESHOLD,		//left &amp; right 需要扩展的border大小
+            //这样做是为了能够正确提取边界的FAST角点        
+            copyMakeBorder(mvImagePyramid[level],             //源图像
+                        temp,                                 //目标图像（此时其实就已经有大了一圈的尺寸了）
+                        EDGE_THRESHOLD, EDGE_THRESHOLD,     //top &amp; bottom 需要扩展的border大小
+                        EDGE_THRESHOLD, EDGE_THRESHOLD,        //left &amp; right 需要扩展的border大小
                         BORDER_REFLECT_101+BORDER_ISOLATED);//扩充方式
         &#125;
         else
         &#123;
-	        //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
-            copyMakeBorder(image,			
-			            temp, 
+            //对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            copyMakeBorder(image,            
+                        temp, 
                         EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
                         BORDER_REFLECT_101);            
         &#125;
     &#125;
 &#125;
-</code></pre>
-<p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br />
-1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br />
-2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD=19。</p>
-<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp" /><br />
-这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
-<hr />
-<h3 id="computekeypointsocttree"><a class="markdownIt-Anchor" href="#computekeypointsocttree"></a> ComputeKeyPointsOctTree()</h3>
-<p>我们先来理一下该方法的具体原理和流程。</p>
-<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br />
-1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br />
-2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
-<p>代码运行流程如下:<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree" /></p>
+</code></pre><p>这里主要先看temp和mvImagePyramid[level]，temp定义了一个带padding的图像，目的是:<br>1.利用FAST算法在提取特征点时，图像边缘的特征点半径为3的圆无法取到（边界外无像素点），需要扩展3个像素宽度的边缘。<br>2.计算描述子时，边缘的特征点需要半径为19的圆，故扩充的padding宽度EDGE_THRESHOLD=19。</p>
+<p>定义好变量后，接下来就是缩放图像，如果是第零层，那就直接把原始图像放到temp中间，完成一个带边框的图像，mvImagePyramid[level]指向中间部分。之后，就先把上一层的图像缩小后放入mvImagePyramid[level]中，然后copyMakeBorder函数用算法填充padding。这两步过后就有一个带padding的缩放好的图像了。具体图像样式如下所示。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/4.png" alt="temp"><br>这就是temp图像，说实话，作者这里应该是有一个小bug,按作者本意，肯定是要有边框的图像的，但实际上mvImagePyramid[level]按上面讲的，还是只取了temp的中间部分，是无边框的。这样下面取角点的时候，就是把原图的边缘宽度为19的部分当作padding，这些当作padding的像素点就不能做角点检测了，不过这个padding相对于整块图片还是比较小的，总体损失不大。</p>
+<hr>
+<h3 id="ComputeKeyPointsOctTree"><a href="#ComputeKeyPointsOctTree" class="headerlink" title="ComputeKeyPointsOctTree()"></a>ComputeKeyPointsOctTree()</h3><p>我们先来理一下该方法的具体原理和流程。</p>
+<p>提取特征点最重要的就是力求特征点均匀地分布在图像的所有部分,为实现这一目标,编程实现上使用了两个技巧:<br>1.分CELL搜索特征点,若某CELL内特征点响应值普遍较小的话就降低分数线再搜索一遍.<br>2.对得到的所有特征点进行八叉树筛选,若某区域内特征点数目过于密集,则只取其中响应值最大的那个。</p>
+<p>代码运行流程如下:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/5.png" alt=" ComputeKeyPointsOctTree"></p>
 <p>下面具体看代码，主要看遍历网格部分，这段计算机视觉life的注释不太对，我改了一下</p>
 <pre><code>//开始遍历图像网格，还是以行开始遍历的
 for(int i=0; i&lt;nRows; i++)
 &#123;
-	//计算当前网格初始行坐标
+    //计算当前网格初始行坐标
     const float iniY =minBorderY+i*hCell;
     float maxY = iniY+hCell+6;
 
-	//如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
+    //如果初始的行坐标就已经超过了有效的图像边界了，下一次循环
     if(iniY&gt;=maxBorderY-3)
         continue;
-	//如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
+    //如果图像的大小导致不能够正好划分出来整齐的图像网格，那么就把提取特征点的区域缩小一些
     if(maxY&gt;maxBorderY)
         maxY = maxBorderY;
 
-	//开始列的遍历
+    //开始列的遍历
     for(int j=0; j&lt;nCols; j++)
     &#123;
         const float iniX =minBorderX+j*wCell;
-        float maxX = iniX+wCell+6;				
+        float maxX = iniX+wCell+6;                
         if(iniX&gt;=maxBorderX-3)
             continue;
         if(maxX&gt;maxBorderX)
             maxX = maxBorderX;
 
-		//这个容器存储提取到的特征点
+        //这个容器存储提取到的特征点
         vector&lt;cv::KeyPoint&gt; vKeysCell;
 
-		//FAST提取特征点，调用opencv的库函数来检测FAST角点
-        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像，这里就是当前遍历到的图像块
+        //FAST提取特征点，调用opencv的库函数来检测FAST角点
+        FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像，这里就是当前遍历到的图像块
             vKeysCell,      //存储角点位置的容器
-		    iniThFAST,		//检测阈值
-	        true);			//使能非极大值抑制
+            iniThFAST,        //检测阈值
+            true);            //使能非极大值抑制
 
-		//如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
+        //如果这个图像块中使用默认的FAST检测阈值没有能够检测到角点
         if(vKeysCell.empty())
         &#123;
-		    //那么就使用更低的阈值来进行重新检测
-            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),	//待检测的图像
-                vKeysCell,		//存储角点位置的容器
-			    minThFAST,		//更低的检测阈值
-			    true);			//使能非极大值抑制
+            //那么就使用更低的阈值来进行重新检测
+            FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),    //待检测的图像
+                vKeysCell,        //存储角点位置的容器
+                minThFAST,        //更低的检测阈值
+                true);            //使能非极大值抑制
         &#125;
 
         //当图像cell中检测到FAST角点的时候执行下面的语句
         if(!vKeysCell.empty())
         &#123;
-		    //遍历其中的所有FAST角点
+            //遍历其中的所有FAST角点
             for(vector&lt;cv::KeyPoint&gt;::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
             &#123;
-			    //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
-			    //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
-			    //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
+                //NOTICE 到目前为止，这些角点的坐标都是基于图像cell的，现在我们要先将其恢复到当前的【坐标边界】下的坐标
+                //这样做是因为在下面使用八叉树法整理特征点的时候将会使用得到这个坐标
+                //在后面将会被继续转换成为在当前图层的扩充图像坐标系下的坐标
                 (*vit).pt.x+=j*wCell;
                 (*vit).pt.y+=i*hCell;
-		        //然后将其加入到”等待被分配“的特征点容器中
+                //然后将其加入到”等待被分配“的特征点容器中
                 vToDistributeKeys.push_back(*vit);
             &#125;//遍历图像cell中的所有的提取出来的FAST角点，并且恢复其在整个金字塔当前层图像下的坐标
         &#125;
     &#125;
 &#125;
-</code></pre>
-<p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
-<p><strong>遍历图像网格</strong><br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell" /><br />
-如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br />
-根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2" /></p>
+</code></pre><p>最开始，就是对allKeypoints，cell的尺寸初始化，然后就开始遍历图像金字塔的每一层。遍历每次金字塔时，先定义我们要用到的图像边界minBorderX之类的，这些变量讲构建金字塔时，在图上都有标注。然后就是定义一些遍历cell时的一些辅助变量，之后就开始遍历图像网格了，这里要细讲一下。</p>
+<p><strong>遍历图像网格</strong><br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell.png" alt="cell"><br>如图所示，虽然我们之前定义的cell应该是35x35的，但我们每次遍历的网格按上面的代码其实应该是41x41的，这是因为我们检测角点用的是opencv库里面的FAST()函数，该方法是以检测点为圆心建立半径为3的圆进行计算，由此图像四周要留出3像素的宽度，这样实际检测的就是35x35了。<br>根据上面的图，其实我们按窗口检测角点时，边缘3像素宽度位置的像素是无法检测的，但是我们窗口移动时，会包含这些像素。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/cell2.png" alt="cell2"></p>
 <p>网格全部遍历完后，将得到的角点存储到vToDistributeKeys中，此时特征点的坐标是扩充3个像素点的图像的坐标系下的，即上面图片绿色那部分。接下来，对提取到的特征点进行八叉树筛选,见 DistributeOctTree() 函数。</p>
 <pre><code>//声明一个对当前图层的特征点的容器的引用
 vector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];
@@ -929,11 +875,11 @@ keypoints.reserve(nfeatures);
 // 根据mnFeatuvector&lt;KeyPoint&gt; &amp; keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
 //返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
 //得到的特征点的坐标，依旧是在当前图层下来讲的
-keypoints = DistributeOctTree(vToDistributeKeys, 			//当前图层提取出来的特征点
-							minBorderX, maxBorderX,		    //当前图层图像的边界
+keypoints = DistributeOctTree(vToDistributeKeys,             //当前图层提取出来的特征点
+                            minBorderX, maxBorderX,            //当前图层图像的边界
                             minBorderY, maxBorderY,
-							mnFeaturesPerLevel[level], 	    //希望保留下来的当前层图像的特征点个数
-							level);						    //当前层图像所在的图层
+                            mnFeaturesPerLevel[level],         //希望保留下来的当前层图像的特征点个数
+                            level);                            //当前层图像所在的图层
 
 //PATCH_SIZE是对于底层的初始图像来说的，现在要根据当前图层的尺度缩放倍数进行缩放得到缩放后的PATCH大小 和特征点的方向计算有关
 const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
@@ -944,25 +890,21 @@ for(int i=0; i&lt;nkps ; i++)
 &#123;
     keypoints[i].pt.x+=minBorderX;
     keypoints[i].pt.y+=minBorderY;
-	//记录特征点来源的图像金字塔图层
+    //记录特征点来源的图像金字塔图层
     keypoints[i].octave=level;
-	//记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
+    //记录计算方向的patch，缩放后对应的大小， 又被称作为特征点半径
     keypoints[i].size = scaledPatchSize;
 &#125;
-</code></pre>
-<p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
+</code></pre><p>这里的坐标恢复到了以最外层为坐标系，就是上面图片的最外面那一层，PATCH_SIZE就是使用灰度质心法计算特征点的方向信息时，图像块的大小,或者说是直径，要根据金字塔每层的大小进行缩放。</p>
 <p>最后计算特征点方向</p>
 <pre><code>for (int level = 0; level &lt; nlevels; ++level)
-    computeOrientation(mvImagePyramid[level],	//对应的图层的图像
-					   allKeypoints[level], 	//这个图层中提取并保留下来的特征点容器
-					   umax);					//以及PATCH的横坐标边界
-</code></pre>
-<p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
-<hr />
-<h3 id="orbextractordistributeocttree"><a class="markdownIt-Anchor" href="#orbextractordistributeocttree"></a> ORBextractor::DistributeOctTree()</h3>
-<p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br />
-这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree" /></p>
+    computeOrientation(mvImagePyramid[level],    //对应的图层的图像
+                       allKeypoints[level],     //这个图层中提取并保留下来的特征点容器
+                       umax);                    //以及PATCH的横坐标边界
+</code></pre><p>特征点角度计算的原理博客开头已经解释过了，就是用灰度质心法，不过上面讲解时用的是矩形图，实际应该用圆形，可以用成员变量umax来遍历圆形图像块。</p>
+<hr>
+<h3 id="ORBextractor-DistributeOctTree"><a href="#ORBextractor-DistributeOctTree" class="headerlink" title="ORBextractor::DistributeOctTree()"></a>ORBextractor::DistributeOctTree()</h3><p>函数DistributeOctTree()进行八叉树筛选(非极大值抑制),不断将存在特征点的图像区域进行4等分,直到分出了足够多的分区,每个分区内只保留响应值最大的特征点。<br>这里就不看代码了，知道原理就行，代码太长了，且比较繁琐，主要是看不看懂其实没差。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/DistributeOctTree.jpg" alt="DistributeOctTree"></p>
 
           
         
@@ -1467,19 +1409,9 @@ mpLastKeyFrame = pKF;</code></pre>
       
         
           
-            <h1 id="orbslam3学习笔记2"><a class="markdownIt-Anchor" href="#orbslam3学习笔记2"></a> ORBSLAM3学习笔记(2)</h1>
-<p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="systemsystem"><a class="markdownIt-Anchor" href="#systemsystem"></a> System::System()</h3>
-<p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br />
-先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br />
-1.读取当前传感器类型<br />
-2.读取配置文件<br />
-3.加载Vocabulary<br />
-4.创建关键帧库<br />
-5.创建多地图<br />
-6.创建线程 跟踪、局部建图、回环、显示路径。</p>
+            <h1 id="ORBSLAM3学习笔记-2"><a href="#ORBSLAM3学习笔记-2" class="headerlink" title="ORBSLAM3学习笔记(2)"></a>ORBSLAM3学习笔记(2)</h1><p>这篇主要是对System.cc文件的阅读，主要是看System类的构造函数，因为main函数中主要用了这个函数。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="System-System"><a href="#System-System" class="headerlink" title="System::System()"></a>System::System()</h3><p>构造函数功能虽然简单，但这里完成了对这个系统的初始化，所以还是要讲得细一点，主要是通过这个构造函数，了解一下整个orbslam3有哪些重要的类，这些类的成员变量等。<br>先整体介绍一下构造函数的具体流程，该函数主要完成了以下几个步骤：<br>1.读取当前传感器类型<br>2.读取配置文件<br>3.加载Vocabulary<br>4.创建关键帧库<br>5.创建多地图<br>6.创建线程 跟踪、局部建图、回环、显示路径。</p>
 <p>首先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>System::System(const string &amp;strVocFile,    //词袋文件所在路径
     const string &amp;strSettingsFile,          //配置文件所在路径
@@ -1494,9 +1426,7 @@ mpLastKeyFrame = pKF;</code></pre>
     mbActivateLocalizationMode(false),      //是否开启局部地图定位开关 
     mbDeactivateLocalizationMode(false), 
     mbShutDown(false)
-</code></pre>
-<p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br />
-其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
+</code></pre><p>参数的基本含义都注释在上面了，这里就先不多做赘述，马上使用到这些参数时，会详细地说明。<br>其中&amp;strVocFile，&amp;strSettingsFile，sensor都是main函数调用构造函数是传递过来的。其中sensor是MONOCULAR，根据System.h文件中的枚举列表可知，sensor = 0。</p>
 <pre><code>enum eSensor&#123;
     MONOCULAR=0,
     STEREO=1,
@@ -1505,13 +1435,10 @@ mpLastKeyFrame = pKF;</code></pre>
     IMU_STEREO=4,
     IMU_RGBD=5,
 &#125;;
-</code></pre>
-<hr />
-<h4 id="settings类对象的初始化"><a class="markdownIt-Anchor" href="#settings类对象的初始化"></a> Settings类对象的初始化</h4>
-<p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
+</code></pre><hr>
+<h4 id="Settings类对象的初始化"><a href="#Settings类对象的初始化" class="headerlink" title="Settings类对象的初始化"></a>Settings类对象的初始化</h4><p>配置文件的读取主要是用了opencv库里的函数，读取完之后，我们就用读取到的内容初始化System类的成员变量settings_。</p>
 <pre><code>settings_ = new Settings(strSettingsFile,mSensor);
-</code></pre>
-<p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
+</code></pre><p>strSettingsFile就是我们读取到的配置文件，mSensor就是传感器类型。接下来去看<strong>Settings类的构造函数</strong>。</p>
 <p>先看构造函数引用的参数以及部分成员变量的初始化</p>
 <pre><code>Settings::Settings(
     const std::string &amp;configFile,  //配置文件
@@ -1521,43 +1448,27 @@ mpLastKeyFrame = pKF;</code></pre>
     bNeedToRectify_(false), 
     bNeedToResize1_(false),
     bNeedToResize2_(false)
-</code></pre>
-<p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
+</code></pre><p>Settings类的构造函数先确认configFile能否打开，然后调用函数</p>
 <pre><code>readCamera1(fSettings);
-</code></pre>
-<p>该函数主要实现了将三个setting类的成员变量初始化:<br />
-<strong>1.GeometricCamera* calibration1_</strong><br />
-calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
+</code></pre><p>该函数主要实现了将三个setting类的成员变量初始化:<br><strong>1.GeometricCamera* calibration1_</strong><br>calibration1_是GeometricCamera类对象，由于GeometricCamera类是Pinhole的基类，故创建calibration1_对象用的是Pinhole的构造函数</p>
 <pre><code>Pinhole(const std::vector&lt;float&gt; _vParameters) : GeometricCamera(_vParameters), tvr(nullptr) &#123;
     assert(mvParameters.size() == 4);
     mnId=nNextId++;
     mnType = CAM_PINHOLE;
 &#125;
-</code></pre>
-<p>GeometricCamera类有三个成员变量，分别是</p>
+</code></pre><p>GeometricCamera类有三个成员变量，分别是               </p>
 <pre><code>std::vector&lt;float&gt; mvParameters;
 unsigned int mnId;
 unsigned int mnType;
-</code></pre>
-<p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br />
-故calibration1_对象中保存了相机的内参，id和类型。</p>
-<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br />
-即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
-<p><strong>3.bool bNeedToUndistort_</strong><br />
-判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
+</code></pre><p>mvParameters向量用来存储相机内参，mnId为相机id，mnId=nNextId++，nNextId的缺省值为0。mnType = CAM_PINHOLE，CAM_PINHOLE = 0，CAM_FISHEYE = 1。<br>故calibration1_对象中保存了相机的内参，id和类型。</p>
+<p><strong>2.std::vector<float> vPinHoleDistorsion1_</strong><br>即相机的畸变参数，畸变参数主要包括径向畸变的k1,k2,k3(有时没有这个k3)和切向畸变的p1,p2。</p>
+<p><strong>3.bool bNeedToUndistort_</strong><br>判读相机是否需要去畸变，若相机为单目或rgbd，且vPinHoleDistorsion1_的size不为零，则该值为true。</p>
 <p>读取完Camera1再根据sensor_类型判断是否需要调用readCamera2(fSettings)函数，由于我现在看的是单目相机，就不需要执行这个函数了。然后调用函数</p>
 <pre><code>readImageInfo(fSettings);
-</code></pre>
-<p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
+</code></pre><p>该语句将cv::Size originalImSize_，float fps_，bool bRGB_ 这三个setting类的成员变量初始化。分别为图像原始大小，帧率，和rgb通道类型。</p>
 <p>接着根据sensor_类型判断是否需要调用readIMU(fSettings)和readRGBD(fSettings)。然后调用函数</p>
 <pre><code>readORB(fSettings);
-</code></pre>
-<p>该函数初始化成员变量<br />
-<strong>int nFeatures_</strong> 指定要提取的特征点数目<br />
-<strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br />
-<strong>int nLevels_</strong> 指定图像金字塔的层数<br />
-<strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br />
-<strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
+</code></pre><p>该函数初始化成员变量<br><strong>int nFeatures_</strong> 指定要提取的特征点数目<br><strong>float scaleFactor_</strong> 指定图像金字塔的缩放系数<br><strong>int nLevels_</strong> 指定图像金字塔的层数<br><strong>int initThFAST_</strong> 指定初始的FAST特征点提取参数，可以提取出最明显的角点<br><strong>int minThFAST_</strong> 如果初始阈值没有检测到角点，降低到这个阈值提取出弱一点的角点</p>
 <p>接下来仍然是调用函数初始化成员变量，分别调用了readViewer(fSettings)，readLoadAndSave(fSettings)，readOtherParameters(fSettings)，以下变量被初始化</p>
 <pre><code>/*
 * Viewer stuff
@@ -1580,24 +1491,19 @@ std::string sLoadFrom_, sSaveto_;
 * Other stuff
 */
 float thFarPoints_;
-</code></pre>
-<p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
+</code></pre><p>Viewer相关的参数目前还不知道是干啥的，以后看到了再来更新。sLoadFrom_, sSaveto_如果根据Examples目录提供的文件，这两项是空的。</p>
 <p>总结，Settings类主要就是将配置文件里的数据读取到Settings类的对象中，总体比较简单。</p>
-<hr />
+<hr>
 <p>settings_初始化完成后，保存及加载地图的名字，目前这两个参数都是空的。</p>
 <pre><code>mStrLoadAtlasFromFile = settings_-&gt;atlasLoadFile();
 mStrSaveAtlasToFile = settings_-&gt;atlasSaveFile();
-</code></pre>
-<p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
+</code></pre><p>然后，确认是否激活回环，默认是开着的。建立一个新的ORB字典</p>
 <pre><code>mpVocabulary = new ORBVocabulary();
-</code></pre>
-<p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary&lt; DBoW2::FORB::TDescriptor，DBoW2::FORB &gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
-<hr />
-<h4 id="keyframedatabase类对象的初始化"><a class="markdownIt-Anchor" href="#keyframedatabase类对象的初始化"></a> KeyFrameDatabase类对象的初始化</h4>
-<p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
+</code></pre><p>mpVocabulary是ORBVocabulary类型的，ORBVocabulary是自定义类型，本质是DBoW2::TemplatedVocabulary&lt; DBoW2::FORB::TDescriptor，DBoW2::FORB &gt;类型。关于DBow2的关键代码的讲解，可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/yys2324826380/article/details/105453134/">ORBSLAM中的DBoW2关键代码注释</a>，<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_14439393/5724573">ORB_SLAM2源码中字典使用细节</a>。</p>
+<hr>
+<h4 id="KeyFrameDatabase类对象的初始化"><a href="#KeyFrameDatabase类对象的初始化" class="headerlink" title="KeyFrameDatabase类对象的初始化"></a>KeyFrameDatabase类对象的初始化</h4><p>确认词袋文件可以加载后，初始化成员变量mpKeyFrameDatabase，这是关键帧数据库</p>
 <pre><code>mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-</code></pre>
-<p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
+</code></pre><p>下面我们简单看一下KeyFrameDatabase类，首先看它有哪些成员变量</p>
 <pre><code>protected:
 // Associated vocabulary
 const ORBVocabulary* mpVoc;
@@ -1610,29 +1516,23 @@ std::vector&lt;list&lt;long unsigned int&gt; &gt; mvBackupInvertedFileId;
 
 // Mutex
 std::mutex mMutex;
-</code></pre>
-<p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br />
-接下来看KeyFrameDatabase类的构造函数</p>
+</code></pre><p>首先，它包含一个词袋对象mpVoc，mvInvertedFile是倒排索引，mvInvertedFile[i]表示包含了第i个word id的所有关键帧，数据库的主要内容。这些关键帧的添加用了该类的成员函数void add(KeyFrame* pKF)。mvBackupInvertedFileId目前还不懂QAQ，以后再更新。mMutex是线程锁。<br>接下来看KeyFrameDatabase类的构造函数</p>
 <pre><code>// 构造函数
 KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;voc)
 &#123;
     mvInvertedFile.resize(voc.size());
 &#125;
-</code></pre>
-<p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
-<hr />
-<h4 id="atlas类对象的初始化"><a class="markdownIt-Anchor" href="#atlas类对象的初始化"></a> Atlas类对象的初始化</h4>
-<p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
+</code></pre><p>这里很明显就是把之前得到的词袋文件赋给mpVoc，再把mvInvertedFile向量的size变为词袋size。</p>
+<hr>
+<h4 id="Atlas类对象的初始化"><a href="#Atlas类对象的初始化" class="headerlink" title="Atlas类对象的初始化"></a>Atlas类对象的初始化</h4><p>关键帧数据库创建完毕，创建多地图，参数0表示初始化关键帧id为0</p>
 <pre><code>mpAtlas = new Atlas(0);
-</code></pre>
-<p>直接来看Atlas类的构造函数</p>
+</code></pre><p>直接来看Atlas类的构造函数</p>
 <pre><code>Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid), mHasViewer(false)
 &#123;
     mpCurrentMap = static_cast&lt;Map *&gt;(NULL);
     CreateNewMap();
 &#125;
-</code></pre>
-<p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
+</code></pre><p>mpCurrentMap是Atlas类的成员变量，Map类型，表示当前地图，我们先给它一个空指针，然后看CreateNewMap()函数。</p>
 <pre><code>void Atlas::CreateNewMap()
 &#123;
     // 锁住地图集
@@ -1658,22 +1558,19 @@ KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary &amp;voc) : mpVoc(&amp;vo
     mpCurrentMap-&gt;SetCurrentMap();              //设置为活跃地图
     mspMaps.insert(mpCurrentMap);               //插入地图集
 &#125;
-</code></pre>
-<p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
-<hr />
+</code></pre><p>现在mpCurrentMap为空，则按照注释，完成新建地图，设置为活跃地图，插入地图集三个步骤。新建地图就是把mpCurrentMap初始化，设置map的id。</p>
+<hr>
 <p>接下来将用于显示帧和地图的成员变量初始化，由Viewer调用。</p>
 <pre><code>mpFrameDrawer = new FrameDrawer(mpAtlas);
 mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-</code></pre>
-<p>先看FrameDrawer类的构造函数</p>
+</code></pre><p>先看FrameDrawer类的构造函数</p>
 <pre><code>FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 &#123;
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
     mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 &#125;
-</code></pre>
-<p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">SLAM——ORB-SLAM3代码分析（十三）FrameDrawer</a>。</p>
+</code></pre><p>基本就是对画布初始化了一下，关于FrameDrawer类的讲解可以看<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_45794281/article/details/122026326">SLAM——ORB-SLAM3代码分析（十三）FrameDrawer</a>。</p>
 <p>再看MapDrawer类的构造函数</p>
 <pre><code>MapDrawer::MapDrawer(Atlas* pAtlas, const string &amp;strSettingPath, Settings* settings):mpAtlas(pAtlas)
 &#123;
@@ -1698,8 +1595,7 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
         &#125;
     &#125;
 &#125;
-</code></pre>
-<p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
+</code></pre><p>这里其实就是调用了newParameterLoader(settings)函数，根据settings对成员变量进行赋值。</p>
 <pre><code>void MapDrawer::newParameterLoader(Settings *settings) &#123;
     mKeyFrameSize = settings-&gt;keyFrameSize();
     mKeyFrameLineWidth = settings-&gt;keyFrameLineWidth();
@@ -1708,24 +1604,18 @@ mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     mCameraSize = settings-&gt;cameraSize();
     mCameraLineWidth  = settings-&gt;cameraLineWidth();
 &#125;
-</code></pre>
-<hr />
-<h4 id="tracking类对象的初始化"><a class="markdownIt-Anchor" href="#tracking类对象的初始化"></a> Tracking类对象的初始化</h4>
-<p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
+</code></pre><hr>
+<h4 id="Tracking类对象的初始化"><a href="#Tracking类对象的初始化" class="headerlink" title="Tracking类对象的初始化"></a>Tracking类对象的初始化</h4><p>FrameDrawer和MapDrawer初始化完成，接下来对成员变量mpTracker进行初始化</p>
 <pre><code>mpTracker = new Tracking(this, mpVocabulary,mpFrameDrawer, mpMapDrawer,
                          mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-</code></pre>
-<p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
-<hr />
-<h4 id="创建并开启local-mapping线程"><a class="markdownIt-Anchor" href="#创建并开启local-mapping线程"></a> 创建并开启local mapping线程</h4>
-<p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
+</code></pre><p>这行代码调用了Tracking类的构造函数，具体内容就写在博客<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a>里了。</p>
+<hr>
+<h4 id="创建并开启local-mapping线程"><a href="#创建并开启local-mapping线程" class="headerlink" title="创建并开启local mapping线程"></a>创建并开启local mapping线程</h4><p>Tracking类对象的初始化完成后，创建并开启local mapping线程。首先初始化LocalMapping类对象</p>
 <pre><code>mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                  mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-</code></pre>
-<p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
+</code></pre><p>构造函数在LocalMapping.cc中，故具体讲解就放在<a href="">LocalMapping.cc</a>中了。接下来看local mapping线程的创建</p>
 <pre><code>mptLocalMapping = new thread(&amp;ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
-</code></pre>
-<p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
+</code></pre><p>这段代码是在创建一个新的线程，并将线程执行的入口点设置为 ORB_SLAM3::LocalMapping::Run 函数，同时传入一个参数 mpLocalMapper。关于LocalMapping::Run 函数，由于local mapping线程刚创建时，Tracking线程还未创建，故没有关键帧传入，此时LocalMapping::Run()就是每3000ms检查mlNewKeyFrames列表里有没有关键帧。接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-5/">LocalMapping.cc</a>中了。我们可以先不管，继续往下看。</p>
 <p>上面执行完后(LocalMapping::Run 函数还在子线程中继续跑)，执行下面的内容，对mpLocalMapper对象剩下的一些成员变量初始化。</p>
 <pre><code>// 设置最远3D地图点的深度值，如果超过阈值，说明可能三角化不太准确，丢弃
 if(settings_)
@@ -1740,16 +1630,12 @@ if(mpLocalMapper-&gt;mThFarPoints!=0)
 &#125;
 else
     mpLocalMapper-&gt;mbFarPoints = false;
-</code></pre>
-<hr />
-<h4 id="创建并开启闭环线程"><a class="markdownIt-Anchor" href="#创建并开启闭环线程"></a> 创建并开启闭环线程</h4>
-<pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
+</code></pre><hr>
+<h4 id="创建并开启闭环线程"><a href="#创建并开启闭环线程" class="headerlink" title="创建并开启闭环线程"></a>创建并开启闭环线程</h4><pre><code>mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
 mptLoopClosing = new thread(&amp;ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-</code></pre>
-<p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
-<hr />
-<h4 id="设置线程间的指针"><a class="markdownIt-Anchor" href="#设置线程间的指针"></a> 设置线程间的指针</h4>
-<pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
+</code></pre><p>这里和上面差不多，没什么要讲的，刚开启时没有待闭环检测关键帧，基本没什么操作，接收到关键帧后就要进行一系列处理，具体步骤就放在<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-6/">LoopClosing.cc</a>中了</p>
+<hr>
+<h4 id="设置线程间的指针"><a href="#设置线程间的指针" class="headerlink" title="设置线程间的指针"></a>设置线程间的指针</h4><pre><code>mpTracker-&gt;SetLocalMapper(mpLocalMapper);
 mpTracker-&gt;SetLoopClosing(mpLoopCloser);
 
 mpLocalMapper-&gt;SetTracker(mpTracker);
@@ -1757,11 +1643,9 @@ mpLocalMapper-&gt;SetLoopCloser(mpLoopCloser);
 
 mpLoopCloser-&gt;SetTracker(mpTracker);
 mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
-</code></pre>
-<p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
-<hr />
-<h4 id="创建并开启显示线程"><a class="markdownIt-Anchor" href="#创建并开启显示线程"></a> 创建并开启显示线程</h4>
-<pre><code>if(bUseViewer)
+</code></pre><p>这里是为了不同对象之间能相互调用其他对象的成员变量和函数。</p>
+<hr>
+<h4 id="创建并开启显示线程"><a href="#创建并开启显示线程" class="headerlink" title="创建并开启显示线程"></a>创建并开启显示线程</h4><pre><code>if(bUseViewer)
 //if(false) // TODO
 &#123;
     mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile,settings_);
@@ -1770,15 +1654,12 @@ mpLoopCloser-&gt;SetLocalMapper(mpLocalMapper);
     mpLoopCloser-&gt;mpViewer = mpViewer;
     mpViewer-&gt;both = mpFrameDrawer-&gt;both;
 &#125;
-</code></pre>
-<p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
+</code></pre><p>首先初始化成员变量mpViewer，调用Viewer的构造函数，把传过去的参数赋值给对应变量，有些变量是通过settings_中的Viewer相关的参数赋值的。Viewer线程主要是调用MapDrawer和FrameDrawer画图，代码量多，但实际上又不是很重要，等有时间回头再看吧。</p>
 <p>System类对象的初始化基本就完成了。</p>
-<hr />
-<h3 id="systemtrackmonocular"><a class="markdownIt-Anchor" href="#systemtrackmonocular"></a> System::TrackMonocular()</h3>
-<p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
+<hr>
+<h3 id="System-TrackMonocular"><a href="#System-TrackMonocular" class="headerlink" title="System::TrackMonocular()"></a>System::TrackMonocular()</h3><p>这个函数首先把传来的im图像信息深拷贝一份，然后调用函数GrabImageMonocular()</p>
 <pre><code>Sophus::SE3f Tcw = mpTracker-&gt;GrabImageMonocular(imToFeed,timestamp,filename);
-</code></pre>
-<p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
+</code></pre><p>传入的参数就是拷贝的图像，时间戳和文件名(为空)。具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/28/ORBSLAM3_NOTE_3/">Tracking.cc</a></p>
 
           
         

@@ -310,21 +310,9 @@
       
         
           
-            <h1 id="vinsmono学习笔记4"><a class="markdownIt-Anchor" href="#vinsmono学习笔记4"></a> VINSMONO学习笔记(4)</h1>
-<p>这篇博客继续学习初始化，还剩下visualInitialAlign()一个函数要看，但内容比较多，也非常重要，就全放在这篇博客里了。</p>
-<hr />
-<h2 id="原理讲解及源码阅读"><a class="markdownIt-Anchor" href="#原理讲解及源码阅读"></a> 原理讲解及源码阅读</h2>
-<h3 id="标定imu角速度bias"><a class="markdownIt-Anchor" href="#标定imu角速度bias"></a> 标定IMU角速度bias</h3>
-<p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb1.png" alt="g_b_1" /><br />
-经过sfm步骤后，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>q</mi><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>c</mi><mn>0</mn></msub></msubsup></mrow><annotation encoding="application/x-tex">q_{b_{k+1}}^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1951249999999998em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.746292em;"><span style="top:-2.3986920000000005em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1449000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>q</mi><msub><mi>b</mi><mi>k</mi></msub><msub><mi>c</mi><mn>0</mn></msub></msubsup></mrow><annotation encoding="application/x-tex">q_{b_{k}}^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.15346em;vertical-align:-0.40716799999999986em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.746292em;"><span style="top:-2.398692em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1449000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.40716799999999986em;"><span></span></span></span></span></span></span></span></span></span>都已得到，正常情况下，上面的式子肯定是单位四元数，但如果直接用之前预积分的值，由于没有减去角速度bias的值，所以上面的式子有误差，这里要优化<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>γ</mi><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\gamma _{b_{k + 1} }^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3856009999999996em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>,给它加上一个bias值，经过优化的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>γ</mi><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\gamma _{b_{k + 1}}^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3856009999999996em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>可以通过一阶泰勒展开表示：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb2.png" alt="g_b_2" /><br />
-这里的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover accent="true"><mi>γ</mi><mo>^</mo></mover><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\hat \gamma _{b_{k + 1} }^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3856009999999996em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.69444em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.19444em;"><span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>就是之前预积分出来的结果，未考虑bias。讲上式代入误差公式，误差公式应该等于单位四元数，再将除bias的变量移到等式右边，得到下式：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/bg3.png" alt="g_b_3" /><br />
-这里只考虑虚部，再把<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover accent="true"><mi>γ</mi><mo>^</mo></mover><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\hat \gamma _{b_{k + 1} }^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3856009999999996em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.69444em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.19444em;"><span></span></span></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>移到右边可得到下式：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb4.png" alt="g_b_4" /><br />
-两边再乘以雅可比的转置，就可得到增量方程的形式了：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb5.png" alt="g_b_5" /><br />
-然后用ldlt分解求解这个增量方程就行。这里不需要迭代优化这个<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>γ</mi><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\gamma _{b_{k + 1} }^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3856009999999996em;vertical-align:-0.4488329999999998em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4488329999999998em;"><span></span></span></span></span></span></span></span></span></span>，只要进行一次求解，得到这个bias就行。</p>
+            <h1 id="VINSMONO学习笔记-4"><a href="#VINSMONO学习笔记-4" class="headerlink" title="VINSMONO学习笔记(4)"></a>VINSMONO学习笔记(4)</h1><p>这篇博客继续学习初始化，还剩下visualInitialAlign()一个函数要看，但内容比较多，也非常重要，就全放在这篇博客里了。</p>
+<hr>
+<h2 id="原理讲解及源码阅读"><a href="#原理讲解及源码阅读" class="headerlink" title="原理讲解及源码阅读"></a>原理讲解及源码阅读</h2><h3 id="标定IMU角速度bias"><a href="#标定IMU角速度bias" class="headerlink" title="标定IMU角速度bias"></a>标定IMU角速度bias</h3><p><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb1.png" alt="g_b_1"><br>经过sfm步骤后，$q_{b_{k+1}}^{c_0}$和$q_{b_{k}}^{c_0}$都已得到，正常情况下，上面的式子肯定是单位四元数，但如果直接用之前预积分的值，由于没有减去角速度bias的值，所以上面的式子有误差，这里要优化$\gamma _{b_{k + 1} }^{b_k}$,给它加上一个bias值，经过优化的$\gamma _{b_{k + 1}}^{b_k}$可以通过一阶泰勒展开表示：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb2.png" alt="g_b_2"><br>这里的$\hat \gamma _{b_{k + 1} }^{b_k}$就是之前预积分出来的结果，未考虑bias。讲上式代入误差公式，误差公式应该等于单位四元数，再将除bias的变量移到等式右边，得到下式：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/bg3.png" alt="g_b_3"><br>这里只考虑虚部，再把$\hat \gamma _{b_{k + 1} }^{b_k}$移到右边可得到下式：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb4.png" alt="g_b_4"><br>两边再乘以雅可比的转置，就可得到增量方程的形式了：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gb5.png" alt="g_b_5"><br>然后用ldlt分解求解这个增量方程就行。这里不需要迭代优化这个$\gamma _{b_{k + 1} }^{b_k}$，只要进行一次求解，得到这个bias就行。</p>
 <p>下面看详细代码,先主要来看得到增量方程的那个循环:</p>
 <pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end(); frame_i++)
 &#123;
@@ -339,16 +327,14 @@
     A += tmp_A.transpose() * tmp_A;
     b += tmp_A.transpose() * tmp_b;
 &#125;
-</code></pre>
-<p>这里就是遍历所有图像帧，frame_i就是当前帧，frame_j就是当前帧的下一帧，q_ij就是通过图像帧旋转和之前标定的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>b</mi><mi>c</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{bc}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="mord mathnormal mtight">c</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>得到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">b_{k+1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.902771em;vertical-align:-0.208331em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.208331em;"><span></span></span></span></span></span></span></span></span></span>到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">b_{k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的旋转，tmp_A是预积分<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>对角速度bias的雅可比。之前预积分的时候对pre_integration的jacobian中的残差对<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>a</mi></msub><mo separator="true">,</mo><msub><mi>b</mi><mi>g</mi></msub></mrow><annotation encoding="application/x-tex">b_a,b_g</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">g</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>的雅可比进行了更新，这里从中取了我们需要的部分，具体可以去看预积分那篇最后雅可比的图，还是挺一目了然的。</p>
+</code></pre><p>这里就是遍历所有图像帧，frame_i就是当前帧，frame_j就是当前帧的下一帧，q_ij就是通过图像帧旋转和之前标定的$q_{bc}$得到$b_{k+1}$到$b_{k}$的旋转，tmp_A是预积分$\gamma$对角速度bias的雅可比。之前预积分的时候对pre_integration的jacobian中的残差对$b_a,b_g$的雅可比进行了更新，这里从中取了我们需要的部分，具体可以去看预积分那篇最后雅可比的图，还是挺一目了然的。</p>
 <p>使用ldlt分解求得bias后要重新进行预积分，把角速度bias带进去：</p>
 <pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end( ); frame_i++)
 &#123;
     frame_j = next(frame_i);
     frame_j-&gt;second.pre_integration-&gt;repropagate(Vector3d::Zero(), Bgs[0]);
 &#125;
-</code></pre>
-<p>函数repropagate实现了重新求解预积分，如下所示：</p>
+</code></pre><p>函数repropagate实现了重新求解预积分，如下所示：</p>
 <pre><code>void repropagate(const Eigen::Vector3d &amp;_linearized_ba, const Eigen::Vector3d &amp;_linearized_bg)
 &#123;
     sum_dt = 0.0;
@@ -364,28 +350,16 @@
     for (int i = 0; i &lt; static_cast&lt;int&gt;(dt_buf.size()); i++)
         propagate(dt_buf[i], acc_buf[i], gyr_buf[i]);
 &#125;
-</code></pre>
-<p>这里就是先把预积分相关的变量全部先置为0，再遍历上一帧到这一帧的所有imu数据，这些都存在pre_integration对象的成员变量dt_buf, acc_buf, gyr_buf容器中，调用函数propagate()，按遍历顺序传入对应参数，重新进行预积分。</p>
-<hr />
-<h3 id="初始化速度-重力和尺度因子"><a class="markdownIt-Anchor" href="#初始化速度-重力和尺度因子"></a> 初始化速度、重力和尺度因子</h3>
-<p>先确定要估计的变量：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs1.png" alt="gvs1" /><br />
-其中，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>v</mi><mi>k</mi><msub><mi>b</mi><mi>k</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">v_k^{b_k}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2380759999999997em;vertical-align:-0.3013079999999999em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9367679999999998em;"><span style="top:-2.3986920000000005em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span><span style="top:-3.1506600000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3013079999999999em;"><span></span></span></span></span></span></span></span></span></span>表示<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span>时刻body坐标系的速度在body坐标系下的表示。<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>g</mi><msub><mi>c</mi><mn>0</mn></msub></msup></mrow><annotation encoding="application/x-tex">g^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.858832em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>为重力向量在参考帧(即之前的第l帧)相机坐标系下的表示。<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi></mrow><annotation encoding="application/x-tex">s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal">s</span></span></span></span>表示尺度因子，将视觉轨迹拉伸到米制单位。</p>
-<p>世界坐标系下的预积分约束如下：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs2.png" alt="gvs2" /></p>
-<p>但是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span>坐标系我们不知道，只知道l帧相机坐标系，所以需要把上面的公式转到l帧相机坐标系上(<strong>下面的公式中<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">c_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>其实是l帧</strong>)：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs3.png" alt="gvs3" /></p>
-<p>先看<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub></mrow><annotation encoding="application/x-tex">\alpha_{b_kb_{k+1}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7280849999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.0037em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span></span></span>,理想状态下，式子左边减去右边结果应该为0，下面看详细推导：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs5.png" alt="gvs4" /></p>
-<p>把要估计的量及其系数放在等式右边，其他的放在左边，再转换为矩阵形式，可得到下式：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs6.png" alt="gvs5" /></p>
-<p>接下来再看<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mrow><msub><mi>b</mi><mi>k</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></msub></mrow><annotation encoding="application/x-tex">\beta_{b_kb_{k+1}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9919649999999999em;vertical-align:-0.29752499999999993em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span><span class="mord mtight"><span class="mord mathnormal mtight">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.21074999999999994em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.29752499999999993em;"><span></span></span></span></span></span></span></span></span></span>，具体操作和上面差不多：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs7.png" alt="gvs6" /></p>
-<p>然后将两个矩阵合并：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs8.png" alt="gvs7" /></p>
-<p>最后将其变成增量方程形式:<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs9.png" alt="gvs8" /><br />
-然后和标定角速度bias时一样，用ldlt分解求得估计值就行，下面看具体代码:</p>
+</code></pre><p>这里就是先把预积分相关的变量全部先置为0，再遍历上一帧到这一帧的所有imu数据，这些都存在pre_integration对象的成员变量dt_buf, acc_buf, gyr_buf容器中，调用函数propagate()，按遍历顺序传入对应参数，重新进行预积分。</p>
+<hr>
+<h3 id="初始化速度、重力和尺度因子"><a href="#初始化速度、重力和尺度因子" class="headerlink" title="初始化速度、重力和尺度因子"></a>初始化速度、重力和尺度因子</h3><p>先确定要估计的变量：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs1.png" alt="gvs1"><br>其中，$v_k^{b_k}$表示$k$时刻body坐标系的速度在body坐标系下的表示。$g^{c_0}$为重力向量在参考帧(即之前的第l帧)相机坐标系下的表示。$s$表示尺度因子，将视觉轨迹拉伸到米制单位。</p>
+<p>世界坐标系下的预积分约束如下：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs2.png" alt="gvs2"></p>
+<p>但是$w$坐标系我们不知道，只知道l帧相机坐标系，所以需要把上面的公式转到l帧相机坐标系上(<strong>下面的公式中$c_0$其实是l帧</strong>)：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs3.png" alt="gvs3"></p>
+<p>先看$\alpha_{b_kb_{k+1}}$,理想状态下，式子左边减去右边结果应该为0，下面看详细推导：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs5.png" alt="gvs4"></p>
+<p>把要估计的量及其系数放在等式右边，其他的放在左边，再转换为矩阵形式，可得到下式：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs6.png" alt="gvs5"></p>
+<p>接下来再看$\beta_{b_kb_{k+1}}$，具体操作和上面差不多：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs7.png" alt="gvs6"></p>
+<p>然后将两个矩阵合并：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs8.png" alt="gvs7"></p>
+<p>最后将其变成增量方程形式:<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs9.png" alt="gvs8"><br>然后和标定角速度bias时一样，用ldlt分解求得估计值就行，下面看具体代码:</p>
 <pre><code>bool LinearAlignment(map&lt;double, ImageFrame&gt; &amp;all_image_frame, Vector3d &amp;g, VectorXd &amp;x)
 &#123;
     int all_frame_count = all_image_frame.size();
@@ -402,8 +376,7 @@
     ...
     ...
 &#125;
-</code></pre>
-<p>这里是定义总的增量方程的左边的信息矩阵A以及右边的雅可比乘残差矩阵b，n_state是矩阵大小。上面原理部分只是讲了两帧之间的参数估计，但实际上，每加一帧就要多估计一个v。因此，下面计算增量方程时，都是按帧遍历，计算完两帧之间的增量方程的左右两边，再把数据放到A,b对应矩阵块里面，下面为具体代码：</p>
+</code></pre><p>这里是定义总的增量方程的左边的信息矩阵A以及右边的雅可比乘残差矩阵b，n_state是矩阵大小。上面原理部分只是讲了两帧之间的参数估计，但实际上，每加一帧就要多估计一个v。因此，下面计算增量方程时，都是按帧遍历，计算完两帧之间的增量方程的左右两边，再把数据放到A,b对应矩阵块里面，下面为具体代码：</p>
 <pre><code>for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end(); frame_i++, i++)
 &#123;
     frame_j = next(frame_i);
@@ -443,23 +416,11 @@
     A.block&lt;6, 4&gt;(i * 3, n_state - 4) += r_A.topRightCorner&lt;6, 4&gt;();
     A.block&lt;4, 6&gt;(n_state - 4, i * 3) += r_A.bottomLeftCorner&lt;4, 6&gt;();
 &#125;
-</code></pre>
-<p>前面计算r_A和r_b就是按照上面讲的公式写代码就行，很简单，这里主要看怎么放入最终的矩阵里，先看左边的矩阵A，我画了一个图，应该挺好理解的：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/vgs10.png" alt="gvs9" /><br />
-这里就拿第一个得到的r_A举例，这里把矩阵大小和每块放在哪里都画出来了，其他的以此类推。下面时右边的矩阵，其实差不多，这里也展示以下：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs13.png" alt="gvs10" /><br />
-增量矩阵得到后，ldlt求解就行，不多说了。</p>
-<hr />
-<h3 id="优化重力向量g_c_0"><a class="markdownIt-Anchor" href="#优化重力向量g_c_0"></a> 优化重力向量<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><msub><mi>c</mi><mn>0</mn></msub></msub></mrow><annotation encoding="application/x-tex">g_{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68066em;vertical-align:-0.2501em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139199999999997em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2501em;"><span></span></span></span></span></span></span></span></span></span></h3>
-<p>具体原理如下，由于这部分挺简单的，就直接放深蓝学院ppt的图了：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_1.png" alt="gc0_1.png" /><br />
-这里就是把<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover accent="true"><mi>g</mi><mo>^</mo></mover><msub><mi>c</mi><mn>0</mn></msub></msup></mrow><annotation encoding="application/x-tex">\hat g^{c_0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.69444em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.22222em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.19444em;"><span></span></span></span></span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31731428571428577em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>带入上面那个的式子，优化变量g变为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>w</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">w_1,w_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.02691em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.02691em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>,具体式子如下：<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_2.png" alt="gc0_2.png" /><br />
-同样是用ldlt求解。</p>
-<hr />
-<h3 id="bool-estimatorvisualinitialalign"><a class="markdownIt-Anchor" href="#bool-estimatorvisualinitialalign"></a> bool Estimator::visualInitialAlign()</h3>
-<p>下面总的来看这个函数<br />
-<strong>1.计算陀螺仪偏置，尺度，重力加速度和速度</strong></p>
+</code></pre><p>前面计算r_A和r_b就是按照上面讲的公式写代码就行，很简单，这里主要看怎么放入最终的矩阵里，先看左边的矩阵A，我画了一个图，应该挺好理解的：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/vgs10.png" alt="gvs9"><br>这里就拿第一个得到的r_A举例，这里把矩阵大小和每块放在哪里都画出来了，其他的以此类推。下面时右边的矩阵，其实差不多，这里也展示以下：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gvs13.png" alt="gvs10"><br>增量矩阵得到后，ldlt求解就行，不多说了。</p>
+<hr>
+<h3 id="优化重力向量-g-c-0"><a href="#优化重力向量-g-c-0" class="headerlink" title="优化重力向量$g_{c_0}$"></a>优化重力向量$g_{c_0}$</h3><p>具体原理如下，由于这部分挺简单的，就直接放深蓝学院ppt的图了：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_1.png" alt="gc0_1.png"><br>这里就是把$\hat g^{c_0}$带入上面那个的式子，优化变量g变为$w_1,w_2$,具体式子如下：<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/VINSMONO/gc0_2.png" alt="gc0_2.png"><br>同样是用ldlt求解。</p>
+<hr>
+<h3 id="bool-Estimator-visualInitialAlign"><a href="#bool-Estimator-visualInitialAlign" class="headerlink" title="bool Estimator::visualInitialAlign()"></a>bool Estimator::visualInitialAlign()</h3><p>下面总的来看这个函数<br><strong>1.计算陀螺仪偏置，尺度，重力加速度和速度</strong></p>
 <pre><code>bool Estimator::visualInitialAlign()
 &#123;
     TicToc t_g;
@@ -468,8 +429,7 @@
         return false;
     ...
 &#125;
-</code></pre>
-<p><strong>2.遍历所有帧，将每个图像帧到l图像帧的位移和对应的imu到l图像帧的旋转存到Ps和Rs数组，并将它们都置为关键帧</strong></p>
+</code></pre><p><strong>2.遍历所有帧，将每个图像帧到l图像帧的位移和对应的imu到l图像帧的旋转存到Ps和Rs数组，并将它们都置为关键帧</strong></p>
 <pre><code>bool Estimator::visualInitialAlign()
 &#123;
     // 1. 计算陀螺仪偏置，尺度，重力加速度和速度
@@ -489,8 +449,7 @@
     &#125;
     ...
 &#125;
-</code></pre>
-<p><strong>3.重新计算所有f_manager的特征点深度</strong></p>
+</code></pre><p><strong>3.重新计算所有f_manager的特征点深度</strong></p>
 <pre><code>// 3. 重新计算所有f_manager的特征点深度    
 VectorXd dep = f_manager.getDepthVector();    
 for (int i = 0; i &lt; dep.size(); i++)        
@@ -507,14 +466,12 @@ for (int i = 0; i &lt; NUM_OF_CAM; i++)
     // 三角化计算地图点的深度
     // Ps中存放的是各个帧相对于参考帧之间的平移，RIC[0]为相机-IMU之间的旋转    
     f_manager.triangulate(Ps, &amp;(TIC_TMP[0]), &amp;(RIC[0]));
-</code></pre>
-<p><strong>4.IMU的bias改变，重新计算滑窗内的预积分</strong></p>
+</code></pre><p><strong>4.IMU的bias改变，重新计算滑窗内的预积分</strong></p>
 <pre><code>for (int i = 0; i &lt;= WINDOW_SIZE; i++)    
 &#123;        
     pre_integrations[i]-&gt;repropagate(Vector3d::Zero(), Bgs[i]);    
 &#125;
-</code></pre>
-<p><strong>5.将<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">P_s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">V_s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、depth尺度s缩放后更新坐标系</strong></p>
+</code></pre><p><strong>5.将$P_s$、$V_s$、depth尺度s缩放后更新坐标系</strong></p>
 <pre><code>// 5. 将Ps、Vs、depth尺度s缩放后从l帧转变为相对于c0帧图像坐标系下
 /**           
 * 前面初始化中，计算出来的是相对滑动窗口中第l帧的位姿，在这里转换到IMU bo坐标系下           
@@ -550,9 +507,8 @@ for (auto &amp;it_per_id : f_manager.feature)
         continue;        
     it_per_id.estimated_depth *= s;    
 &#125;
-</code></pre>
-<p><em><strong>这里强调一下，这里的Ps存的是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>坐标系下<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">b_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">b_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的位移，Vs存的是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>坐标系下每帧的速度。</strong></em></p>
-<p><strong>6.通过将重力旋转到z轴上，得到世界坐标系与相机坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>之间的旋转矩阵rot_diff</strong></p>
+</code></pre><p><strong><em>这里强调一下，这里的Ps存的是$l$坐标系下$b_0$到$b_i$的位移，Vs存的是$l$坐标系下每帧的速度。</em></strong></p>
+<p><strong>6.通过将重力旋转到z轴上，得到世界坐标系与相机坐标系$l$之间的旋转矩阵rot_diff</strong></p>
 <pre><code>/**
  * 通过将g旋转至z轴方向，
  * 这样就可以计算相机系到世界坐标系的旋转矩阵，这里求得的是rot_diff,这样就可以将所有变量调整至世界系中。
@@ -566,9 +522,8 @@ double yaw = Utility::R2ypr(R0 * Rs[0]).x();
 R0 = Utility::ypr2R(Eigen::Vector3d&#123;-yaw, 0, 0&#125;) * R0; // 只考虑偏航角的影响    
 g = R0 * g;      
 Matrix3d rot_diff = R0;
-</code></pre>
-<p>rot_diff就是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>w</mi><mi>l</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{wl}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.00773em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.02691em;">w</span><span class="mord mathnormal mtight" style="margin-right:0.01968em;">l</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>,感觉在vins里l参考帧的坐标系其实就是初始相机坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">c_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></p>
-<p><strong>7.所有变量从参考坐标系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi></mrow><annotation encoding="application/x-tex">l</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span></span></span></span>旋转到世界坐标系w</strong></p>
+</code></pre><p>rot_diff就是$R_{wl}$,感觉在vins里l参考帧的坐标系其实就是初始相机坐标系$c_0$</p>
+<p><strong>7.所有变量从参考坐标系$l$旋转到世界坐标系w</strong></p>
 <pre><code>for (int i = 0; i &lt;= frame_count; i++)    
 &#123;        
     Ps[i] = rot_diff * Ps[i];        
@@ -579,7 +534,6 @@ Matrix3d rot_diff = R0;
 //ROS_DEBUG_STREAM(&quot;my R0  &quot; &lt;&lt; Utility::R2ypr(Rs[0]).transpose());
 return true;
 </code></pre>
-
           
         
       
@@ -1519,72 +1473,27 @@ class="math inline">\(b_a,b_g\)</span>的雅可比进行了更新，初始化的
       
         
           
-            <h1 id="vinsmono学习笔记1"><a class="markdownIt-Anchor" href="#vinsmono学习笔记1"></a> VINSMONO学习笔记(1)</h1>
-<p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
+            <h1 id="VINSMONO学习笔记-1"><a href="#VINSMONO学习笔记-1" class="headerlink" title="VINSMONO学习笔记(1)"></a>VINSMONO学习笔记(1)</h1><p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
 <p>参考博客：<a target="_blank" rel="noopener" href="https://blog.csdn.net/mcw1234/article/details/83039506">VINS-Mono详解（一）</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/wbzhang233/article/details/88885485">港科大VINS-MONO入门（一）：框架入门及源码解析</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_51547017/article/details/123306540">VINS_mono 代码详细理解（一）</a></p>
-<hr />
-<h2 id="系统架构"><a class="markdownIt-Anchor" href="#系统架构"></a> 系统架构</h2>
-<p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。</p>
+<hr>
+<h2 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h2><p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。 </p>
 <p>前端节点的feature_tracker_node的程序入口是文件feature_tracker_node.cpp中的main()函数，接收图像信息,调用img_callback()函数进行处理。</p>
 <p>estimator_node节点中开了3个子线程, 分别是:process,loop_detection和pose_graph. 其中 process()线程处理VIO后端, 包括(IMU preintegration, initialization, LocalBA)loop_detection()线程处理闭环检测pose_graph()线程分别处理全局优化。如果不需要做loop closure, 可以把LOOP_CLOUSRE置0, 则后面两个线程不会创建。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="int-main"><a class="markdownIt-Anchor" href="#int-main"></a> int main()</h3>
-<p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="int-main"><a href="#int-main" class="headerlink" title="int main()"></a>int main()</h3><p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
 <p>特别的，如果相机是鱼眼相机，需要读取FISHEYE_MASK，存到相机FeatureTracker的实例的成员变量fisheye_mask中，它会在后续操作中被用来去除边缘噪点。</p>
-<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th style="text-align:center">name</th>
-<th style="text-align:center">topic</th>
-<th style="text-align:center">type</th>
-<th style="text-align:center">消息内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>subscriber</td>
-<td style="text-align:center">sub_img</td>
-<td style="text-align:center">IMAGE_TOPIC</td>
-<td style="text-align:center">sensor_msgs::Image</td>
-<td style="text-align:center">相机图像数据</td>
-</tr>
-<tr>
-<td>publisher</td>
-<td style="text-align:center">pub_img</td>
-<td style="text-align:center">feature</td>
-<td style="text-align:center">sensor_msgs::PointCloud</td>
-<td style="text-align:center">跟踪的特征点</td>
-</tr>
-<tr>
-<td>publisher</td>
-<td style="text-align:center">pub_match</td>
-<td style="text-align:center">feature_img</td>
-<td style="text-align:center">sensor_msgs::Image</td>
-<td style="text-align:center">标记出了特征点的图像</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3 id="void-img_callback"><a class="markdownIt-Anchor" href="#void-img_callback"></a> void img_callback()</h3>
-<p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
+<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。<br>| |name|topic|type|消息内容|<br>|-|:———-:|:———:|:———:|:———:|<br>|subscriber|sub_img|IMAGE_TOPIC|sensor_msgs::Image|相机图像数据|<br>|publisher|pub_img|feature|sensor_msgs::PointCloud|跟踪的特征点|<br>|publisher|pub_match|feature_img|sensor_msgs::Image|标记出了特征点的图像|</p>
+<hr>
+<h3 id="void-img-callback"><a href="#void-img-callback" class="headerlink" title="void img_callback()"></a>void img_callback()</h3><p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
 <p>然后遍历成员变量<code>trackerData</code>数组，调用该对象的函数readImage()，将数据读取存储到<code>trackerData</code>里(这部分下面会详细讲)。然后更新<code>trackerData</code>里特征点的id。</p>
 <p>接下来，创建了一个名为 <code>feature_points</code> 的指针，该指针指向一个 sensor_msgs::PointCloud 类型的消息对象,将<strong>当前帧的所有特征点在归一化平面上的坐标</strong>存到<code>feature_points</code>的成员变量<code>points</code>中，将<strong>当前帧的所有特征点的像素坐标，id，xy轴方向的速度</strong>存到<code>feature_points</code>的成员变量<code>channels</code>中，通过<code>pub_img</code>发布出去（第一帧不发送）。</p>
 <p>最后，如果要进行特征点轨迹的可视化，即SHOW_TRACK为true，则将原来转为灰度图的图像重新恢复成彩色图，存到变量stereo_img里，然后按图像大小截取到tmp_img里，在tmp_img中特征点坐标处画圆圈，颜色深度由追踪到的次数决定，通过<code>pub_match</code>将处理过的图像发布出去。</p>
-<hr />
-<h3 id="void-featuretrackerreadimage"><a class="markdownIt-Anchor" href="#void-featuretrackerreadimage"></a> void FeatureTracker::readImage()</h3>
-<p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
+<hr>
+<h3 id="void-FeatureTracker-readImage"><a href="#void-FeatureTracker-readImage" class="headerlink" title="void FeatureTracker::readImage()"></a>void FeatureTracker::readImage()</h3><p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
 <p>图像数据变量：</p>
-<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br />
-<code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br />
-<code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
-<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br />
-<code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br />
-<code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
-<p>函数的具体流程为：<br />
-1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
+<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br><code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br><code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
+<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br><code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br><code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
+<p>函数的具体流程为：<br>1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
 <p>2.调用cv::calcOpticalFlowPyrLK()对前一帧的特征点cur_pts进行金字塔光流跟踪，得到forw_pts。status标记了cur_pts中各个特征点的跟踪状态，根据status将跟踪失败的特征点从prev_pts、cur_pts和forw_pts中剔除，而且在记录特征点id的ids，和记录特征点被跟踪次数的track_cnt中，也要把这些跟踪失败的特征点对应位置的记录删除。被status标记为跟踪正常的特征点，在当前帧图像中的位置可能已经处于图像边界外了，这些特征点也应该被删除，删除操作同上。最后将未被删除的点的跟踪次数加1。</p>
 <p>3.如果不需要发布当前帧的数据，则直接将当前帧forw的相关数据赋给上一帧cur，然后在这一步整个readImage的流程就结束了。</p>
 <p>4.如果需要发布当前帧的数据，先调用FeatureTracker::rejectWithF()函数，剔除outliers。具体方法为：调用cv::findFundamentalMat()对prev_pts和forw_pts计算F矩阵，通过F矩阵去除outliers。剩下的特征点track_cnt都加一。</p>
@@ -2539,35 +2448,25 @@ id="twoviewreconstructionfindhomography">TwoViewReconstruction::FindHomography()
       
         
           
-            <h1 id="orbslam3学习笔记8"><a class="markdownIt-Anchor" href="#orbslam3学习笔记8"></a> ORBSLAM3学习笔记(8)</h1>
-<p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="orbmatchersearchforinitialization"><a class="markdownIt-Anchor" href="#orbmatchersearchforinitialization"></a> ORBmatcher::SearchForInitialization()</h3>
-<p><strong>1.创建一个旋转直方图</strong></p>
+            <h1 id="ORBSLAM3学习笔记-8"><a href="#ORBSLAM3学习笔记-8" class="headerlink" title="ORBSLAM3学习笔记(8)"></a>ORBSLAM3学习笔记(8)</h1><p>这篇博客主要是对ORBmatcher.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="ORBmatcher-SearchForInitialization"><a href="#ORBmatcher-SearchForInitialization" class="headerlink" title="ORBmatcher::SearchForInitialization()"></a>ORBmatcher::SearchForInitialization()</h3><p><strong>1.创建一个旋转直方图</strong></p>
 <pre><code>vector&lt;int&gt; rotHist[HISTO_LENGTH];
 // 每个bin里预分配500个，因为使用的是vector不够的话可以自动扩展容量
 for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre>
-<p>旋转直方图如下图所示<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图" /><br />
-这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br />
-factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
-<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br />
-遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
+</code></pre><p>旋转直方图如下图所示<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/RH.png" alt="旋转直方图"><br>这个直方图就是rotHist，每个柱体就是一个vector容器，称为bin。bin中存储匹配特征点之间的角度差。最后，只取最主流的三个bin，我们只要角度差在这三个范围内的匹配结果，其他的说明特征点角度计算时误差较大，直接舍弃。<br>factor表示每度在整个直方图区间的占比，用来确定角度差的存储在哪个bin里面。</p>
+<p><strong>2.在半径窗口内搜索当前帧中所有的候选匹配特征点</strong><br>遍历帧1中的所有特征点(由于这次匹配是用于初始化的，只取金字塔第0层的)</p>
 <ul>
 <li>在半径窗口内搜索当前帧F2中所有的候选匹配特征点，调用函数GetFeaturesInArea()，具体见<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/31/ORBSLAM3-NOTE-7/">Frame.cc</a></li>
 <li>遍历搜索搜索窗口中的所有潜在的匹配候选点，找到最优的和次优的。匹配的优劣根据描述子的距离判断，两个二进制串之间的汉明距离，指的是其不同位数的个数。</li>
 <li>判断最优结果是否满足阈值，判断最佳距离比次佳距离是否小于设定的比例。判断找到的候选特征点对应F1中特征点是否已经匹配过了，如果已经匹配过了，我觉得应该是将这个和原来的匹配都删掉，但源码中是删掉原来的匹配，存入这个新的匹配。如果上面的条件都满足，计算匹配点之间的距离，存入直方图对应的bin中。</li>
 </ul>
 <p><strong>3.遍历完成，筛除旋转直方图中“非主流”部分</strong></p>
-<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br />
-vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
-<hr />
-<h3 id="orbmatchersearchfortriangulation"><a class="markdownIt-Anchor" href="#orbmatchersearchfortriangulation"></a> ORBmatcher::SearchForTriangulation()</h3>
-<p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
+<p><strong>4.将最后通过筛选的匹配好的特征点保存到vbPrevMatched</strong><br>vbPrevMatched是引用参数，将数据保存到该参数中传递回去。</p>
+<hr>
+<h3 id="ORBmatcher-SearchForTriangulation"><a href="#ORBmatcher-SearchForTriangulation" class="headerlink" title="ORBmatcher::SearchForTriangulation()"></a>ORBmatcher::SearchForTriangulation()</h3><p><strong>1.计算KF1的相机中心在KF2图像平面的二维像素坐标</strong></p>
 <blockquote>
 <p>直接看我下面的注释就行</p>
 </blockquote>
@@ -2615,15 +2514,12 @@ for(int i=0;i&lt;HISTO_LENGTH;i++)
     rotHist[i].reserve(500);
 
 const float factor = HISTO_LENGTH/360.0f;
-</code></pre>
-<p><strong>2.利用BoW加速匹配</strong><br />
-首先看一下定义的辅助变量</p>
+</code></pre><p><strong>2.利用BoW加速匹配</strong><br>首先看一下定义的辅助变量</p>
 <pre><code>DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
 DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
 DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
 DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
-</code></pre>
-<p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
+</code></pre><p>这里要知道vFeatVec存储了什么，存储的变量是怎么来的，可以看前面推荐的几篇关于词袋方面的博客。</p>
 <p>2.1 遍历pKF1和pKF2中的node节点</p>
 <blockquote>
 <p>首先要进行判断，如果f1it和f2it属于同一个node节点才会进行匹配，这就是BoW加速匹配原理。</p>
@@ -2631,8 +2527,7 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <p>下面讲f1it和f2it属于同一个node节点时该怎么操作</p>
 <ol>
 <li>遍历该node节点下<strong>f1it</strong>下的所有特征点</li>
-<li>通过特征点索引idx1在pKF1中取出对应的MapPoint
-<blockquote>
+<li>通过特征点索引idx1在pKF1中取出对应的MapPoint<blockquote>
 <p>若MapPoint存在，则直接进入下一次循环，遍历下一个特征点。若MapPoint不存在，说明该特征点是从未匹配过的。通过这一步骤，我们就能避免重复匹配，导致获得已存在的地图点了。</p>
 </blockquote>
 </li>
@@ -2640,32 +2535,24 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 <li>遍历该node节点下<strong>f2it</strong>对应KF2中的所有特征点</li>
 <li>如果pKF2当前特征点索引idx2已经被匹配过或者对应的3d点非空，那么跳过这个索引idx2</li>
 <li>通过特征点索引idx2在pKF2中取出对应的特征点和其描述子，计算两个关键帧中对应特征点的描述子距离。</li>
-<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong>
-<blockquote>
-<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br />
-金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
+<li><strong>极点ep到kp2的像素距离如果小于阈值th,认为kp2对应的MapPoint距离pKF1相机太近，跳过该匹配点对</strong><blockquote>
+<p>作者根据kp2金字塔尺度因子(scale^n，scale=1.2，n为层数)定义阈值th<br> 金字塔层数从0到7，对应距离 sqrt(100*pKF2-&gt;mvScaleFactors[kp2.octave]) 是10-20个像素</p>
 </blockquote>
 </li>
-<li>计算特征点kp2到kp1对应极线的距离是否小于阈值
-<blockquote>
+<li>计算特征点kp2到kp1对应极线的距离是否小于阈值<blockquote>
 <p>这个就不细嗦了，这里其实和TwoViewReconstruction.cc那篇博客里的关于F矩阵的卡方检验是一样的。</p>
 </blockquote>
 </li>
 <li>记录匹配结果，记录旋转差直方图信息</li>
 </ol>
-<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br />
-<strong>4.存储匹配关系</strong></p>
-<hr />
-<h3 id="orbmatcherfuse"><a class="markdownIt-Anchor" href="#orbmatcherfuse"></a> ORBmatcher::Fuse()</h3>
-<p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br />
-在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
+<p><strong>3.用旋转差直方图来筛掉错误匹配对</strong><br><strong>4.存储匹配关系</strong></p>
+<hr>
+<h3 id="ORBmatcher-Fuse"><a href="#ORBmatcher-Fuse" class="headerlink" title="ORBmatcher::Fuse()"></a>ORBmatcher::Fuse()</h3><p>该函数的作用是地图点与帧中图像的特征点匹配,实现地图点融合。<br>在将地图点反投影到帧中的过程中,存在以下两种情况:</p>
 <ul>
 <li>若地图点反投影对应位置上的特征点不存在地图点,说明该特征点之前可能漏掉了，则直接添加观测。</li>
 <li>若地图点反投影位置上存在对应地图点,说明两帧中的特征点对应的可能是同一个地图点，但之前出现了误差，则将两个地图点合并到其中观测较多的那个。</li>
 </ul>
-<p>下面看具体代码：<br />
-1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br />
-2.遍历所有的待投影地图点，进行如下判断：</p>
+<p>下面看具体代码：<br>1.获取关键帧（待融合关键帧pKF）位姿、内参、光心在世界坐标系下坐标方便下面使用：Rcw、tcw、fx、fy、cx、cy、bf、Ow。<br>2.遍历所有的待投影地图点，进行如下判断：</p>
 <ul>
 <li>若该地图点地图点无效 或 已经是该帧的地图点（无需融合），跳过。</li>
 <li>将地图点变换到关键帧pKF的相机坐标系下，深度值为负，跳过。</li>
@@ -2675,22 +2562,19 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
 </ul>
 <p>3.在投影点附近搜索窗口内找到候选匹配点的索引</p>
 <blockquote>
-<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br />
-首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
+<p>搜索候选匹配点的索引调用了KeyFrame::GetFeaturesInArea(),这里其实和Frame::GetFeaturesInArea()差不多，具体实现就不细讲了，就讲一下搜索半径怎么来的。<br>首先，根据地图点到光心的距离，得到该点在图像金字塔的层数，然后得到该层的缩放比例，搜索半径就等于th乘以该比例。在orbslam3中，所有th的缺省值都为1。</p>
 </blockquote>
-<p>4.遍历候选匹配点，寻找最佳匹配点<br />
-对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
+<p>4.遍历候选匹配点，寻找最佳匹配点<br>对于每个匹配点，也不是都直接计算描述子距离，首先还要进行判断:</p>
 <ul>
 <li>金字塔层级要接近（同一层或小一层），否则跳过</li>
 <li>计算投影点与候选匹配特征点的距离，进行卡方检验，若超过阈值，直接跳过。</li>
 </ul>
-<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br />
-5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
+<p>若上述判断通过，则计算描述子距离，最后选取距离最小的。<br>5.与最近特征点的描述子距离足够小,就进行地图点融合。</p>
 <ul>
 <li>地图点反投影位置上存在对应地图点,则将两个地图点合并到其中观测较多的那个则直接添加观测</li>
 <li>如果最佳匹配点没有对应地图点，该地图点观测中添加该帧，该帧添加该地图点。</li>
 </ul>
-<hr />
+<hr>
 
           
         
@@ -2810,26 +2694,18 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
       
         
           
-            <h1 id="orbslam3学习笔记7"><a class="markdownIt-Anchor" href="#orbslam3学习笔记7"></a> ORBSLAM3学习笔记(7)</h1>
-<p>这篇博客主要是对Frame.cc文件的学习。</p>
-<hr />
-<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
-<h3 id="frameframe-缺省构造"><a class="markdownIt-Anchor" href="#frameframe-缺省构造"></a> Frame::Frame() 缺省构造</h3>
-<p>把相关变量赋为空或false，无其他操作。</p>
-<hr />
-<h3 id="frameframeconst-frame-frame-拷贝构造"><a class="markdownIt-Anchor" href="#frameframeconst-frame-frame-拷贝构造"></a> Frame::Frame(const Frame &amp;frame) 拷贝构造</h3>
-<p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
-<hr />
-<h3 id="frameframe有参数构造"><a class="markdownIt-Anchor" href="#frameframe有参数构造"></a> Frame::Frame(…)有参数构造</h3>
-<p><strong>1.帧id自加</strong></p>
+            <h1 id="ORBSLAM3学习笔记-7"><a href="#ORBSLAM3学习笔记-7" class="headerlink" title="ORBSLAM3学习笔记(7)"></a>ORBSLAM3学习笔记(7)</h1><p>这篇博客主要是对Frame.cc文件的学习。</p>
+<hr>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="Frame-Frame-缺省构造"><a href="#Frame-Frame-缺省构造" class="headerlink" title="Frame::Frame() 缺省构造"></a>Frame::Frame() 缺省构造</h3><p>把相关变量赋为空或false，无其他操作。</p>
+<hr>
+<h3 id="Frame-Frame-const-Frame-amp-frame-拷贝构造"><a href="#Frame-Frame-const-Frame-amp-frame-拷贝构造" class="headerlink" title="Frame::Frame(const Frame &amp;frame) 拷贝构造"></a>Frame::Frame(const Frame &amp;frame) 拷贝构造</h3><p>这里就是把参数frame的数据，拷贝到该对象的成员变量中去。</p>
+<hr>
+<h3 id="Frame-Frame-…-有参数构造"><a href="#Frame-Frame-…-有参数构造" class="headerlink" title="Frame::Frame(…)有参数构造"></a>Frame::Frame(…)有参数构造</h3><p><strong>1.帧id自加</strong></p>
 <pre><code>mnId=nNextId++;
-</code></pre>
-<p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br />
-这些参数都是从传入的ORBextractor类对象中获取。</p>
+</code></pre><p><strong>2.得图像金字塔的参数，如层数、层间比等</strong><br>这些参数都是从传入的ORBextractor类对象中获取。</p>
 <p><strong>3.提取orb特征点</strong></p>
 <pre><code>ExtractORB(0,imGray,0,1000);
-</code></pre>
-<p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
+</code></pre><p>这里调用了ExtractORB()函数，第一个参数是左右标志位，单目相机默认是左边。第二个时灰度图，三四是界限，下面具体看该函数</p>
 <pre><code>void Frame::ExtractORB(int flag, const cv::Mat &amp;im, const int x0, const int x1)
 &#123;
     vector&lt;int&gt; vLapping = &#123;x0,x1&#125;;
@@ -2841,41 +2717,32 @@ DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
         // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
         monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 &#125;
-</code></pre>
-<p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
-<p><strong>4.畸变矫正</strong><br />
-这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
+</code></pre><p>(*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);其实就是调用了ORBextractor类的()的重载函数。具体内容可以看<a target="_blank" rel="noopener" href="https://someone-ob.github.io/2023/03/30/ORBSLAM3-NOTE-4/">ORBextractor.cc</a></p>
+<p><strong>4.畸变矫正</strong><br>这里就是先把mvKeys存储的特征点的坐标放到一个Mat矩阵里，用opencv库里的函数去其去畸变，把得到的新的坐标覆盖掉mvKeys里的旧数据。去畸变是因为之后要用这些特征点匹配计算位姿变换，我们需要路标点投影到相机平面的正确的坐标。</p>
 <pre><code>UndistortKeyPoints();
-</code></pre>
-<p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
+</code></pre><p>畸变矫正完，由于单目相机无法直接获得立体信息，所以这里要给右图像对应点和深度赋值-1表示没有相关信息</p>
 <pre><code>mvuRight = vector&lt;float&gt;(N,-1);
 mvDepth = vector&lt;float&gt;(N,-1);
 mnCloseMPs = 0;
-</code></pre>
-<p><strong>5.初始化本帧的地图点</strong></p>
+</code></pre><p><strong>5.初始化本帧的地图点</strong></p>
 <pre><code>mvpMapPoints = vector&lt;MapPoint*&gt;(N,static_cast&lt;MapPoint*&gt;(NULL));
 
 mmProjectPoints.clear();// = map&lt;long unsigned int, cv::Point2f&gt;(N, static_cast&lt;cv::Point2f&gt;(NULL));
 mmMatchedInImage.clear();
-</code></pre>
-<p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
-<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br />
-存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
+</code></pre><p>这里就是把vector容器的大小初始化了一下，里面没有内容。</p>
+<p><strong>6.计算去畸变后图像边界，将特征点分配到网格中。</strong><br>存放特征点的网格mGrid是一个二维数组，数组中的每个元素都是一个vector容器。这个网格是在用来做特征点匹配的，因为暴力匹配的效率实在是有点低，下面看步骤：</p>
 <ul>
-<li>若图像是第一帧或者是相机标定参数发生变化，则
-<ul>
+<li>若图像是第一帧或者是相机标定参数发生变化，则<ul>
 <li>计算去畸变后图像的边界，这里也是用opencv库里的函数，这步将mnMinX，mnMaxX，mnMinY，mnMaxY初始化。</li>
 <li>计算一个图像像素在网格中占的宽和高mfGridElementWidthInv，mfGridElementHeightInv，这两个变量用来确定特征点在哪个网格。</li>
 <li>特殊的初始化过程完成，标志复位mbInitialComputations=false;</li>
 </ul>
 </li>
-<li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure>
-</li>
+<li>设置一些非立体鱼眼模式的标志位  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Nleft = -1;</span><br><span class="line">Nright = -1;</span><br><span class="line">mvLeftToRightMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvRightToLeftMatch = vector&lt;int&gt;(0);</span><br><span class="line">mvStereo3Dpoints = vector&lt;Eigen::Vector3f&gt;(0);</span><br><span class="line">monoLeft = -1;</span><br><span class="line">monoRight = -1;</span><br></pre></td></tr></table></figure></li>
 <li>将特征点分配到图像网格中 ，调用函数AssignFeaturesToGrid()</li>
 </ul>
-<hr />
-<h3 id="frameassignfeaturestogrid"><a class="markdownIt-Anchor" href="#frameassignfeaturestogrid"></a> Frame::AssignFeaturesToGrid()</h3>
-<p><strong>1.给存储特征点的网格数组 Frame::mGrid 预分配空间</strong></p>
+<hr>
+<h3 id="Frame-AssignFeaturesToGrid"><a href="#Frame-AssignFeaturesToGrid" class="headerlink" title="Frame::AssignFeaturesToGrid()"></a>Frame::AssignFeaturesToGrid()</h3><p><strong>1.给存储特征点的网格数组 Frame::mGrid 预分配空间</strong></p>
 <pre><code>const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
 
 int nReserve = 0.5f*N/(nCells);
@@ -2888,8 +2755,7 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
             mGridRight[i][j].reserve(nReserve);
         &#125;
     &#125;
-</code></pre>
-<p>这里nReserve定义为0.5f*N/(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
+</code></pre><p>这里nReserve定义为0.5f*N/(nCells)，乘以0.5是为了避免内存空间的浪费，反正vector能动态扩容，如果有些格子里的特征点特别多，原来预分配的不够用了，动态申请内存空间就行。</p>
 <p><strong>2.遍历每个特征点，将每个特征点在mvKeysUn中的索引值放到对应的网格mGrid中</strong></p>
 <pre><code>for(int i=0;i&lt;N;i++)
 &#123;
@@ -2907,25 +2773,17 @@ for(unsigned int i=0; i&lt;FRAME_GRID_COLS;i++)
             mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
     &#125;
 &#125;
-</code></pre>
-<p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
-<hr />
-<h3 id="framegetfeaturesinarea"><a class="markdownIt-Anchor" href="#framegetfeaturesinarea"></a> Frame::GetFeaturesInArea()</h3>
-<p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br />
-<img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点" /></p>
-<hr />
-<h3 id="frameisinfrustum"><a class="markdownIt-Anchor" href="#frameisinfrustum"></a> Frame::isInFrustum()</h3>
-<p>1.获得这个地图点的世界坐标<br />
-2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br />
-3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br />
-4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
+</code></pre><p>遍历每个关键点，调用PosInGrid()函数，计算出每个关键点在哪个网格，然后将其索引值放入对应网格的vector当中。</p>
+<hr>
+<h3 id="Frame-GetFeaturesInArea"><a href="#Frame-GetFeaturesInArea" class="headerlink" title="Frame::GetFeaturesInArea()"></a>Frame::GetFeaturesInArea()</h3><p>该函数用来找候选的匹配点，简单来说就是根据需要匹配的点坐标(x,y)和半径r确定边界，遍历在边界内的网格，确认网格内的特征点是第0层的，且在圆内，则把它们push到vector容器中。<br><img src="https://cdn.jsdelivr.net/gh/someone-ob/ImgHosting/PIC/orbslam3/getfeatures.png" alt="获取候选特征点"></p>
+<hr>
+<h3 id="Frame-isInFrustum"><a href="#Frame-isInFrustum" class="headerlink" title="Frame::isInFrustum()"></a>Frame::isInFrustum()</h3><p>1.获得这个地图点的世界坐标<br>2.检查这个地图点在当前帧的相机坐标系下，是否有正的深度.如果是负的，表示出错，返回false<br>3.将MapPoint投影到当前帧的像素坐标(u,v), 并判断是否在图像有效范围内<br>4.计算MapPoint到相机中心的距离, 并判断是否在尺度变化的距离内</p>
 <blockquote>
-<p>这里的尺度是0.8 * mfMinDistance到1.2 * mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
+<p>这里的尺度是0.8 <em> mfMinDistance到1.2 </em> mfMaxDistance，mfMinDistance和mfMaxDistance在Mappoint文件里关于观测距离范围那部分有讲。</p>
 </blockquote>
-<p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br />
-6.根据地图点到光心的距离来预测一个尺度</p>
+<p>5.计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值, 若小于设定阈值，返回false<br>6.根据地图点到光心的距离来预测一个尺度</p>
 <blockquote>
-<p>这里的尺度是指地图点对应的金字塔层数，公式是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext>m</mtext><mo>=</mo><mi>c</mi><mi>e</mi><mi>i</mi><mi>l</mi><mrow><mo fence="true">(</mo><mfrac><mrow><mi>log</mi><mo>⁡</mo><mrow><mo fence="true">(</mo><mfrac><msub><mi>d</mi><mi>max</mi><mo>⁡</mo></msub><mi>d</mi></mfrac><mo fence="true">)</mo></mrow></mrow><mrow><mi>log</mi><mo>⁡</mo><mrow><mo fence="true">(</mo><mn>1.2</mn><mo fence="true">)</mo></mrow></mrow></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{m}=ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord text"><span class="mord">m</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.40003em;vertical-align:-0.95003em;"></span><span class="mord mathnormal">c</span><span class="mord mathnormal">e</span><span class="mord mathnormal">i</span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.31em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight"><span class="mtight">l</span><span class="mtight">o</span><span class="mtight" style="margin-right:0.01389em;">g</span></span><span class="minner mtight"><span class="mopen mtight delimcenter" style="top:0em;"><span class="mtight">(</span></span><span class="mord mtight">1</span><span class="mord mtight">.</span><span class="mord mtight">2</span><span class="mclose mtight delimcenter" style="top:0em;"><span class="mtight">)</span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.6125em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight"><span class="mtight">l</span><span class="mtight">o</span><span class="mtight" style="margin-right:0.01389em;">g</span></span><span class="minner mtight"><span class="mopen sizing reset-size3 size6 mtight delimcenter" style="top:0.07500000000000001em;"><span class="mtight">(</span></span><span class="mord mtight"><span class="mopen nulldelimiter sizing reset-size3 size6"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9623857142857143em;"><span style="top:-2.656em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">d</span></span></span></span><span style="top:-3.2255000000000003em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line mtight" style="border-bottom-width:0.049em;"></span></span><span style="top:-3.466357142857143em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.23056em;"><span style="top:-2.3em;margin-left:0em;margin-right:0.1em;"><span class="pstrut" style="height:2.5em;"></span><span class="mord mtight"><span class="mop mtight"><span class="mtight">m</span><span class="mtight">a</span><span class="mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.344em;"><span></span></span></span></span></span><span class="mclose nulldelimiter sizing reset-size3 size6"></span></span><span class="mclose sizing reset-size3 size6 mtight delimcenter" style="top:0.07500000000000001em;"><span class="mtight">)</span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.52em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span>,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
+<p>这里的尺度是指地图点对应的金字塔层数，公式是$\text{m}=ceil\left( \frac{\log \left( \frac{d_{\max} }{d} \right)}{\log \left( 1.2 \right)} \right)$,可以参考Mappoint.cc里关于观测距离范围那部分。</p>
 </blockquote>
 <p>7.记录计算得到的一些参数</p>
 <pre><code>pMP-&gt;mbTrackInView = true;
@@ -2943,7 +2801,6 @@ pMP-&gt;mnTrackScaleLevel= nPredictedLevel;
 // 保存当前视角和法线夹角的余弦值
 pMP-&gt;mTrackViewCos = viewCos;
 </code></pre>
-
           
         
       
