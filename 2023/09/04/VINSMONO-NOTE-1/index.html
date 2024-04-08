@@ -79,12 +79,12 @@
 
 
 
-<meta name="description" content="VINSMONO学习笔记(1)这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。 参考博客：VINS-Mono详解（一），港科大VINS-MONO入门（一）：框架入门及源码解析，VINS_mono 代码详细理解（一）  系统架构VINS-M">
+<meta name="description" content="VINSMONO学习笔记(1) 这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。 参考博客：VINS-Mono详解（一），港科大VINS-MONO入门（一）：框架入门及源码解析，VINS_mono 代码详细理解（一）   系统架构 VI">
 <meta property="og:type" content="article">
 <meta property="og:title" content="VINS-MONO源码阅读:前端">
 <meta property="og:url" content="http://example.com/2023/09/04/VINSMONO-NOTE-1/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="VINSMONO学习笔记(1)这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。 参考博客：VINS-Mono详解（一），港科大VINS-MONO入门（一）：框架入门及源码解析，VINS_mono 代码详细理解（一）  系统架构VINS-M">
+<meta property="og:description" content="VINSMONO学习笔记(1) 这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。 参考博客：VINS-Mono详解（一），港科大VINS-MONO入门（一）：框架入门及源码解析，VINS_mono 代码详细理解（一）   系统架构 VI">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-09-04T05:04:24.000Z">
 <meta property="article:modified_time" content="2023-09-19T06:23:52.656Z">
@@ -310,27 +310,72 @@
       
 
       
-        <h1 id="VINSMONO学习笔记-1"><a href="#VINSMONO学习笔记-1" class="headerlink" title="VINSMONO学习笔记(1)"></a>VINSMONO学习笔记(1)</h1><p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
+        <h1 id="vinsmono学习笔记1"><a class="markdownIt-Anchor" href="#vinsmono学习笔记1"></a> VINSMONO学习笔记(1)</h1>
+<p>这篇博客开始是对VINSMONO框架的源码学习，最近把深蓝学院的VIO课程看完了，希望通过阅读VINSMONO的源码来进行巩固和加深理解。这篇博客主要是对VINSMONO的整体框架的梳理和对前端节点代码的阅读。</p>
 <p>参考博客：<a target="_blank" rel="noopener" href="https://blog.csdn.net/mcw1234/article/details/83039506">VINS-Mono详解（一）</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/wbzhang233/article/details/88885485">港科大VINS-MONO入门（一）：框架入门及源码解析</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_51547017/article/details/123306540">VINS_mono 代码详细理解（一）</a></p>
-<hr>
-<h2 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h2><p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。 </p>
+<hr />
+<h2 id="系统架构"><a class="markdownIt-Anchor" href="#系统架构"></a> 系统架构</h2>
+<p>VINS-Mono是基于ros开发的，主要包含两个节点: 前端节点<code>feature_tracker_node</code>和后端节点<code>estimator_node</code>。前端节点处理Measurement Preprocessing中的Feature Detection and Tracking, 其他几个部分(IMU preintegration, initialization, LocalBA, Loop closure)都是在estimator_node中处理。</p>
 <p>前端节点的feature_tracker_node的程序入口是文件feature_tracker_node.cpp中的main()函数，接收图像信息,调用img_callback()函数进行处理。</p>
 <p>estimator_node节点中开了3个子线程, 分别是:process,loop_detection和pose_graph. 其中 process()线程处理VIO后端, 包括(IMU preintegration, initialization, LocalBA)loop_detection()线程处理闭环检测pose_graph()线程分别处理全局优化。如果不需要做loop closure, 可以把LOOP_CLOUSRE置0, 则后面两个线程不会创建。</p>
-<hr>
-<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="int-main"><a href="#int-main" class="headerlink" title="int main()"></a>int main()</h3><p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
+<hr />
+<h2 id="源码阅读"><a class="markdownIt-Anchor" href="#源码阅读"></a> 源码阅读</h2>
+<h3 id="int-main"><a class="markdownIt-Anchor" href="#int-main"></a> int main()</h3>
+<p>首先，读取yaml文件中的相关参数，再创建由FeatureTracker类的实例组成的数组<code>trackerData[NUM_OF_CAM]</code>，其中<code>NUM_OF_CAM</code>为相机的个数，这意味这每一个相机都有一个FeatureTracker的实例，每个相机的FeatureTracker实例通过调用成员函数FeatureTracker::readIntrinsicParameter()，来读取每个相机各自对应的内参。</p>
 <p>特别的，如果相机是鱼眼相机，需要读取FISHEYE_MASK，存到相机FeatureTracker的实例的成员变量fisheye_mask中，它会在后续操作中被用来去除边缘噪点。</p>
-<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。<br>| |name|topic|type|消息内容|<br>|-|:———-:|:———:|:———:|:———:|<br>|subscriber|sub_img|IMAGE_TOPIC|sensor_msgs::Image|相机图像数据|<br>|publisher|pub_img|feature|sensor_msgs::PointCloud|跟踪的特征点|<br>|publisher|pub_match|feature_img|sensor_msgs::Image|标记出了特征点的图像|</p>
-<hr>
-<h3 id="void-img-callback"><a href="#void-img-callback" class="headerlink" title="void img_callback()"></a>void img_callback()</h3><p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
+<p>接着定义一个订阅器和两个发布器。订阅器sub_img从话题IMAGE_TOPIC中订阅相机图像数据，回调函数为img_callback()。发布器pub_img在名为feature的话题下发布一条类型为sensor_msgs::PointCloud的消息，该话题消息为从相机图像中跟踪的特征点。发布器pub_match在名为feature_img的话题下发布一条类型为sensor_msgs::Image的消息，该话题消息为标记出了特征点的图像。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align:center">name</th>
+<th style="text-align:center">topic</th>
+<th style="text-align:center">type</th>
+<th style="text-align:center">消息内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>subscriber</td>
+<td style="text-align:center">sub_img</td>
+<td style="text-align:center">IMAGE_TOPIC</td>
+<td style="text-align:center">sensor_msgs::Image</td>
+<td style="text-align:center">相机图像数据</td>
+</tr>
+<tr>
+<td>publisher</td>
+<td style="text-align:center">pub_img</td>
+<td style="text-align:center">feature</td>
+<td style="text-align:center">sensor_msgs::PointCloud</td>
+<td style="text-align:center">跟踪的特征点</td>
+</tr>
+<tr>
+<td>publisher</td>
+<td style="text-align:center">pub_match</td>
+<td style="text-align:center">feature_img</td>
+<td style="text-align:center">sensor_msgs::Image</td>
+<td style="text-align:center">标记出了特征点的图像</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="void-img_callback"><a class="markdownIt-Anchor" href="#void-img_callback"></a> void img_callback()</h3>
+<p>每当接收到从IMAGE_TOPIC话题订阅的数据，就会进入回调函数img_callback()进行处理。对于传来的图像，首先要判断其是否需要发送，并不是每处理一帧图像，都将特征点检测跟踪结果发布出去。数据发布频率由配置参数FREQ给定，通过PUB_THIS_FRAME控制是否发布当前帧的检测跟踪数据，将数据平均发布频率稳定在FREQ：如果当前统计时间内的平均数据发布频率快于FREQ，则将PUB_THIS_FRAME置为false，只进行特征点的跟踪，但不发布当前帧的数据；否则，将PUB_THIS_FRAME置为true，进行特征点的跟踪且发布当前帧的数据。</p>
 <p>然后遍历成员变量<code>trackerData</code>数组，调用该对象的函数readImage()，将数据读取存储到<code>trackerData</code>里(这部分下面会详细讲)。然后更新<code>trackerData</code>里特征点的id。</p>
 <p>接下来，创建了一个名为 <code>feature_points</code> 的指针，该指针指向一个 sensor_msgs::PointCloud 类型的消息对象,将<strong>当前帧的所有特征点在归一化平面上的坐标</strong>存到<code>feature_points</code>的成员变量<code>points</code>中，将<strong>当前帧的所有特征点的像素坐标，id，xy轴方向的速度</strong>存到<code>feature_points</code>的成员变量<code>channels</code>中，通过<code>pub_img</code>发布出去（第一帧不发送）。</p>
 <p>最后，如果要进行特征点轨迹的可视化，即SHOW_TRACK为true，则将原来转为灰度图的图像重新恢复成彩色图，存到变量stereo_img里，然后按图像大小截取到tmp_img里，在tmp_img中特征点坐标处画圆圈，颜色深度由追踪到的次数决定，通过<code>pub_match</code>将处理过的图像发布出去。</p>
-<hr>
-<h3 id="void-FeatureTracker-readImage"><a href="#void-FeatureTracker-readImage" class="headerlink" title="void FeatureTracker::readImage()"></a>void FeatureTracker::readImage()</h3><p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
+<hr />
+<h3 id="void-featuretrackerreadimage"><a class="markdownIt-Anchor" href="#void-featuretrackerreadimage"></a> void FeatureTracker::readImage()</h3>
+<p>FeatureTracker类中的主要处理函数就是readImage()，在这个函数中涉及到几个变量名，需要对它们的含义进行特别说明（以下说明针对单目模式，其含义并不适用于双目模式），否则根据变量名称去揣测其含义会出错。</p>
 <p>图像数据变量：</p>
-<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br><code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br><code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
-<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br><code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br><code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
-<p>函数的具体流程为：<br>1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
+<p><code>prev_img</code>： 上一次发布数据时对应的图像帧<br />
+<code>cur_img</code>： 光流跟踪的前一帧图像，而不是“当前帧”<br />
+<code>forw_img</code>： 光流跟踪的后一帧图像，真正意义上的“当前帧”特征点数据变量：</p>
+<p><code>prev_pts</code>： 上一次发布的，且能够被当前帧（forw）跟踪到的特征点<br />
+<code>cur_pts</code>： 在光流跟踪的前一帧图像中，能够被当前帧（forw）跟踪到的特征点<br />
+<code>forw_pts</code>： 光流跟踪的后一帧图像，即当前帧中的特征点（除了跟踪到的特征点，可能还包含新检测的特征点）</p>
+<p>函数的具体流程为：<br />
+1.如果控制参数EQUALIZE为true，调用cv::createCLAHE对图像进行自适应直方图均衡处理；</p>
 <p>2.调用cv::calcOpticalFlowPyrLK()对前一帧的特征点cur_pts进行金字塔光流跟踪，得到forw_pts。status标记了cur_pts中各个特征点的跟踪状态，根据status将跟踪失败的特征点从prev_pts、cur_pts和forw_pts中剔除，而且在记录特征点id的ids，和记录特征点被跟踪次数的track_cnt中，也要把这些跟踪失败的特征点对应位置的记录删除。被status标记为跟踪正常的特征点，在当前帧图像中的位置可能已经处于图像边界外了，这些特征点也应该被删除，删除操作同上。最后将未被删除的点的跟踪次数加1。</p>
 <p>3.如果不需要发布当前帧的数据，则直接将当前帧forw的相关数据赋给上一帧cur，然后在这一步整个readImage的流程就结束了。</p>
 <p>4.如果需要发布当前帧的数据，先调用FeatureTracker::rejectWithF()函数，剔除outliers。具体方法为：调用cv::findFundamentalMat()对prev_pts和forw_pts计算F矩阵，通过F矩阵去除outliers。剩下的特征点track_cnt都加一。</p>
@@ -502,7 +547,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VINSMONO%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-1"><span class="nav-number">1.</span> <span class="nav-text">VINSMONO学习笔记(1)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text">系统架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#int-main"><span class="nav-number">1.2.1.</span> <span class="nav-text">int main()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-img-callback"><span class="nav-number">1.2.2.</span> <span class="nav-text">void img_callback()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-FeatureTracker-readImage"><span class="nav-number">1.2.3.</span> <span class="nav-text">void FeatureTracker::readImage()</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vinsmono%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01"><span class="nav-number">1.</span> <span class="nav-text"> VINSMONO学习笔记(1)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text"> 系统架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.2.</span> <span class="nav-text"> 源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#int-main"><span class="nav-number">1.2.1.</span> <span class="nav-text"> int main()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-img_callback"><span class="nav-number">1.2.2.</span> <span class="nav-text"> void img_callback()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#void-featuretrackerreadimage"><span class="nav-number">1.2.3.</span> <span class="nav-text"> void FeatureTracker::readImage()</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -522,7 +567,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
